@@ -1,0 +1,157 @@
+table {
+  border-collapse: collapse;
+}
+tr.row-variation {
+/*  background-color: #b8e8ff;*/
+}
+tr.row-bezae {
+  background-color: #b3de69;
+}
+tr.row-even {
+  background-color: #f8fff8;
+}
+tr.row-odd {
+  background-color: #f8fff8;
+}
+td {
+  vertical-align:top;
+  white-space:nowrap;
+}
+td.textRegion {
+  border-right: rgba(0,0,255,0.1);
+  border-right-style: solid;
+  border-right-width: 1px;
+}
+td.button {
+  background-color: #cccccc;
+  cursor:pointer;
+}
+td.button:hover {
+  background-color: #eeeeee;
+}
+td.button:active {
+  background-color: #ffffff;
+}
+td.cell-bezae {
+  font-style:italic;
+}
+td.cell-mainstream {
+  color: #ff0000;
+}
+td.singular {
+  /*background-color: #ffffd8;*/
+  color: #aaa;
+}
+td.borderSides {
+  border-left: #800000;
+  border-left-style: solid;
+  border-left-width: 2px;
+  border-right: #800000;
+  border-right-style: solid;
+  border-right-width: 1px;
+}
+td.borderTop {
+  border-top: #800000;
+  border-top-style: solid;
+  border-top-width: 1px;
+}
+td.borderBottom {
+  border-bottom: #800000;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+}
+td.workButton {
+  cursor: pointer;
+}
+td.workButton:hover {
+  background-color: #e0e0e0;
+}
+td.workButton:active {
+  background-color: #f0f0ff;
+}
+td.mainForm {
+  font-weight: 600;
+}
+td.simpleButton {
+  cursor: pointer;
+}
+span.singular {
+  color: #ccc;
+  background-color: inherit;
+}
+span.bezaeSingular {
+  color: #f00;
+}
+span.noRetroversion {
+  font-style: italic;
+}
+span.columnDiff {
+  font-weight: bold;
+}
+span.morph_off {
+  display: none;
+}
+span.morph_on {
+  display: inline-block;
+  text-align: right;
+  margin-left: 10px;
+  font-size: smaller;
+  color: #aaa;
+}
+.popup {
+  position: relative;
+}
+.popup .popuptext {
+  visibility: hidden;
+  background-color: #ffffff;
+  opacity: 0.95;
+  width: 810px;
+  height: 800px;
+  border-radius: 6px;
+  padding: 5px 0;
+  position: absolute;
+  z-index: 1;
+  top: 100%;
+  cursor: default;
+  border-color: #808080;
+  border-style: solid;
+  border-width: 1px;
+}
+.popup .show {
+  visibility: visible;
+}
+span.reading {
+  position: absolute;
+  border-top: 1px solid #c0c0c0;
+  width: 810px;
+}
+span.ms {
+  position: absolute;
+}
+span.ms-bezae {
+  color: #00b000;
+  font-weight: 600;
+}
+span.ms-mainstream {
+  color: #c00000;
+  font-weight: 600;
+}
+span.ms-vaticanus {
+  color: #c0b000;
+  font-weight: 600;
+}
+span.subreading {
+  font-size: smaller;
+}
+span.button {
+  position: absolute;
+  background-color: #aabbff;
+  padding: 5px 25px 5px 25px;
+  cursor: pointer;
+}
+span.button:hover {
+  background-color: #bbccf8;
+}
+span.button:active {
+  background-color: #ccddff;
+}

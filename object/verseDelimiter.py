@@ -1,0 +1,10 @@
+import sys, os
+
+from object.addressSlot import *
+
+class  VerseDelimiter(AddressSlot):
+    def __init__(s, t_idx, v_num):
+        super(VerseDelimiter, s).__init__(t_idx, v_num)
+
+    def jsonSerialize(s):
+        return { 'verse': int(s.verse_num), 'tokenIndex': s.token_idx, '_type': 'verse' }

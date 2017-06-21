@@ -1,0 +1,48 @@
+$def with (args)
+<ul>
+$for dir, subdirs in args['dirs']['directoryMap'].iteritems():
+    $code:
+        isGL = 'false'
+        if 'GL' in dir:
+            isGL = 'true'
+    <li>
+      <div class='accordion' onclick='DSS.accordionClick(event)'>$dir</div>
+      $if loop.index == 1:
+          <div class='accordion-body'>
+      $else:
+          <div class='accordion-body accordion-hidden'>
+      <ul class='list6'>
+      $for subdir in subdirs:
+          $code:
+              label = subdir + 'cl'
+          <li><a href='javascript:DSS.viewClusterPlot("$dir", "$subdir", "clusters w layers", "Clusters", $isGL)'>$label</a></li>
+      </ul>
+      <ul class='list6'>
+      $for subdir in subdirs:
+          $code:
+              label = subdir + 'gr'
+          <li><a href='javascript:DSS.viewClusterPlot("$dir", "$subdir", "clusters by Greek Witness", "Clusters")'>$label</a></li>
+      </ul>
+      <ul class='list6'>
+      $for subdir in subdirs:
+          $code:
+              label = subdir + 'la'
+          <li><a href='javascript:DSS.viewClusterPlot("$dir", "$subdir", "clusters by Latin Witness", "Clusters")'>$label</a></li>
+      </ul>
+      <ul class='list6'>
+      $for subdir in subdirs:
+          $code:
+              label = subdir + 'rs'
+          <li><a href='javascript:DSS.viewClusterResults("$dir", "$subdir")'>$label</a></li>
+      </ul>
+      $if 'GL' in dir:
+          <ul class='list5'>
+              <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer histograms", "Layer Distribution by Verse")'>Hist</a></li>
+              <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer kernel density", "Layer Distribution by Verse")'>Dens</a></li>
+              <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer verse barchart - magentas", "Layer Distribution by Verse")'>Bar</a></li>
+              <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer verse heatmap - reds", "Layer Distribution by Verse")'>Heat</a></li>
+              <li><a href='javascript:DSS.viewGraphic("$dir", "distinctive-distrib", "distinctive agreements by witness", "Distinctive Agreements by Witness")'>Agree</a></li>
+          </ul>
+      </div>
+    </li>
+</ul>

@@ -1,0 +1,84 @@
+$def with (args)
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Textual Tradition of Mark</title>
+  <link rel="shortcut icon" href="static/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="static/css/style.css">
+  <script src="static/js/jquery-3.2.1.js"></script>
+  <script src="static/js/controller.js"></script>
+<body>
+
+  <div id='container'>
+    <div id='header'>
+      <div id='title'>Manuscript Analysis</div><div id='messages'></div>
+    </div>
+    <div id='sidecol'>
+      <ul>
+        <li>Chapter <select id='inputfile'>
+        $for key in args['config'].get('files'):
+            <option value='$args['config'].get("files")[key]'>$key
+        </select>
+      <ul class='list3'>
+        $for ms in args['config'].get('referenceMSS'):
+            <li><input id='refms$ms' type='checkbox' value='$ms'> $ms
+      </ul>
+      <ul>
+        <li><a id='analyze' href='javascript:DSS.analyze()'>Analyze</a>
+      <div id='dirslist'>
+        <ul>
+        $for dir, subdirs in args['dirs']['directoryMap'].iteritems():
+            $code:
+                isGL = 'false'
+                if 'GL' in dir:
+                    isGL = 'true'
+            <li>
+              <div class='accordion' onclick='DSS.accordionClick(event)'>$dir</div>
+              $if loop.index == 1:
+                  <div class='accordion-body'>
+              $else:
+                  <div class='accordion-body accordion-hidden'>
+              <ul class='list6'>
+              $for subdir in subdirs:
+                  $code:
+                      label = subdir + 'cl'
+                  <li><a href='javascript:DSS.viewClusterPlot("$dir", "$subdir", "clusters w layers", "Clusters", $isGL)'>$label</a></li>
+              </ul>
+              <ul class='list6'>
+              $for subdir in subdirs:
+                  $code:
+                      label = subdir + 'gr'
+                  <li><a href='javascript:DSS.viewClusterPlot("$dir", "$subdir", "clusters by Greek Witness", "Clusters")'>$label</a></li>
+              </ul>
+              <ul class='list6'>
+              $for subdir in subdirs:
+                  $code:
+                      label = subdir + 'la'
+                  <li><a href='javascript:DSS.viewClusterPlot("$dir", "$subdir", "clusters by Latin Witness", "Clusters")'>$label</a></li>
+              </ul>
+              <ul class='list6'>
+              $for subdir in subdirs:
+                  $code:
+                      label = subdir + 'rs'
+                  <li><a href='javascript:DSS.viewClusterResults("$dir", "$subdir")'>$label</a></li>
+              </ul>
+              $if 'GL' in dir:
+                  <ul class='list5'>
+                      <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer histograms", "Layer Distribution by Verse")'>Hist</a></li>
+                      <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer kernel density", "Layer Distribution by Verse")'>Dens</a></li>
+                      <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer verse barchart - magentas", "Layer Distribution by Verse")'>Bar</a></li>
+                      <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer verse heatmap - reds", "Layer Distribution by Verse")'>Heat</a></li>
+                      <li><a href='javascript:DSS.viewGraphic("$dir", "distinctive-distrib", "distinctive agreements by witness", "Distinctive Agreements by Witness")'>Agree</a></li>
+                  </ul>
+              </div>
+            </li>
+        </ul>
+      </div>
+    </div> 
+
+    <div id='content'>
+      <div>Content</div>
+    </div>
+    <div class='clear'></div>
+  </div> 

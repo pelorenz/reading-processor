@@ -1,0 +1,9 @@
+general:
+  bw: 'FALSE'
+  clusterAnalysis: 'TRUE'
+  distribAnalysis: 'FALSE'
+  witnessDistribAnalysis: 'FALSE'
+  minclusters:  '2'
+  maxclusters:  '2'
+
+outdir:         'C:\Data\Workspace\reading-processor\static\stats\'
