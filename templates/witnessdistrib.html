@@ -1,0 +1,13 @@
+$def with (res)
+<div class='cluster-heading'>Witness Distribution in Clusters</div>
+<div class='distrib-container'>
+$for clust in res['clusters']:
+    $if clust['witnesses']:
+        <div class='clust-occurs'>
+        <div class='cluster-subheading'>Cluster $loop.index ($clust['size'])</div>
+        <table>
+        $for witness in clust['witnesses']:
+            <tr class='$witness['id']'><td class='cluster-witness'>$witness['id']</td><td>$witness['occurrences']</td></tr>
+        </table>
+        </div>
+</div>

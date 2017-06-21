@@ -3,11 +3,6 @@ $for clust in res['clusters']:
     <div class='cluster-heading'>Cluster $loop.index ($clust['size'])</div>
     $for reading in clust['readings']:
         <div class='cluster-reading layer$reading["layer"]'>$reading['fit'] N$reading['neighbor'] $reading['description']</div>
-    <div class='cluster-subheading'>Cluster $loop.index Witnesses</div>
-    <table>
-    $for witness in clust['witnesses']:
-        <tr class='$witness['id']'><td class='cluster-witness'>$witness['id']</td><td>$witness['occurrences']</td></tr>
-    </table>
 <div class='cluster-heading'>Cluster Summary</div>
 <table>
   <tr>

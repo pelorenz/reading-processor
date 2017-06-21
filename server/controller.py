@@ -26,6 +26,7 @@ class Controller:
         method = getattr(s, operation, lambda: "")
         return method()
 
+    # actions
     def analyze(s):
         udata = web.input()
         refMSS = []
@@ -42,14 +43,20 @@ class Controller:
         return fragment
 
     def clustresults(s):
-        fragment = ''
+        result = s.getJSONResult()
+        return s.templates.clustresults(result)
+
+    def witnessdistrib(s):
+        result = s.getJSONResult()
+        return s.templates.witnessdistrib(result)
+
+    # non-actions
+    def getJSONResult(s):
+        result = None
         udata = web.input()
         if udata.has_key('json'):
             jsondata = udata['json']
             result = json.loads(jsondata)
             for clust in result['clusters']:
                 clust['witnesses'] = sorted(clust['witnesses'], cmp=sortWitnesses)
-            fragment = s.templates.clustresults(result)
-
-        return fragment
-
+        return result

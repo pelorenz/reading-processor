@@ -68,26 +68,23 @@
     var img = $('<img>', {src: 'static/stats/' + dir + '/' + subfolder + '/' + dir + ' - ' + filename + '.png'});
     $('#content').append(img);
   },
-  viewClusterResults: function(dir, subdir) {
+  viewClusterResults: function(dir, subdir, action) {
     $.ajax({url: '/static/stats/' + dir + '/' + subdir + ' clusters/' + dir + '-' + subdir + 'cl-results.json',
       success: function(response) {
-        $.post({url: '/app/clustresults',
+        $.post({url: '/app/' + action,
         data: {
           'json': response
         },
         success: function(response) {
           $('#content').html(response);
           $('#messages').text('Done!');
-          $("#analyze").removeClass('disable-link');
         },
         error: function(xhr, status, error) {
           $('#messages').html('Error');
-          $("#analyze").removeClass('disable-link');
         }});
       },
       error: function(xhr, status, error) {
         $('#messages').html('Error');
-        $("#analyze").removeClass('disable-link');
     }});
   }
 }

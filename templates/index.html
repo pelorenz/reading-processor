@@ -60,8 +60,14 @@ $def with (args)
               <ul class='list6'>
               $for subdir in subdirs:
                   $code:
-                      label = subdir + 'rs'
-                  <li><a href='javascript:DSS.viewClusterResults("$dir", "$subdir")'>$label</a></li>
+                      label = subdir + 'mb'
+                  <li><a href='javascript:DSS.viewClusterResults("$dir", "$subdir", "clustresults")'>$label</a></li>
+              </ul>
+              <ul class='list6'>
+              $for subdir in subdirs:
+                  $code:
+                      label = subdir + 'wd'
+                  <li><a href='javascript:DSS.viewClusterResults("$dir", "$subdir", "witnessdistrib")'>$label</a></li>
               </ul>
               $if 'GL' in dir:
                   <ul class='list5'>
