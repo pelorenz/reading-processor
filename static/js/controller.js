@@ -90,11 +90,11 @@
         $('#messages').html('Error');
     }});
   },
-  viewClusterMerge: function(dir) {
+  viewClusterMerge: function(dir, action) {
     // dir = Mark 01-05GL
     $.ajax({url: '/static/layers/' + DSS.stripLangCode(dir) + '.json',
       success: function(response) {
-        $.post({url: '/app/clustmerge',
+        $.post({url: '/app/' + action,
         data: {
           'json': response
         },
