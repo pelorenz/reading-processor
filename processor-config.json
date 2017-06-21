@@ -10,6 +10,7 @@
   "htmlInitialFragment": "initial_fragment.htm",
   "cacheFolder": "cache/",
   "csvFolder": "csv/",
+  "layersFolder": "static/layers/",
   "inputFolder": "input/",
   "outputFolder": "output/",
   "variantFolder": "variant-data/",

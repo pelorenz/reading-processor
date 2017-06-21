@@ -46,6 +46,9 @@
   msFromDir: function(dir) {
     return dir.replace(/Mark \d{2,2}\-(\d{1,4})[GL]{1,2}/gi, '$1');
   },
+  stripLangCode: function(dir) {
+    return dir.replace(/(Mark \d{2,2}\-\d{1,4})[GL]{1,2}/gi, '$1');
+  },
   viewClusterPlot: function(dir, subdir, filename, title, isGL) {
     $('#content').empty();
     // e.g. Mark 01-01GL
@@ -72,6 +75,26 @@
     $.ajax({url: '/static/stats/' + dir + '/' + subdir + ' clusters/' + dir + '-' + subdir + 'cl-results.json',
       success: function(response) {
         $.post({url: '/app/' + action,
+        data: {
+          'json': response
+        },
+        success: function(response) {
+          $('#content').html(response);
+          $('#messages').text('Done!');
+        },
+        error: function(xhr, status, error) {
+          $('#messages').html('Error');
+        }});
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
+  },
+  viewClusterMerge: function(dir) {
+    // dir = Mark 01-05GL
+    $.ajax({url: '/static/layers/' + DSS.stripLangCode(dir) + '.json',
+      success: function(response) {
+        $.post({url: '/app/clustmerge',
         data: {
           'json': response
         },

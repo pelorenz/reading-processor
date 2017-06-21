@@ -43,6 +43,10 @@ class Controller:
 
         return fragment
 
+    def clustmerge(s):
+        result = s.getJSONResult()
+        return s.templates.clustmerge(result)
+
     def clustresults(s):
         result = s.getJSONResult()
         return s.templates.clustresults(result)
@@ -59,5 +63,6 @@ class Controller:
             jsondata = udata['json']
             result = json.loads(jsondata)
             for clust in result['clusters']:
-                clust['witnesses'] = sorted(clust['witnesses'], cmp=sortWitnesses)
+                if result.has_key('witnesses'):
+                    clust['witnesses'] = sorted(clust['witnesses'], cmp=sortWitnesses)
         return result
