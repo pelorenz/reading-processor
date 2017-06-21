@@ -97,6 +97,66 @@ def callDistrib(lock, rms, chapter, langCode):
     print ''
     lock.release()
 
+def makePart(tok, lpart):
+    part = {}
+    vtoks = tok.split('.') if '.' in tok else [ tok ]
+    if len(vtoks) == 1:
+        if not lpart:
+            raise ValueError('Variant label requires initial verse identifier.')
+
+        part['verse'] = lpart['verse']
+        part['addresses'] = vtoks[0].split('-') if '-' in vtoks[0] else [ vtoks[0] ]
+    elif len(vtoks) == 2:
+        part['verse'] = vtoks[0]
+        part['addresses'] = vtoks[1].split('-') if '-' in vtoks[1] else [ vtoks[1] ]
+    else:
+        raise ValueError('Malformed variant label.')
+    return part
+
+def makeParts(v):
+    parts = []
+    toks = v.split(',') if ',' in v else [ v ]
+    lastpart = None
+    for idx, tok in enumerate(toks):
+        lastpart = makePart(tok, lastpart)
+        parts.append(lastpart)
+    return parts
+
+def sortVariations(v1, v2):
+    parts1 = makeParts(v1['wrapped'].variationUnit.label)
+    parts2 = makeParts(v2['wrapped'].variationUnit.label)
+
+    p1 = parts1[0]
+    p2 = parts2[0]
+
+    # different verses?
+    if (int(p1['verse']) < int(p2['verse'])):
+        return -1
+    elif (int(p1['verse']) > int(p2['verse'])):
+        return 1
+
+    # different addresses?
+    a1 = int(p1['addresses'][0])
+    a2 = int(p2['addresses'][0])
+    if a1 < a2:
+        return -1
+    elif a1 > a2:
+        return 1
+
+    # different number of parts?
+    if len(p1) < len(p2):
+        return -1
+    elif len(p1) > len(p2):
+        return 1
+
+    # different number of addresses
+    if len(p1['addresses']) < len(p2['addresses']):
+        return -1
+    elif len(p1['addresses']) > len(p2['addresses']):
+        return 1
+
+    return 0
+
 class Analyzer:
 
     def __init__(s):
@@ -162,10 +222,10 @@ class Analyzer:
                 disp_counter = disp_counter + 1
             file.close()
 
-    def writeCSV(s, refMS, sfx, mss, nils, vars, vect):
+    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, layersMap, variantsMap):
         c = s.config
 
-        csvfile = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + sfx + '.csv'
+        csvfile = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + langCode + '.csv'
         with open(csvfile, 'w+') as file:
             # number of nils allowed
             num_nils = len(refMS.__dict__[vars]) * 0.05
@@ -240,6 +300,24 @@ class Analyzer:
                     if len(v_str) > 0:
                         witness_str = v_str
 
+                excerpt = var.variationUnit.getExcerpt(refMS.gaNum, witness_str, False)
+                longLabel = var.longLabel(witness_str, nonnil_MSS)
+                sequence = s.generateID(disp_counter)
+
+                # assign to layer (variant might already exist in layer!)
+                label = var.variationUnit.label
+                if not variantsMap.has_key(label):
+                    wrapper = {
+                        'wrapped': var,
+                        'sequence': sequence,
+                        'witnesses': witness_str,
+                        'excerpt': excerpt,
+                        'description': longLabel,
+                        'languageCode': langCode
+                    }
+                    layersMap[layer].append(wrapper)
+                    variantsMap[label] = layer
+
                 # Debug layer assignment
                 #s.info(witness_str, ', layer', str(layer), ', lcounter', str(latin_counter), ', gcounter', str(greek_counter))
 
@@ -251,25 +329,98 @@ class Analyzer:
                     else:
                         vct.append(val)
 
-                file.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + var.longLabel(witness_str, nonnil_MSS) + u'\t' + s.generateID(disp_counter) + u'\t' + str(layer).decode('utf-8') + '\t' + witness_str + u'\t' + var.variationUnit.getExcerpt(refMS.gaNum, witness_str, False) + u'\t' + u'\t'.join(vct) + u'\n').encode('utf-8'))
+                file.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(layer).decode('utf-8') + '\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct) + u'\n').encode('utf-8'))
 
                 disp_counter = disp_counter + 1
+            file.close()
+
+    def writeLayers(s, rms, layersMap):
+        c = s.config
+
+        j_layers = { 'clusters': [] }
+        for idx in range(1, 4):
+            # TODO add witness occurrences
+            j_layer = { 
+              'index': str(idx).decode('utf-8'),
+              'size': str(len(layersMap[idx])).decode('utf-8'),
+              'readings': []
+            }
+
+            # sort variatons
+            sorted_variations = sorted(layersMap[idx], cmp=sortVariations)
+
+            # create readings
+            for var in sorted_variations:
+                j_var = {
+                    'reference': var['wrapped'].variationUnit.label,
+                    'languageCode': var['languageCode'],
+                    'sequence': var['sequence'],
+                    'layer': str(idx).decode('utf-8'),
+                    'witnesses': var['witnesses'],
+                    'excerpt': var['excerpt'],
+                    'description': var['description']
+                }
+                j_layer['readings'].append(j_var)
+
+            j_layers['clusters'].append(j_layer)
+
+        j_layer = { 
+          'index': '4',
+          'size': str(len(rms.singular)).decode('utf-8'),
+          'readings': []
+        }
+
+        # create readings
+        disp_counter = 1
+        for vu in rms.singular:
+            excerpt = vu.getExcerpt(rms.gaNum, '', True)
+            j_var = {
+                'reference': vu.label,
+                'languageCode': 'S',
+                'sequence': s.generateID(disp_counter),
+                'layer': '4',
+                'witnesses': '',
+                'excerpt': excerpt,
+                'description': vu.label + u' ' + excerpt
+            }
+            j_layer['readings'].append(j_var)
+
+            disp_counter = disp_counter + 1
+
+        j_layers['clusters'].append(j_layer)
+
+        jsonfile = c.get('layersFolder') + 'Mark ' + s.chapter[1:] + '-' + rms.gaNum + '.json'
+        with open(jsonfile, 'w+') as file:
+            jsonstr = json.dumps(j_layers, ensure_ascii=False)
+            file.write(jsonstr.encode('utf-8'))
             file.close()
 
     def generateReferenceCSV(s):
         c = s.config
         s.info('')
         for rms in s.referenceMSS:
-            s.info('generating CSVs for', rms)
+            s.info('generating CSVs for', rms.gaNum)
 
-            # selG
-            s.writeCSV(rms, 'G', 'selGrMSS', 'selGr_nils', 'sel_G', 'selGrVect')
+            # variants keyed by layer
+            layersMap = {}
+            layersMap[1] = []
+            layersMap[2] = []
+            layersMap[3] = []
+
+            # layers keyed by variant label
+            variantsMap = {}
 
             # selGL
-            s.writeCSV(rms, 'GL', 'selMSS', 'sel_nils', 'sel_GL', 'selVect')
+            s.writeCSV(rms, 'GL', 'selMSS', 'sel_nils', 'sel_GL', 'selVect', layersMap, variantsMap)
+
+            # selG
+            s.writeCSV(rms, 'G', 'selGrMSS', 'selGr_nils', 'sel_G', 'selGrVect', layersMap, variantsMap)
 
             # singular
             s.writeSingular(rms)
+
+            # write layer JSON
+            s.writeLayers(rms, layersMap)
 
     def generateVariants(s):
         s.info('')

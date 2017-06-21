@@ -11,6 +11,7 @@
 /output
 /server/*.pyc
 /static/js/jquery*
+/static/layers
 /static/stats
 /utility/*.pyc
 /variant-data

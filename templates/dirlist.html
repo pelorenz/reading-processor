@@ -43,12 +43,13 @@ $for dir in args['keys']:
           <li><a href='javascript:DSS.viewClusterResults("$dir", "$subdir", "witnessdistrib")'>$label</a></li>
       </ul>
       $if 'GL' in dir:
-          <ul class='list5'>
+          <ul class='list6'>
               <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer histograms", "Layer Distribution by Verse")'>Hist</a></li>
               <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer kernel density", "Layer Distribution by Verse")'>Dens</a></li>
               <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer verse barchart - magentas", "Layer Distribution by Verse")'>Bar</a></li>
               <li><a href='javascript:DSS.viewGraphic("$dir", "verse-distrib", "per layer verse heatmap - reds", "Layer Distribution by Verse")'>Heat</a></li>
               <li><a href='javascript:DSS.viewGraphic("$dir", "distinctive-distrib", "distinctive agreements by witness", "Distinctive Agreements by Witness")'>Agree</a></li>
+              <li><a href='javascript:DSS.viewClusterMerge("$dir")'>Merge</a></li>
           </ul>
       </div>
     </li>
