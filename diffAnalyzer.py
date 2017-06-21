@@ -227,7 +227,7 @@ class Analyzer:
                 disp_counter = disp_counter + 1
             file.close()
 
-    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, layersMap, variantsMap):
+    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, layersMap, variantsMap, witnessesMap):
         c = s.config
 
         csvfile = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + langCode + '.csv'
@@ -323,6 +323,17 @@ class Analyzer:
                     layersMap[layer].append(wrapper)
                     variantsMap[label] = layer
 
+                    # increment witness occurrences for layer
+                    for i, m in enumerate(refMS.__dict__[mss]):
+                        if m in nonnil_MSS:
+                            mkey = m
+                            if mkey[:1].isdigit():
+                                mkey = 'X' + mkey
+                            if not witnessesMap[layer].has_key(mkey):
+                                witnessesMap[layer][mkey] = { "id": mkey, "occurrences": "0" }
+                            if (var.__dict__[vect])[i] == '1':
+                                witnessesMap[layer][mkey]['occurrences'] = str(int(witnessesMap[layer][mkey]['occurrences']) + 1).decode('utf-8')
+
                 # Debug layer assignment
                 #s.info(witness_str, ', layer', str(layer), ', lcounter', str(latin_counter), ', gcounter', str(greek_counter))
 
@@ -339,15 +350,20 @@ class Analyzer:
                 disp_counter = disp_counter + 1
             file.close()
 
-    def writeLayers(s, rms, layersMap):
+    def writeLayers(s, rms, layersMap, witnessesMap):
         c = s.config
 
         j_layers = { 'clusters': [] }
         for idx in range(1, 4):
-            # TODO add witness occurrences
+            witnessList = []
+            # prepare witness list from witness map
+            for key, value in witnessesMap[idx].iteritems():
+                witnessList.append(value)
+
             j_layer = { 
               'index': str(idx).decode('utf-8'),
               'size': str(len(layersMap[idx])).decode('utf-8'),
+              'witnesses': witnessList,
               'readings': []
             }
 
@@ -358,6 +374,7 @@ class Analyzer:
             for var in sorted_variations:
                 j_var = {
                     'reference': var['wrapped'].variationUnit.label,
+                    'languageCode': var['languageCode'],
                     'sequence': var['sequence'],
                     'layer': str(idx).decode('utf-8'),
                     'witnesses': var['witnesses'],
@@ -371,6 +388,7 @@ class Analyzer:
         j_layer = { 
           'index': '4',
           'size': str(len(rms.singular)).decode('utf-8'),
+          'witnesses': [],
           'readings': []
         }
 
@@ -380,6 +398,7 @@ class Analyzer:
             excerpt = vu.getExcerpt(rms.gaNum, '', True)
             j_var = {
                 'reference': vu.label,
+                'languageCode': 'S',
                 'sequence': s.generateID(disp_counter),
                 'layer': '4',
                 'witnesses': '',
@@ -413,17 +432,23 @@ class Analyzer:
             # layers keyed by variant label
             variantsMap = {}
 
+            # map of witness occurrences keyed by layer
+            witnessesMap = {}
+            witnessesMap[1] = {}
+            witnessesMap[2] = {}
+            witnessesMap[3] = {}
+
             # selGL
-            s.writeCSV(rms, 'GL', 'selMSS', 'sel_nils', 'sel_GL', 'selVect', layersMap, variantsMap)
+            s.writeCSV(rms, 'GL', 'selMSS', 'sel_nils', 'sel_GL', 'selVect', layersMap, variantsMap, witnessesMap)
 
             # selG
-            s.writeCSV(rms, 'G', 'selGrMSS', 'selGr_nils', 'sel_G', 'selGrVect', layersMap, variantsMap)
+            s.writeCSV(rms, 'G', 'selGrMSS', 'selGr_nils', 'sel_G', 'selGrVect', layersMap, variantsMap, witnessesMap)
 
             # singular
             s.writeSingular(rms)
 
             # write layer JSON
-            s.writeLayers(rms, layersMap)
+            s.writeLayers(rms, layersMap, witnessesMap)
 
     def generateVariants(s):
         s.info('')

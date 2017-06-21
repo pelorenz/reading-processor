@@ -47,6 +47,10 @@ class Controller:
         result = s.getJSONResult()
         return s.templates.clustmerge(result)
 
+    def witnessdistribmerge(s):
+        result = s.getJSONResult()
+        return s.templates.witnessdistribmerge(result)
+
     def clustresults(s):
         result = s.getJSONResult()
         return s.templates.clustresults(result)
@@ -63,6 +67,6 @@ class Controller:
             jsondata = udata['json']
             result = json.loads(jsondata)
             for clust in result['clusters']:
-                if result.has_key('witnesses'):
+                if clust.has_key('witnesses'):
                     clust['witnesses'] = sorted(clust['witnesses'], cmp=sortWitnesses)
         return result
