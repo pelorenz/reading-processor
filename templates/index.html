@@ -28,8 +28,9 @@ $def with (args)
         <li><a id='analyze' href='javascript:DSS.analyze()'>Analyze</a>
       <div id='dirslist'>
         <ul>
-        $for dir, subdirs in args['dirs']['directoryMap'].iteritems():
+        $for dir in args['keys']:
             $code:
+                subdirs = args['dirs']['directoryMap'][dir]
                 isGL = 'false'
                 if 'GL' in dir:
                     isGL = 'true'

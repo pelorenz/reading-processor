@@ -38,6 +38,7 @@ class Controller:
         args = {}
         args['config'] = s.config
         args['dirs'] = Util().listDirs()
+        args['keys'] = sorted(args['dirs']['directoryMap'], cmp=sortLabels)
         fragment = s.templates.dirlist(args)
 
         return fragment
