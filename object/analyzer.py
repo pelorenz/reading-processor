@@ -256,7 +256,7 @@ class Analyzer:
                     v_witnesses = []
                     latin_counter = 0
                     greek_counter = 0
-                    has35 = has03 = has032 = has038 = has28 = has565 = has700 = has788 = False
+                    has35 = has03 = has05 = has032 = has038 = has28 = has565 = has700 = has788 = False
                     for i, m in enumerate(refMS.__dict__[mss]):
                         if m in nonnil_MSS:
                             nonnil_vect.append(var.__dict__[vect][i])
@@ -271,6 +271,7 @@ class Analyzer:
                                     greek_counter = greek_counter + 1
                                     if m == '35': has35 = True
                                     if m == '03': has03 = True
+                                    if m == '05': has05 = True
                                     if m == '032': has032 = True
                                     if m == '038': has038 = True
                                     if m == '28': has28 = True
@@ -296,12 +297,12 @@ class Analyzer:
 
                     # compute D sublayer
                     d_layer = 1
-                    if has03 and not (has038 or has28 or has565 or has700 or has788) and not has032:
+                    if has03 and not (has038 or has28 or has565 or has700 or has788) and not (has032 or has05):
                         d_layer = 2
-                    elif has032 and not (has038 or has28 or has565 or has700 or has788) and not has03:
+                    elif (has032 or has05) and not (has038 or has28 or has565 or has700 or has788) and not has03:
                         d_layer = 4
                     else:
-                        if (has038 or has28 or has565 or has700 or has788) and not has03 and not has032:
+                        if (has038 or has28 or has565 or has700 or has788) and not has03 and not (has032 or has05):
                             d_layer = 3
 
                     # group VL witnesses
@@ -576,7 +577,8 @@ class Analyzer:
                     procs = []
 
                     # D layer
-                    procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'D', n)))
+                    if rms == '05' or rms == '032':
+                        procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'D', n)))
 
                     # Greek with Latin retroversion clustering
                     procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'GL', n)))
