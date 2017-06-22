@@ -1,28 +1,58 @@
-import os, json
+import os, json, re
 
 from utility.config import *
 
-def sortLabels(l1, l2):
-    if '-03' in l1 and '-03' in l2:
-        if '038' in l1:
-            return 1
-        elif '038' in l2:
-            return -1
+def sortLabels(lab1, lab2):
+    ch1 = lab1[5:7]
+    ch2 = lab2[5:7]
 
-        if '032' in l1:
-            return 1
-        elif '032' in l2:
-            return -1
+    ch1 = int(ch1[1:]) if ch1[:1] == '0' else int(ch1)
+    ch2 = int(ch2[1:]) if ch2[:1] == '0' else int(ch2)
 
-        # should never happen
-        return 0
+    if ch1 < ch2:
+        return -1
+    elif ch1 > ch2:
+        return 1
+
+    ms1 = lab1[8:].replace('G', '').replace('L', '').replace('D', '')
+    ms2 = lab2[8:].replace('G', '').replace('L', '').replace('D', '')
+    if ms1[:1] == '0' and ms2[:1] != '0':
+        return -1
+    elif ms1[:1] != '0' and ms2[:1] == '0':
+        return 1
+
+    if ms1[:1] == '0' and ms2[:1] == '0':
+        ms1 = int(ms1[1:])
+        ms2 = int(ms2[1:])
+        if ms1 < ms2:
+            return -1
+        elif ms1 > ms2:
+            return 1
+    elif ms1[:1].isdigit() and ms2[:1].isdigit():
+        if int(ms1) < int(ms2):
+            return -1
+        elif int(ms1) > int(ms2):
+            return 1
     else:
-        if l1 < l2:
+        if ms1[:1] == 'v' and ms2[:1] != 'v':
             return -1
-        elif l2 < l1:
+        elif ms1[:1] != 'v' and ms2[:1] == 'v':
             return 1
-        else:
-            return 0
+
+    if 'GL' in lab1: cod1 = 'GL'
+    elif 'L' in lab1: cod1 = 'L'
+    else: cod1 = 'D'
+
+    if 'GL' in lab2: cod2 = 'GL'
+    elif 'L' in lab2: cod2 = 'L'
+    else: cod2 = 'D'
+
+    if cod1 < cod2:
+        return -1
+    elif cod1 > cod2:
+        return 1
+
+    return 0
 
 class Util:
     def __init__(s):
