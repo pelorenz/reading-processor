@@ -76,7 +76,7 @@ div.cluster-reading {
   font-size: small;
 }
 div.layer1 {
-  background-color: #ffb3c2;
+  background-color: #ffccd6;
 }
 div.layer2 {
   background-color: #fff599;
@@ -86,6 +86,18 @@ div.layer3 {
 }
 div.layer4 {
   background-color: #dbf;
+}
+div.d-layer1 {
+  background-color: #fff;
+}
+div.d-layer2 {
+  background-color: #dbf;
+}
+div.d-layer3 {
+  background-color: #ff6;
+}
+div.d-layer4 {
+  background-color: #66b3ff;
 }
 a.disable-link {
   pointer-events: none;

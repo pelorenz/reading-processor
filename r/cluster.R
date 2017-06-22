@@ -1,18 +1,11 @@
 # Partition
 #
 # Greek
-# "C:\Dev\R\R-3.3.2\bin\R.exe" --vanilla --args "C:\Data\Workspace\reading-processor\r\cluster-config.yml" "Mark 01-05 G" "C:\Data\Workspace\reading-processor\csv\c01-05G.csv" "C:\Data\Workspace\reading-processor\csv\c01-05SG.csv" 2 < "C:\Data\Workspace\reading-processor\r\cluster.R" > out-g.txt
+# "C:\Dev\R\R-3.3.2\bin\R.exe" --vanilla --args "C:\Data\Workspace\reading-processor\r\cluster-config.yml" "Mark 01-05 G" "C:\Data\Workspace\reading-processor\csv\c01-05G.csv" "C:\Data\Workspace\reading-processor\csv\c01-05SG.csv" "2" "G" < "C:\Data\Workspace\reading-processor\r\cluster.R" > out-g.txt
 #
 # Greek and Latin
-# "C:\Dev\R\R-3.3.2\bin\R.exe" --vanilla --args "C:\Data\Workspace\reading-processor\r\cluster-config.yml" "Mark 01-05 GL" "C:\Data\Workspace\reading-processor\csv\c01-05GL.csv" "C:\Data\Workspace\reading-processor\csv\c01-05SG.csv" "3" < "C:\Data\Workspace\reading-processor\r\cluster.R" > out-gl.txt
+# "C:\Dev\R\R-3.3.2\bin\R.exe" --vanilla --args "C:\Data\Workspace\reading-processor\r\cluster-config.yml" "Mark 01-05 GL" "C:\Data\Workspace\reading-processor\csv\c01-05GL.csv" "C:\Data\Workspace\reading-processor\csv\c01-05SG.csv" "3" "GL" < "C:\Data\Workspace\reading-processor\r\cluster.R" > out-gl.txt
 #
-# "C:\Dev\R\R-3.3.2\bin\R.exe" --vanilla --args "C:\Data\Workspace\reading-processor\r\cluster-config.yml" "Mark 01-032 GL" "C:\Data\Workspace\reading-processor\csv\c01-032GL.csv" "C:\Data\Workspace\reading-processor\csv\c01-032SG.csv" < "C:\Data\Workspace\reading-processor\r\cluster.R" > out-gl.txt
-#
-# Latin-only
-# "C:\Dev\R\R-3.3.2\bin\R.exe" --vanilla --args "C:\Data\Workspace\reading-processor\r\cluster-config.yml" "Mark 01 L" < "C:\Data\Workspace\reading-processor\r\cluster.R" > out-l.txt
-#
-# Layer D
-# "C:\Dev\R\R-3.3.2\bin\R.exe" --vanilla --args "C:\Data\Workspace\reading-processor\r\cluster-config.yml" "Mark 01 D" < "C:\Data\Workspace\reading-processor\r\cluster.R" > out-d.txt
 
 require('Cairo')
 require('cluster')
@@ -161,7 +154,11 @@ computeResults <- function(dss, nclusters) {
 
   # Plot of Greek Mainstream and Old Latin layers and Alexandrian base
   CairoPNG(file=paste(clustdir, sprintf("%s - %i clusters w layers.png", label, nclusters), sep="\\"),width=600,height=600)
-  plot(cl, which=1, labels=4, lines=0, main=sprintf("Readings supported by key layers"), cex=2, plotchar=FALSE, col.p='black', pch=c(1,18,4,17)[nodeLayers])
+  psymbols = c(1,18,4,17,0) # hollow circle, solid diamond, x, solid triangle, hollow square
+  if (LANG_CODE == 'D') {
+    psymbols = c(18,0,1,4,17) # solid diamond, hollow square, hollow circle, x, solid triangle
+  }
+  plot(cl, which=1, labels=4, lines=0, main=sprintf("Readings supported by key layers"), cex=2, plotchar=FALSE, col.p='black', pch=psymbols[nodeLayers])
   dev.off()
 
   CairoPNG(file=paste(clustdir, sprintf("%s - %i clusters w layers (letters).png", label, nclusters), sep="\\"),width=600,height=600)
@@ -274,6 +271,9 @@ computeResults <- function(dss, nclusters) {
   fileConn<-file(paste(clustdir, sprintf("%s-%icl-results.json", label, nclusters), sep="\\"))
   sink(fileConn, append=FALSE, split=TRUE)
   cat('{\n')
+  cat('  "languageCode": "')
+  cat(LANG_CODE)
+  cat('",\n')
   cat('  "clusters": [')
   for (i in 1:nclusters) {
     cat('  {\n') # cluster
@@ -373,12 +373,12 @@ computeResults <- function(dss, nclusters) {
     }
     cat('    ]\n') # readings
     cat('  }') # cluster
-    if (i != nclusters || length(singularRefsLong) > 0) {
+    if (i != nclusters || (length(singularRefsLong) > 0 && LANG_CODE != 'D')) {
       cat(',')
     }
     cat('\n')
   }
-  if (length(singularRefsLong) > 0) {
+  if (length(singularRefsLong) > 0 && LANG_CODE != 'D') {
     cat('  {\n') # cluster
     cat('    "index": "')
     cat(nclusters + 1)
@@ -464,6 +464,7 @@ infile <- cmdArgs[6]
 singularInfile <- cmdArgs[7]
 
 NUM_CLUSTERS <- as.numeric(cmdArgs[8])
+LANG_CODE <- cmdArgs[9]
 
 # RConsole Debugging
 # config <- yaml.load_file("C:\\Data\\Workspace\\reading-processor\\r\\cluster-config.yml")
