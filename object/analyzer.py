@@ -50,6 +50,7 @@ def callClust(lock, rms, chapter, langCode, nclusts):
     p.append('C:\\Data\\Workspace\\reading-processor\\csv\\' + csvfile)
     p.append('C:\\Data\\Workspace\\reading-processor\\csv\\' + singfile)
     p.append(str(nclusts))
+    p.append(langCode)
     p.append('<')
     p.append('C:\\Data\\Workspace\\reading-processor\\r\\cluster.R')
     p.append('>')
@@ -225,125 +226,173 @@ class Analyzer:
     def writeCSV(s, refMS, langCode, mss, nils, vars, vect, layersMap, variantsMap, witnessesMap):
         c = s.config
 
-        csvfile = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + langCode + '.csv'
-        with open(csvfile, 'w+') as file:
-            # number of nils allowed
-            num_nils = len(refMS.__dict__[vars]) * 0.05
-            nonnil_MSS = [m for m in refMS.__dict__[mss] if refMS.__dict__[nils][m] < num_nils or m in s.nilExceptions]
+        # Two CSV files: one for all variants, another for D-layer variants
+        csvfile_all = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + langCode + '.csv'
+        csvfile_D = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
+        with open(csvfile_all, 'w+') as file_all:
+            fmode = 'w+' if langCode == 'GL' else 'a+'
+            with open(csvfile_D, fmode) as file_D:
+                # number of nils allowed
+                num_nils = len(refMS.__dict__[vars]) * 0.05
+                nonnil_MSS = [m for m in refMS.__dict__[mss] if refMS.__dict__[nils][m] < num_nils or m in s.nilExceptions]
 
-            # write CSV header
-            file.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(nonnil_MSS) + u'\n').encode('utf-8'))
+                # write header for all-variant CSV
+                file_all.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(nonnil_MSS) + u'\n').encode('utf-8'))
 
-            # write CSV content
-            disp_counter = 1
-            for var in refMS.__dict__[vars]:
-                nonnil_vect = []
-                witness_str = ''
-                v_witnesses = []
-                latin_counter = 0
-                greek_counter = 0
-                has35 = False
-                for i, m in enumerate(refMS.__dict__[mss]):
-                    if m in nonnil_MSS:
-                        nonnil_vect.append(var.__dict__[vect][i])
-                        if (var.__dict__[vect])[i] == '1':
-                            if m[0] == 'V' or m[0] == 'v':
-                                v_witnesses.append(m)
-                                latin_counter = latin_counter + 1
-                            else:
-                                if len(witness_str) > 0:
-                                    witness_str = witness_str + ' '
-                                witness_str = witness_str + m
-                                greek_counter = greek_counter + 1
-                                if m == '35':
-                                    has35 = True
+                # write header for D-variant CSV first time only
+                if langCode == 'GL':
+                    hdr = []
+                    for m in nonnil_MSS:
+                        if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
+                            hdr.append(m)
 
-                # is vect all zeroes or all ones (minus unattested cols)?
-                if nonnil_vect.count('0') == len(nonnil_vect) - nonnil_vect.count('9') or nonnil_vect.count('1') == len(nonnil_vect) - nonnil_vect.count('9'):
-                    continue
+                    file_D.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(hdr) + u'\n').encode('utf-8'))
 
-                # compute layer
-                layer = 2
-                if has35:
-                    layer = 1
-                elif latin_counter >= greek_counter and latin_counter > 2 and greek_counter <= 3:
-                    layer = 3
-                else:
-                    if latin_counter >= greek_counter and latin_counter > 1 and greek_counter <= 2:
-                        layer = 3
-                    elif latin_counter >= greek_counter and latin_counter > 0 and greek_counter <= 1:
-                        layer = 3
-
-                # group VL witnesses
-                v_str = ''
-                hasVulgate = False
-                for m in v_witnesses:
-                    if m[0:2] == 'VL':
-                        if len(v_str) > 0:
-                            v_str = v_str + ' '
-                        v_str = v_str + m[2:]
-                    elif m == 'vg':
-                        hasVulgate = True
-
-                if len(v_str) > 0:
-                    v_str = 'VL(' + v_str + ')'
-
-                if hasVulgate:
-                    if len(v_str) > 0:
-                        v_str = v_str + ' '
-                    v_str = v_str + 'V'
-
-                if len(witness_str) > 0:
-                    if len(v_str) > 0:
-                        witness_str = witness_str + ' ' + v_str
-                else:
-                    if len(v_str) > 0:
-                        witness_str = v_str
-
-                excerpt = var.variationUnit.getExcerpt(refMS.gaNum, witness_str, False)
-                longLabel = var.longLabel(witness_str, nonnil_MSS)
-                sequence = s.generateID(disp_counter)
-
-                # assign to layer (variant might already exist in layer!)
-                label = var.variationUnit.label
-                if not variantsMap.has_key(label):
-                    wrapper = {
-                        'wrapped': var,
-                        'sequence': sequence,
-                        'witnesses': witness_str,
-                        'excerpt': excerpt,
-                        'description': longLabel,
-                        'languageCode': langCode
-                    }
-                    layersMap[layer].append(wrapper)
-                    variantsMap[label] = layer
-
-                    # increment witness occurrences for layer
+                # write CSV content
+                disp_counter = 1
+                for var in refMS.__dict__[vars]:
+                    nonnil_vect = []
+                    witness_str = ''
+                    v_witnesses = []
+                    latin_counter = 0
+                    greek_counter = 0
+                    has35 = has03 = has032 = has038 = has28 = has565 = has700 = has788 = False
                     for i, m in enumerate(refMS.__dict__[mss]):
                         if m in nonnil_MSS:
-                            mkey = m
-                            if mkey[:1].isdigit():
-                                mkey = 'X' + mkey
-                            if not witnessesMap[layer].has_key(mkey):
-                                witnessesMap[layer][mkey] = { "id": mkey, "occurrences": "0" }
+                            nonnil_vect.append(var.__dict__[vect][i])
                             if (var.__dict__[vect])[i] == '1':
-                                witnessesMap[layer][mkey]['occurrences'] = str(int(witnessesMap[layer][mkey]['occurrences']) + 1).decode('utf-8')
+                                if m[0] == 'V' or m[0] == 'v':
+                                    v_witnesses.append(m)
+                                    latin_counter = latin_counter + 1
+                                else:
+                                    if len(witness_str) > 0:
+                                        witness_str = witness_str + ' '
+                                    witness_str = witness_str + m
+                                    greek_counter = greek_counter + 1
+                                    if m == '35': has35 = True
+                                    if m == '03': has03 = True
+                                    if m == '032': has032 = True
+                                    if m == '038': has038 = True
+                                    if m == '28': has28 = True
+                                    if m == '788': has565 = True
+                                    if m == '700': has700 = True
+                                    if m == '788': has788 = True
 
-                # Debug layer assignment
-                #s.info(witness_str, ', layer', str(layer), ', lcounter', str(latin_counter), ', gcounter', str(greek_counter))
+                    # is vect all zeroes or all ones (minus unattested cols)?
+                    if nonnil_vect.count('0') == len(nonnil_vect) - nonnil_vect.count('9') or nonnil_vect.count('1') == len(nonnil_vect) - nonnil_vect.count('9'):
+                        continue
 
-                # zero 9's
-                vct = []
-                for val in nonnil_vect:
-                    if val == '9':
-                        vct.append('0')
+                    # compute layer
+                    layer = 2
+                    if has35:
+                        layer = 1
+                    elif latin_counter >= greek_counter and latin_counter > 2 and greek_counter <= 3:
+                        layer = 3
                     else:
-                        vct.append(val)
+                        if latin_counter >= greek_counter and latin_counter > 1 and greek_counter <= 2:
+                            layer = 3
+                        elif latin_counter >= greek_counter and latin_counter > 0 and greek_counter <= 1:
+                            layer = 3
 
-                file.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(layer).decode('utf-8') + '\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct) + u'\n').encode('utf-8'))
+                    # compute D sublayer
+                    d_layer = 1
+                    if has03 and not (has038 or has28 or has565 or has700 or has788) and not has032:
+                        d_layer = 2
+                    elif has032 and not (has038 or has28 or has565 or has700 or has788) and not has03:
+                        d_layer = 4
+                    else:
+                        if (has038 or has28 or has565 or has700 or has788) and not has03 and not has032:
+                            d_layer = 3
 
-                disp_counter = disp_counter + 1
-            file.close()
+                    # group VL witnesses
+                    v_str = ''
+                    hasVulgate = False
+                    for m in v_witnesses:
+                        if m[0:2] == 'VL':
+                            if len(v_str) > 0:
+                                v_str = v_str + ' '
+                            v_str = v_str + m[2:]
+                        elif m == 'vg':
+                            hasVulgate = True
+
+                    if len(v_str) > 0:
+                        v_str = 'VL(' + v_str + ')'
+
+                    if hasVulgate:
+                        if len(v_str) > 0:
+                            v_str = v_str + ' '
+                        v_str = v_str + 'V'
+
+                    if len(witness_str) > 0:
+                        if len(v_str) > 0:
+                            witness_str = witness_str + ' ' + v_str
+                    else:
+                        if len(v_str) > 0:
+                            witness_str = v_str
+
+                    excerpt = var.variationUnit.getExcerpt(refMS.gaNum, witness_str, False)
+                    longLabel = var.longLabel(witness_str, nonnil_MSS)
+                    sequence = s.generateID(disp_counter)
+
+                    # assign to layer (variant might already exist in layer!)
+                    label = var.variationUnit.label
+                    if not variantsMap.has_key(label):
+                        wrapper = {
+                            'wrapped': var,
+                            'sequence': sequence,
+                            'witnesses': witness_str,
+                            'excerpt': excerpt,
+                            'description': longLabel,
+                            'languageCode': langCode
+                        }
+                        layersMap[layer].append(wrapper)
+                        variantsMap[label] = layer
+
+                        # increment witness occurrences for layer
+                        for i, m in enumerate(refMS.__dict__[mss]):
+                            if m in nonnil_MSS:
+                                mkey = m
+                                if mkey[:1].isdigit():
+                                    mkey = 'X' + mkey
+                                if not witnessesMap[layer].has_key(mkey):
+                                    witnessesMap[layer][mkey] = { "id": mkey, "occurrences": "0" }
+                                if (var.__dict__[vect])[i] == '1':
+                                    witnessesMap[layer][mkey]['occurrences'] = str(int(witnessesMap[layer][mkey]['occurrences']) + 1).decode('utf-8')
+
+                    # Debug layer assignment
+                    #s.info(witness_str, ', layer', str(layer), ', lcounter', str(latin_counter), ', gcounter', str(greek_counter))
+
+                    # zero 9's
+                    vct_all = []
+                    vct_D = []
+                    for idx, val in enumerate(nonnil_vect):
+                        # D variants
+                        m = nonnil_MSS[idx]
+                        if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
+                            if val == '9':
+                                vct_D.append('0')
+                            else:
+                                vct_D.append(val)
+
+                        # All variants
+                        if val == '9':
+                            vct_all.append('0')
+                        else:
+                            vct_all.append(val)
+
+                    # D-variants CSV
+                    if layer == 2:
+                        # Truncate Latin witnesses
+
+                        file_D.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(d_layer).decode('utf-8') + '\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_D) + u'\n').encode('utf-8'))
+
+                    # All-variants CSV
+                    file_all.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(layer).decode('utf-8') + '\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_all) + u'\n').encode('utf-8'))
+
+                    disp_counter = disp_counter + 1
+
+                file_D.close()
+                file_all.close()
 
     def writeLayers(s, rms, layersMap, witnessesMap):
         c = s.config
@@ -486,8 +535,6 @@ class Analyzer:
                             s.generateVector(refMS, refVar, vu, reading, 'allMSS', 'all_nils', 'all_GL', 'allVect')
 
                             s.generateVector(refMS, refVar, vu, reading, 'selMSS', 'sel_nils', 'sel_GL', 'selVect')
-
-                            s.generateVector(refMS, refVar, vu, reading, 'selGrMSS', 'selGr_nils', 'sel_G', 'selGrVect')
                         else:
                             s.generateVector(refMS, refVar, vu, reading, 'selGrMSS', 'selGr_nils', 'sel_G', 'selGrVect')
                             
@@ -527,6 +574,9 @@ class Analyzer:
 
                 for n in range(s.minClusters, s.maxClusters + 1):
                     procs = []
+
+                    # D layer
+                    procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'D', n)))
 
                     # Greek with Latin retroversion clustering
                     procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'GL', n)))
