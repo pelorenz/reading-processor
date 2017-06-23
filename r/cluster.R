@@ -50,47 +50,6 @@ computeResults <- function(dss, nclusters) {
   row.names(dss) <- tempNames
   cl <- pam(dss, nclusters, diss=FALSE, metric='manhattan', keep.diss=TRUE)
 
-  # MDS display
-  results <- cmdscale(dss, k=3, eig=TRUE)
-
-  x <- results$points[,1]
-  y <- results$points[,2]
-  z <- results$points[,3]
-
-  names(x) <- iconv(names(x), to="UTF-8")
-  names(y) <- iconv(names(y), to="UTF-8")
-  names(z) <- iconv(names(z), to="UTF-8")
-
-  # Pam clusters
-  CairoPNG(file=paste(clustdir, sprintf("%s - %i clusters MDS Plot 1x2.png", label, nclusters), sep="\\"),width=1000,height=1000)
-  plot(x, y, type="n", xlab="Dimension 1", ylab="Dimension 2") 
-  points(x, y+.01, col=CLUSTER_COLORS[cl$clustering])
-  text(x, y, rownames(results$points), cex=1.0, offset=5.0, col=CLUSTER_COLORS[cl$clustering])
-  dev.off()
-
-  CairoPNG(file=paste(clustdir, sprintf("%s - %i clusters MDS Plot 1x3.png", label, nclusters), sep="\\"),width=1000,height=1000)
-  plot(x, z, type="n", xlab="Dimension 1", ylab="Dimension 3") 
-  points(x, z+.01, col=CLUSTER_COLORS[cl$clustering])
-  text(x, z, rownames(results$points), cex=1.0, offset=5.0, col=CLUSTER_COLORS[cl$clustering])
-  dev.off()
-
-  # Output Pam results in MDS space
-  fileConn<-file(paste(clustdir, sprintf("%s - %i clusters MDS Coordinates.txt", label, nclusters), sep="\\"))
-  sink(fileConn, append=FALSE, split=TRUE)
-
-  cat('Dimension 1\n')
-  print(round(x[sort.list(as.numeric(x))], 3))
-
-  cat('\n\nDimension 2\n')
-  print(round(y[sort.list(as.numeric(y))], 3))
-
-  cat('\n\nDimension 3\n')
-  print(round(z[sort.list(as.numeric(z))], 3))
-  sink()
-  close(fileConn)
-  # End generate MDS plots
-  ##########################
-
   # Color-coded by cluster
   if (IS_BW) {
     # Without labels

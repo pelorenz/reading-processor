@@ -1,11 +1,13 @@
 $def with (res)
 $code
+    layerPrefix = 'layer'
+    if res['languageCode'] == 'D':
+        layerPrefix = 'd-layer'
+    readingsTotal = 0
+    for clust in res['clusters']:
+        readingsTotal = readingsTotal + int(clust['size'])
 $for clust in res['clusters']:
-    $code:
-        layerPrefix = 'layer'
-        if res['languageCode'] == 'D':
-            layerPrefix = 'd-layer'
-    <div class='cluster-heading'>Cluster $loop.index ($clust['size'])</div>
+    <div class='cluster-heading'>Cluster $loop.index ($clust['size'] of $readingsTotal)</div>
     $for reading in clust['readings']:
         <div class='cluster-reading $layerPrefix$reading["layer"]'>$reading['fit'] N$reading['neighbor'] $reading['description']</div>
 <div class='cluster-heading'>Cluster Summary</div>

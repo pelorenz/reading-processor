@@ -421,6 +421,10 @@ densityPlot <- function(vect, layerName, colorName) {
 verseBarchart <- function(vect, vectRange, layerName, colorName) {
   cScheme <- COLOR_SCHEMES[[colorName]]
   par(lty = 0)
+  if (vectRange > length(cScheme)) {
+    vect <- floor(vect * length(cScheme) / vectRange)
+    vectRange = length(cScheme)
+  }
   barplot(vect, col=cScheme[[vectRange]][vect + 1], ylim=c(0,vectRange), axes=FALSE, names.arg=as.character(seq(1,length(vect),1)))
   title(main=paste(PLOT_TITLE, layerName, sep=" - "))
 }
@@ -433,6 +437,10 @@ verseBarchart <- function(vect, vectRange, layerName, colorName) {
 
 verseHeatmap <- function(vect, vectRange, layerName, colorName) {
   cScheme <- COLOR_SCHEMES[[colorName]]
+  if (vectRange > length(cScheme)) {
+    vect <- floor(vect * length(cScheme) / vectRange)
+    vectRange = length(cScheme)
+  }
   image(matrix(vect),col=cScheme[[vectRange]], axes=FALSE)
   labs <- as.character(seq(1,length(vect),1))
   axis(1,labels=labs,at=seq(0,1,1/(length(vect)-1)))

@@ -1,7 +1,10 @@
 $def with (res)
 $code
+    readingsTotal = 0
+    for clust in res['clusters']:
+        readingsTotal = readingsTotal + int(clust['size'])
 $for clust in res['clusters']:
-    <div class='cluster-heading'>Merged Cluster $loop.index ($clust['size'])</div>
+    <div class='cluster-heading'>Merged Cluster $loop.index ($clust['size'] of $readingsTotal)</div>
     $for reading in clust['readings']:
         <div class='cluster-reading layer$reading["layer"]'>$reading['languageCode'] $reading['description']</div>
 <div class='cluster-heading'>Merged Cluster Summary</div>
