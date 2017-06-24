@@ -9,13 +9,14 @@
   "htmlFolder": "html/",
   "htmlInitialFragment": "initial_fragment.htm",
   "cacheFolder": "cache/",
+  "csvBoolFolder": "csv-bool/",
   "csvFolder": "csv/",
   "layersFolder": "static/layers/",
   "inputFolder": "input/",
   "outputFolder": "output/",
   "variantFolder": "variant-data/",
   "variantChapter": "c01/",
-  "variantFile": "mark-01a-all.json",
+  "variantFile": "mark-01a-all",
   "referenceMSS": [
     "05","032"
   ],

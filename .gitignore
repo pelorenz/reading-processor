@@ -4,6 +4,7 @@
 /archives
 /cache
 /csv
+/csv-bool
 /html/mark*
 /html/js/jquery*
 /html/js/model*

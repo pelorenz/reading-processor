@@ -10,11 +10,11 @@ import sys, os, argparse, urllib, subprocess, string, re, shutil, datetime, oper
 
 from multiprocessing import Process, Lock
 
-from object.jsonDecoder import *
 from object.referenceManuscript import *
 from object.referenceVariant import *
 
 from utility.config import *
+from utility.env import *
 
 def callCormat(lock, rms, chapter, langCode):
     title = 'Mark ' + chapter[1:] + '-' + rms + langCode
@@ -169,10 +169,6 @@ class Analyzer:
         s.chapter = ''
         s.variantModel = []
 
-        s.comparisonMSS = []
-        s.latinMSS = []
-        s.nilExceptions = []
-        s.refMS_IDs = []
         s.referenceMSS = []
         s.minClusters = 2
         s.maxClusters = 2
@@ -222,7 +218,7 @@ class Analyzer:
 
             disp_counter = 1
             for vu in refMS.singular:
-                excerpt = vu.getExcerpt(refMS.gaNum, '', True)
+                excerpt = vu.getExcerpt(vu.getReadingForManuscript(refMS.gaNum), '', True)
                 file.write((vu.label + u'\t' + vu.label + u'\t' + vu.label + u' ' + excerpt + u'\t' + excerpt + u'\t' + s.generateID(disp_counter) + u'\t4\n').encode('utf-8'))
 
                 disp_counter = disp_counter + 1
@@ -239,7 +235,7 @@ class Analyzer:
             with open(csvfile_D, fmode) as file_D:
                 # number of nils allowed
                 num_nils = len(refMS.__dict__[vars]) * 0.05
-                nonnil_MSS = [m for m in refMS.__dict__[mss] if refMS.__dict__[nils][m] < num_nils or m in s.nilExceptions]
+                nonnil_MSS = [m for m in refMS.__dict__[mss] if refMS.__dict__[nils][m] < num_nils or m in s.env.nilExceptions]
 
                 # write header for all-variant CSV
                 file_all.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(nonnil_MSS) + u'\n').encode('utf-8'))
@@ -261,7 +257,7 @@ class Analyzer:
                     v_witnesses = []
                     latin_counter = 0
                     greek_counter = 0
-                    has35 = has03 = has032 = has038 = has28 = has565 = has700 = has788 = False
+                    has35 = has03 = has05 = has032 = has038 = has28 = has565 = has700 = has788 = False
                     for i, m in enumerate(refMS.__dict__[mss]):
                         if m in nonnil_MSS:
                             nonnil_vect.append(var.__dict__[vect][i])
@@ -276,6 +272,7 @@ class Analyzer:
                                     greek_counter = greek_counter + 1
                                     if m == '35': has35 = True
                                     if m == '03': has03 = True
+                                    if m == '05': has05 = True
                                     if m == '032': has032 = True
                                     if m == '038': has038 = True
                                     if m == '28': has28 = True
@@ -301,12 +298,12 @@ class Analyzer:
 
                     # compute D sublayer
                     d_layer = 1
-                    if has03 and not (has038 or has28 or has565 or has700 or has788) and not has032:
+                    if has03 and not (has038 or has28 or has565 or has700 or has788) and not (has032 or has05):
                         d_layer = 2
-                    elif has032 and not (has038 or has28 or has565 or has700 or has788) and not has03:
+                    elif (has032 or has05) and not (has038 or has28 or has565 or has700 or has788) and not has03:
                         d_layer = 4
                     else:
-                        if (has038 or has28 or has565 or has700 or has788) and not has03 and not has032:
+                        if (has038 or has28 or has565 or has700 or has788) and not has03 and not (has032 or has05):
                             d_layer = 3
 
                     # group VL witnesses
@@ -335,8 +332,9 @@ class Analyzer:
                         if len(v_str) > 0:
                             witness_str = v_str
 
-                    excerpt = var.variationUnit.getExcerpt(refMS.gaNum, witness_str, False)
-                    longLabel = var.longLabel(witness_str, nonnil_MSS)
+                    rdg = var.variationUnit.getReadingForManuscript(refMS.gaNum)
+                    excerpt = var.variationUnit.getExcerpt(rdg, witness_str, False)
+                    longLabel = var.longLabel(rdg, witness_str, nonnil_MSS)
                     sequence = s.generateID(disp_counter)
 
                     # assign to layer (variant might already exist in layer!)
@@ -444,7 +442,7 @@ class Analyzer:
         # create readings
         disp_counter = 1
         for vu in rms.singular:
-            excerpt = vu.getExcerpt(rms.gaNum, '', True)
+            excerpt = vu.getExcerpt(vu.getReadingForManuscript(rms.gaNum), '', True)
             j_var = {
                 'reference': vu.label,
                 'languageCode': 'S',
@@ -501,7 +499,7 @@ class Analyzer:
 
     def generateVariants(s):
         s.info('')
-        for rms in s.refMS_IDs:
+        for rms in s.env.refMS_IDs:
             s.info('generating variants for', rms)
             refMS = ReferenceManuscript(rms)
 
@@ -509,15 +507,15 @@ class Analyzer:
             for ms in refMS.allMSS:
                 refMS.all_nils[ms] = 0
 
-            refMS.allGrMSS = [m for m in refMS.allMSS if m not in s.latinMSS]
+            refMS.allGrMSS = [m for m in refMS.allMSS if m not in s.env.latinMSS]
             for ms in refMS.allGrMSS:
                 refMS.allGr_nils[ms] = 0
 
-            refMS.selMSS = [m for m in s.comparisonMSS if m <> rms]
+            refMS.selMSS = [m for m in s.env.comparisonMSS if m <> rms]
             for ms in refMS.selMSS:
                 refMS.sel_nils[ms] = 0
 
-            refMS.selGrMSS = [m for m in refMS.selMSS if m not in s.latinMSS]
+            refMS.selGrMSS = [m for m in refMS.selMSS if m not in s.env.latinMSS]
             for ms in refMS.selGrMSS:
                 refMS.selGr_nils[ms] = 0
 
@@ -563,7 +561,7 @@ class Analyzer:
         if __name__ == '__main__':
             lock = Lock()
             procs = []
-            for rms in s.refMS_IDs:
+            for rms in s.env.refMS_IDs:
                 # Correlation, similarity, and dissimilarity matrices
                 procs.append(Process(target=callCormat, args=(lock, rms, s.chapter, 'GL')))
                 procs.append(Process(target=callCormat, args=(lock, rms, s.chapter, 'G')))
@@ -581,7 +579,8 @@ class Analyzer:
                     procs = []
 
                     # D layer
-                    procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'D', n)))
+                    if rms == '05' or rms == '032':
+                        procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'D', n)))
 
                     # Greek with Latin retroversion clustering
                     procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'GL', n)))
@@ -605,36 +604,14 @@ class Analyzer:
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
 
-        # source files
-        if o.file:
-            file = o.file + '.json'
-        else:
-            file = c.get('variantFile')
+        s.env = Env(s.config, s.options)
 
-        if o.chapter:
-            s.chapter = o.chapter
-            chapter = o.chapter + '/'
-        else:
-            chapter = c.get('variantChapter')
-            s.chapter = chapter[:len(chapter) - 1]
-
-        varfile = c.get('variantFolder') + chapter + file
-
-        # reference MSS
-        s.refMS_IDs = c.get('referenceMSS')
-
-        # comparison MSS
-        s.comparisonMSS = c.get('comparisonMSS')
-
-        # latin MSS
-        s.latinMSS = c.get('latinMSS')
-
-        # MSS accepted with nils
-        s.nilExceptions = c.get('nilExceptions')
+        s.chapter = s.env.chapter()
+        varfile = s.env.varFile()
+        s.variantModel = s.env.loadVariants(varfile)
+        s.info('loading', varfile)
 
         try:
-            s.loadVariants(varfile)
-
             s.generateVariants()
 
             s.generateReferenceCSV()
