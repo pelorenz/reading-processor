@@ -5,11 +5,11 @@ import sys, os, argparse, urllib, subprocess, string, re, shutil, datetime, oper
 
 from multiprocessing import Process, Lock
 
-from object.jsonDecoder import *
 from object.referenceManuscript import *
 from object.referenceVariant import *
 
 from utility.config import *
+from utility.env import *
 
 def callCormat(lock, rms, chapter, langCode):
     title = 'Mark ' + chapter[1:] + '-' + rms + langCode
@@ -164,10 +164,6 @@ class Analyzer:
         s.chapter = ''
         s.variantModel = []
 
-        s.comparisonMSS = []
-        s.latinMSS = []
-        s.nilExceptions = []
-        s.refMS_IDs = []
         s.referenceMSS = []
         s.minClusters = 2
         s.maxClusters = 2
@@ -217,7 +213,7 @@ class Analyzer:
 
             disp_counter = 1
             for vu in refMS.singular:
-                excerpt = vu.getExcerpt(refMS.gaNum, '', True)
+                excerpt = vu.getExcerpt(vu.getReadingForManuscript(refMS.gaNum), '', True)
                 file.write((vu.label + u'\t' + vu.label + u'\t' + vu.label + u' ' + excerpt + u'\t' + excerpt + u'\t' + s.generateID(disp_counter) + u'\t4\n').encode('utf-8'))
 
                 disp_counter = disp_counter + 1
@@ -234,7 +230,7 @@ class Analyzer:
             with open(csvfile_D, fmode) as file_D:
                 # number of nils allowed
                 num_nils = len(refMS.__dict__[vars]) * 0.05
-                nonnil_MSS = [m for m in refMS.__dict__[mss] if refMS.__dict__[nils][m] < num_nils or m in s.nilExceptions]
+                nonnil_MSS = [m for m in refMS.__dict__[mss] if refMS.__dict__[nils][m] < num_nils or m in s.env.nilExceptions]
 
                 # write header for all-variant CSV
                 file_all.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(nonnil_MSS) + u'\n').encode('utf-8'))
@@ -331,8 +327,9 @@ class Analyzer:
                         if len(v_str) > 0:
                             witness_str = v_str
 
-                    excerpt = var.variationUnit.getExcerpt(refMS.gaNum, witness_str, False)
-                    longLabel = var.longLabel(witness_str, nonnil_MSS)
+                    rdg = var.variationUnit.getReadingForManuscript(refMS.gaNum)
+                    excerpt = var.variationUnit.getExcerpt(rdg, witness_str, False)
+                    longLabel = var.longLabel(rdg, witness_str, nonnil_MSS)
                     sequence = s.generateID(disp_counter)
 
                     # assign to layer (variant might already exist in layer!)
@@ -440,7 +437,7 @@ class Analyzer:
         # create readings
         disp_counter = 1
         for vu in rms.singular:
-            excerpt = vu.getExcerpt(rms.gaNum, '', True)
+            excerpt = vu.getExcerpt(vu.getReadingForManuscript(rms.gaNum), '', True)
             j_var = {
                 'reference': vu.label,
                 'languageCode': 'S',
@@ -497,7 +494,7 @@ class Analyzer:
 
     def generateVariants(s):
         s.info('')
-        for rms in s.refMS_IDs:
+        for rms in s.env.refMS_IDs:
             s.info('generating variants for', rms)
             refMS = ReferenceManuscript(rms)
 
@@ -505,15 +502,15 @@ class Analyzer:
             for ms in refMS.allMSS:
                 refMS.all_nils[ms] = 0
 
-            refMS.allGrMSS = [m for m in refMS.allMSS if m not in s.latinMSS]
+            refMS.allGrMSS = [m for m in refMS.allMSS if m not in s.env.latinMSS]
             for ms in refMS.allGrMSS:
                 refMS.allGr_nils[ms] = 0
 
-            refMS.selMSS = [m for m in s.comparisonMSS if m <> rms]
+            refMS.selMSS = [m for m in s.env.comparisonMSS if m <> rms]
             for ms in refMS.selMSS:
                 refMS.sel_nils[ms] = 0
 
-            refMS.selGrMSS = [m for m in refMS.selMSS if m not in s.latinMSS]
+            refMS.selGrMSS = [m for m in refMS.selMSS if m not in s.env.latinMSS]
             for ms in refMS.selGrMSS:
                 refMS.selGr_nils[ms] = 0
 
@@ -559,7 +556,7 @@ class Analyzer:
         if __name__ == '__main__':
             lock = Lock()
             procs = []
-            for rms in s.refMS_IDs:
+            for rms in s.env.refMS_IDs:
                 # Correlation, similarity, and dissimilarity matrices
                 procs.append(Process(target=callCormat, args=(lock, rms, s.chapter, 'GL')))
                 procs.append(Process(target=callCormat, args=(lock, rms, s.chapter, 'G')))
@@ -601,43 +598,16 @@ class Analyzer:
         s.info('Calling analysis with chapter', chapter, 'and input file', inputfile)
         s.info('Reference MSS', refMSS)
 
-        # source files
-        if inputfile:
-            file = inputfile + '.json'
-        else:
-            file = c.get('variantFile')
+        s.env = Env(c, {'chapter': chapter, 'inputfile': inputfile, 'refMSS_IDs': refMSS})
 
-        if chapter:
-            s.chapter = chapter
-            chapter = chapter + '/'
-        else:
-            chapter = c.get('variantChapter')
-            s.chapter = chapter[:len(chapter) - 1]
-
-        varfile = c.get('variantFolder') + chapter + file
-
-        # reference MSS
-        if len(refMSS) > 0:
-            s.refMS_IDs = refMSS
-        else:
-            s.refMS_IDs = c.get('referenceMSS')
-
-        # comparison MSS
-        s.comparisonMSS = c.get('comparisonMSS')
-
-        # latin MSS
-        s.latinMSS = c.get('latinMSS')
-
-        # MSS accepted with nils
-        s.nilExceptions = c.get('nilExceptions')
+        s.chapter = s.env.chapter()
+        s.variantModel = s.env.loadVariants(s.env.varFile())
 
         # Numbers of clusters
         s.minClusters = c.get('minClusters')
         s.maxClusters = c.get('maxClusters')
 
         try:
-            s.loadVariants(varfile)
-
             s.generateVariants()
 
             s.generateReferenceCSV()

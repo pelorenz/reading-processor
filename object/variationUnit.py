@@ -53,10 +53,7 @@ class  VariationUnit(object):
             snippet = snippet[:47] + '...'
         return snippet
 
-    def getExcerpt(s, refms, witnesses, ignoreWitnesses):
-        ref_rdg = s.getReadingForManuscript(refms)
-        #if not ref_rdg:
-        #    return u''
+    def getExcerpt(s, ref_rdg, witnesses, ignoreWitnesses):
         excerpt = s.getReadingSnippet(ref_rdg)
 
         s_readings = sorted(s.readings, cmp=r_compare)
