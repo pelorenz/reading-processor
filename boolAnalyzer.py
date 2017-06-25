@@ -10,6 +10,7 @@ import sys, os, string
 
 from object.referenceManuscript import *
 from object.referenceVariant import *
+from object.util import *
 
 from utility.config import *
 from utility.env import *
@@ -120,117 +121,136 @@ class BoolAnalyzer:
         for rms in s.referenceMSS:
             s.info('generating CSVs for', rms.gaNum)
 
+            d_layer = []
+
             # selGL
-            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect')
+            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect', d_layer)
 
             # selG
-            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect')
+            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect', d_layer)
 
-    def writeCSV(s, refMS, langCode, mss, nils, vars, vect):
+            s.writeDLayer(rms, 'allMSS', d_layer)
+
+    def writeDLayer(s, refMS, mss, d_layer):
+        c = s.config
+
+        csvfile_D = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
+        with open(csvfile_D, 'w+') as file_D:
+            hdr = []
+            for m in getattr(refMS, mss):
+                if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
+                    hdr.append(m)
+
+            file_D.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(hdr) + u'\n').encode('utf-8'))
+
+            d_layer = sorted(d_layer, cmp=sortVariations)
+
+            for w in d_layer:
+                file_D.write((w['reference'] + u'\t' + w['mediumLabel'] + u'\t' + w['description'] + u'\t' + w['sequence'] + u'\t2\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
+
+            file_D.close()
+
+    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, d_layer):
         c = s.config
 
         # Two CSV files: one for all variants, another for D-layer variants
         csvfile_all = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + langCode + '.csv'
-        csvfile_D = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
         with open(csvfile_all, 'w+') as file_all:
-            fmode = 'w+' if langCode == 'GL' else 'a+'
-            with open(csvfile_D, fmode) as file_D:
-                # write header for all-variant CSV
-                file_all.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(getattr(refMS, mss)) + u'\n').encode('utf-8'))
+            file_all.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(getattr(refMS, mss)) + u'\n').encode('utf-8'))
 
-                # write header for D-variant CSV first time only
-                if langCode == 'GL': # 'GL' called first!
-                    hdr = []
-                    for m in getattr(refMS, mss):
-                        if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
-                            hdr.append(m)
+            # write CSV content
+            disp_counter = 1
+            for var in getattr(refMS, vars):
+                refms_vect = []
+                witness_str = ''
+                v_witnesses = []
+                latin_counter = 0
+                greek_counter = 0
+                has35 = False
+                for i, m in enumerate(getattr(refMS, mss)):
+                    refms_vect.append(getattr(var, vect)[i])
+                    if (getattr(var, vect))[i] == '1':
+                        if m[0] == 'V' or m[0] == 'v':
+                            v_witnesses.append(m)
+                            latin_counter = latin_counter + 1
+                        else:
+                            if len(witness_str) > 0:
+                                witness_str = witness_str + ' '
+                            witness_str = witness_str + m
+                            greek_counter = greek_counter + 1
+                            if m == '35': has35 = True
 
-                    file_D.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(hdr) + u'\n').encode('utf-8'))
+                # is vect all zeroes or all ones (minus unattested cols)?
+                if refms_vect.count('0') == len(refms_vect) - refms_vect.count('9') or refms_vect.count('1') == len(refms_vect) - refms_vect.count('9'):
+                    continue
 
-                # write CSV content
-                disp_counter = 1
-                for var in getattr(refMS, vars):
-                    refms_vect = []
-                    witness_str = ''
-                    v_witnesses = []
-                    latin_counter = 0
-                    greek_counter = 0
-                    has35 = False
-                    for i, m in enumerate(getattr(refMS, mss)):
-                        refms_vect.append(getattr(var, vect)[i])
-                        if (getattr(var, vect))[i] == '1':
-                            if m[0] == 'V' or m[0] == 'v':
-                                v_witnesses.append(m)
-                                latin_counter = latin_counter + 1
-                            else:
-                                if len(witness_str) > 0:
-                                    witness_str = witness_str + ' '
-                                witness_str = witness_str + m
-                                greek_counter = greek_counter + 1
-                                if m == '35': has35 = True
+                # compute layer of ref MS reading
+                layer = refMS.getLayer(var)
 
-                    # is vect all zeroes or all ones (minus unattested cols)?
-                    if refms_vect.count('0') == len(refms_vect) - refms_vect.count('9') or refms_vect.count('1') == len(refms_vect) - refms_vect.count('9'):
-                        continue
-
-                    # compute layer of ref MS reading
-                    layer = refMS.getLayer(var)
-
-                    # group VL witnesses
-                    v_str = ''
-                    hasVulgate = False
-                    for m in v_witnesses:
-                        if m[0:2] == 'VL':
-                            if len(v_str) > 0:
-                                v_str = v_str + ' '
-                            v_str = v_str + m[2:]
-                        elif m == 'vg':
-                            hasVulgate = True
-
-                    if len(v_str) > 0:
-                        v_str = 'VL(' + v_str + ')'
-
-                    if hasVulgate:
+                # group VL witnesses
+                v_str = ''
+                hasVulgate = False
+                for m in v_witnesses:
+                    if m[0:2] == 'VL':
                         if len(v_str) > 0:
                             v_str = v_str + ' '
-                        v_str = v_str + 'V'
+                        v_str = v_str + m[2:]
+                    elif m == 'vg':
+                        hasVulgate = True
 
-                    if len(witness_str) > 0:
-                        if len(v_str) > 0:
-                            witness_str = witness_str + ' ' + v_str
-                    else:
-                        if len(v_str) > 0:
-                            witness_str = v_str
+                if len(v_str) > 0:
+                    v_str = 'VL(' + v_str + ')'
 
-                    excerpt = var.variationUnit.getExcerpt(var.reading, witness_str, False)
-                    longLabel = var.longLabel(var.reading, witness_str, getattr(refMS, mss))
-                    sequence = s.generateID(disp_counter)
+                if hasVulgate:
+                    if len(v_str) > 0:
+                        v_str = v_str + ' '
+                    v_str = v_str + 'V'
 
-                    # construct vectors
-                    vct_all = []
-                    vct_D = []
-                    for idx, val in enumerate(refms_vect):
-                        # D variants
-                        m = getattr(refMS, mss)[idx]
-                        if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
-                            vct_D.append(val)
+                if len(witness_str) > 0:
+                    if len(v_str) > 0:
+                        witness_str = witness_str + ' ' + v_str
+                else:
+                    if len(v_str) > 0:
+                        witness_str = v_str
 
-                        # All variants
-                        vct_all.append(val)
+                excerpt = var.variationUnit.getExcerpt(var.reading, witness_str, False)
+                longLabel = var.longLabel(var.reading, witness_str, getattr(refMS, mss))
+                sequence = s.generateID(disp_counter)
 
-                    # D-variants CSV
-                    if layer == 2:
-                        # Truncate Latin witnesses
+                # construct vectors
+                vct_all = []
+                vct_D = []
+                for idx, val in enumerate(refms_vect):
+                    # D variants
+                    m = getattr(refMS, mss)[idx]
+                    if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
+                        vct_D.append(val)
 
-                        file_D.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t2\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_D) + u'\n').encode('utf-8'))
+                    # All variants
+                    vct_all.append(val)
 
-                    # All-variants CSV
-                    file_all.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_all) + u'\n').encode('utf-8'))
+                # D-variants CSV
+                if layer == 2:
+                    # Truncate Latin witnesses
+                    wrapper = {
+                        'wrapped': var,
+                        'reference': var.shortLabel(),
+                        'sequence': sequence,
+                        'witnesses': witness_str,
+                        'excerpt': excerpt,
+                        'mediumLabel': var.mediumLabel(witness_str),
+                        'description': longLabel,
+                        'languageCode': langCode,
+                        'agreementVector': vct_D
+                    }
+                    d_layer.append(wrapper)
 
-                    disp_counter = disp_counter + 1
+                # All-variants CSV
+                file_all.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_all) + u'\n').encode('utf-8'))
 
-                file_D.close()
-                file_all.close()
+                disp_counter = disp_counter + 1
+
+            file_all.close()
 
 # END analyzer
 #########################
