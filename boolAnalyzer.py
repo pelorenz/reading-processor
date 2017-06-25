@@ -122,16 +122,17 @@ class BoolAnalyzer:
             s.info('generating CSVs for', rms.gaNum)
 
             d_layer = []
+            dm_layer = []
 
             # selGL
-            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect', d_layer)
+            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect', d_layer, dm_layer)
 
             # selG
-            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect', d_layer)
+            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect', d_layer, dm_layer)
 
-            s.writeDLayer(rms, 'allMSS', d_layer)
+            s.writeLayers(rms, 'allMSS', d_layer, dm_layer)
 
-    def writeDLayer(s, refMS, mss, d_layer):
+    def writeLayers(s, refMS, mss, d_layer, dm_layer):
         c = s.config
 
         csvfile_D = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
@@ -150,7 +151,23 @@ class BoolAnalyzer:
 
             file_D.close()
 
-    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, d_layer):
+        csvfile_DM = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'DM.csv'
+        with open(csvfile_DM, 'w+') as file_DM:
+            hdr = []
+            for m in getattr(refMS, mss):
+                if m[0] <> 'V' and m[0] <> 'v':
+                    hdr.append(m)
+
+            file_DM.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(hdr) + u'\n').encode('utf-8'))
+
+            dm_layer = sorted(dm_layer, cmp=sortVariations)
+
+            for w in dm_layer:
+                file_DM.write((w['reference'] + u'\t' + w['mediumLabel'] + u'\t' + w['description'] + u'\t' + w['sequence'] + u'\t2\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
+
+            file_DM.close()
+
+    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, d_layer, dm_layer):
         c = s.config
 
         # Two CSV files: one for all variants, another for D-layer variants
@@ -220,19 +237,36 @@ class BoolAnalyzer:
                 # construct vectors
                 vct_all = []
                 vct_D = []
+                vct_DM = []
                 for idx, val in enumerate(refms_vect):
                     # D variants
                     m = getattr(refMS, mss)[idx]
                     if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
                         vct_D.append(val)
 
+                    if m[0] <> 'V' and m[0] <> 'v':
+                        vct_DM.append(val)
+
                     # All variants
                     vct_all.append(val)
 
                 # D-variants CSV
-                if layer == 2:
+                if layer == 1:
+                    wrapperDM = {
+                        'wrapped': var,
+                        'reference': var.shortLabel(),
+                        'sequence': sequence,
+                        'witnesses': witness_str,
+                        'excerpt': excerpt,
+                        'mediumLabel': var.mediumLabel(witness_str),
+                        'description': longLabel,
+                        'languageCode': langCode,
+                        'agreementVector': vct_DM
+                    }
+                    dm_layer.append(wrapperDM)
+                elif layer == 2:
                     # Truncate Latin witnesses
-                    wrapper = {
+                    wrapperD = {
                         'wrapped': var,
                         'reference': var.shortLabel(),
                         'sequence': sequence,
@@ -243,7 +277,20 @@ class BoolAnalyzer:
                         'languageCode': langCode,
                         'agreementVector': vct_D
                     }
-                    d_layer.append(wrapper)
+                    d_layer.append(wrapperD)
+
+                    wrapperDM = {
+                        'wrapped': var,
+                        'reference': var.shortLabel(),
+                        'sequence': sequence,
+                        'witnesses': witness_str,
+                        'excerpt': excerpt,
+                        'mediumLabel': var.mediumLabel(witness_str),
+                        'description': longLabel,
+                        'languageCode': langCode,
+                        'agreementVector': vct_DM
+                    }
+                    dm_layer.append(wrapperDM)
 
                 # All-variants CSV
                 file_all.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_all) + u'\n').encode('utf-8'))
