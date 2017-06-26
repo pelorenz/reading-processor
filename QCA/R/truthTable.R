@@ -97,7 +97,13 @@ function(data, outcome = "", conditions = "", n.cut = 1,
     uniq <- which(!duplicated(condata))
     tt <- condata[uniq, ]
     rownstt <- sort(line.data)[uniq] + 1
-    rownames(tt) <- rownstt
+    dupes <- duplicated(rownstt)
+    if (length(dupes[dupes=TRUE]) > 0) {
+        rownames(tt) <- c(1:length(rownstt))
+    }
+    else {
+        rownames(tt) <- rownstt
+    }
     ipc <- .Call("truthTable", as.matrix(data[, conditions]), as.matrix(tt), as.numeric(fuzzy.cc), data[, outcome], PACKAGE="QCA")
     colnames(ipc) <- rownstt
     minmat <- ipc[seq(4, nrow(ipc)), ]
