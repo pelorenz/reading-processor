@@ -1,0 +1,119 @@
+useDynLib(QCA, .registration = TRUE)
+export(.onAttach,
+    allExpressions,
+    asNumeric,
+    calibrate,
+    compute,
+    createMatrix,
+    deMorgan,
+    deMorganLoop,
+    eqmcc,
+    eqmccLoop,
+    export,
+    factorize,
+    findRows,
+    findSubsets,
+    findSupersets,
+    findTh,
+    fuzzyand,
+    fuzzyor,
+    getRow,
+    getNoflevels,
+    intersection,
+    makeChart,
+    pof,
+    prettyTable,
+    print.aE,
+    print.deMorgan,
+    print.fctr,
+    print.pof,
+    print.qca,
+    print.mqca,
+    print.pic,
+    print.sS,
+    print.tt,
+    recode,
+    retention,
+    runGUI,
+    solveChart,
+    sop,
+    superSubset,
+    translate,
+    truthTable,
+    uninstall,
+    verify.data,
+    verify.dir.exp,
+    verify.eqmcc,
+    verify.inf.test,
+    verify.qca,
+    verify.mqca,
+    verify.multivalue,
+    verify.tt,
+    Xplot,
+    XYplot,
+    
+    possibleNumeric,
+    
+    trimstr,
+    nec,
+    suf,
+    splitstr,
+    getName,
+    getBigList,
+    splitMainComponents,
+    splitBrackets,
+    removeSingleStars,
+    splitPluses,
+    splitStars,
+    splitTildas,
+    solveBrackets,
+    simplifyList,
+    negateValues,
+    removeDuplicates,
+    factor.function,
+    getNonChars,
+    splitProducts,
+    insideBrackets,
+    outsideBrackets,
+    curlyBrackets,
+    roundBrackets,
+    
+    createString,
+    getSolution,
+    prettyString,
+    rowDominance,
+    sortMatrix,
+    sortVector,
+    writePrimeimp,
+    writeSolution,
+    
+    
+    callAllSol,
+    callFindSubsets,
+    callRemoveRedundants,
+    callSolveChart,
+    callSuperSubsetMem,
+    callSuperSubset,
+    callTruthTable
+)
+import(lpSolve)
+import(shiny)
+import(venn)
+import(fastdigest)
+importFrom("utils", "combn", "packageDescription", "remove.packages", "capture.output")
+importFrom("stats", "binom.test", "cutree", "dist", "hclust", "na.omit", "dbinom", "setNames")
+importFrom("grDevices", "dev.cur", "dev.new", "dev.list")
+importFrom("graphics", "abline", "axis", "box", "mtext", "par", "title", "text")
+importFrom("methods", "is")
+S3method(print, "aE")
+S3method(print, "deMorgan")
+S3method(print, "fctr")
+S3method(print, "fuzzyop")
+S3method(print, "mqca")
+S3method(print, "pic")
+S3method(print, "pof")
+S3method(print, "qca")
+S3method(print, "sS")
+S3method(print, "translate")
+S3method(print, "tt")
+
