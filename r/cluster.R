@@ -408,6 +408,7 @@ computeResults <- function(dss, nclusters) {
 #####################################################################
 
 options(max.print=5E5, echo = FALSE)
+options(scipen=999)
 
 # Script logic
 cmdArgs <- commandArgs()

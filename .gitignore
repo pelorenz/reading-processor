@@ -10,6 +10,12 @@
 /input
 /object/*.pyc
 /output
+/QCA/data
+/QCA/inst
+/QCA/man
+/QCA/src/*.dll
+/QCA/src/*.o
+/QCA/QCA*.zip
 /server/*.pyc
 /static/js/jquery*
 /static/layers
