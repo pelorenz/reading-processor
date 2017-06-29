@@ -19,7 +19,7 @@ class ComplexDecoder(json.JSONDecoder):
         for i, arg in enumerate(args):
             if i > 0: info += ' '
             info += str(arg).strip()
-        print info
+        print(info)
 
     def object_hook(s, obj):
         if '_type' not in obj:

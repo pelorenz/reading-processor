@@ -5,6 +5,7 @@
   "jsonFiles": [
     "mark-14a.json","mark-14a-lat.json"
   ],
+  "boolFile": "test4.csv",
   "morphCache": "morph.json",
   "htmlFolder": "html/",
   "htmlInitialFragment": "initial_fragment.htm",

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! python2.7
 # -*- coding: utf-8 -*-
 
 import sys, os, argparse, urllib, subprocess, string, re, shutil, datetime, operator, json

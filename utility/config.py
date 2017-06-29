@@ -7,9 +7,9 @@ class  Config:
             stream = open(configFile, 'r')
             self.configFile = json.load(stream)
         except:
-            print 'EXCEPTION: There was a problem opening the config file', configFile
-            print 'The default config filename is processor-config.json. The default path is the script directory.'
-            print ''
+            print('EXCEPTION: There was a problem opening the config file', configFile)
+            print('The default config filename is processor-config.json. The default path is the script directory.')
+            print ('')
             raise
         finally:
             if stream is not None:
@@ -17,13 +17,13 @@ class  Config:
 
     # Accessors
     def get(self, key):
-        if (self.configFile.has_key(key)):
+        if (key in self.configFile):
             return self.configFile[key]
         else:
             return None
 
     def getDefault(self, key, default):
-        if (self.configFile.has_key(key)):
+        if (key in self.configFile):
             return self.configFile[key]
         else:
             return default

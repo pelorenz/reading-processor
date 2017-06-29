@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! python2.7
 # -*- coding: utf-8 -*-
 
 from utility.options import *
