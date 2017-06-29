@@ -54,16 +54,16 @@ class  TextForm(object):
                 # Do lookup
                 url = url + urllib2.quote(f.encode('UTF-8'))
                 try:
-                    print 'Request ... ' 
+                    print('Request ... ')
                     response = urllib2.urlopen(url)
-                except urllib2.HTTPError, err:
-                    print 'HTTP error ... ', err.reason
-                except urllib2.URLError, err:
-                    print 'URL error ... ', err.reason
+                except urllib2.HTTPError as err:
+                    print('HTTP error ... ', err.reason)
+                except urllib2.URLError as err:
+                    print('URL error ... ', err.reason)
                     #print 'Second request ... ' 
                     #response = urllib2.urlopen(url)
-                except urllib2.HTTPException, err:
-                    print 'HTTP exception ... ', err.reason
+                except urllib2.HTTPException as err:
+                    print('HTTP exception ... ', err.reason)
 
                 analyses = response.read()
 
