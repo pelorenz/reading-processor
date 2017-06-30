@@ -1,15 +1,12 @@
 #! python3.6
 # -*- coding: utf-8 -*-
 
-import sys, os, string
+import sys, os, string, re
 
 from object.util import *
 
 from utility.config import *
 from utility.options import *
-
-import pandas as pd
-import numpy as np
 
 from pyeda.inter import *
 
@@ -66,10 +63,15 @@ def cmp_to_key(sortMsOps):
 class QCAAnalyzer:
 
     def __init__(s):
-        s.df = None
+        s.csv = []
+        s.mscols = []
+        s.refs = []
+        
         s.positive = None
         s.negative = None
-        s.mscols = []
+
+        s.caseMapOnes = {}
+        s.caseMapZeros = {}
 
     def info(s, *args):
         info = ''
@@ -83,96 +85,212 @@ class QCAAnalyzer:
         o = s.options
         s.info('processing', filename)
 
-        s.df = pd.read_csv(filename, sep='\t')
+        csvdata = ''
+        with open(filename, 'r') as file:
+            s.info('reading', filename)
+            csvdata = file.read()
+            file.close()
+
+        rows = csvdata.split('\n')
+        for idx, row in enumerate(rows):
+            parts = row.split('\t')
+            if idx == 0: # colnames
+                s.mscols = ['M' + c for c in parts[1:] if re.match(r'^[\dP]', c)]
+                continue
+
+            s.refs.append(parts[:1][0])
+            s.csv.append(parts[1:])
+
+    def filterRow(s, new_refs, new_csv, vu_refs, vu_csv):
+        # All-zero/one rows?
+        csv = []
+        refs = []
+        for ridx, row in enumerate(vu_csv):
+            if row.count('0') + row.count('-') != len(row) and row.count('1') + row.count('-') != len(row):
+                csv.append(row)
+                refs.append(vu_refs[ridx])
+
+        if len(csv) == 0:
+            return
+
+        new_csv.extend(csv)
+        new_refs.extend(refs)
+
+    def prepareCSV(s):
+        new_csv = []
+        vu_csv = []
+        new_refs = []
+        vu_refs = []
+
+        cur_ref = ''
+        for ridx, ref in enumerate(s.refs):
+            vuref = re.sub(r'[a-z]$', '', ref)
+            if vuref != cur_ref:
+                cur_ref = vuref
+                s.filterRow(new_refs, new_csv, vu_refs, vu_csv)
+                vu_csv = []
+                vu_refs = []
+            elif ridx == len(s.refs) - 1: # last time
+                vu_csv.append(s.csv[ridx])
+                vu_refs.append(s.refs[rid])
+                s.filterRow(new_refs, new_csv, vu_refs, vu_csv)
+                break # Done!
+
+            vu_csv.append(s.csv[ridx])
+            vu_refs.append(s.refs[ridx])
+
+        s.csv = new_csv
+        s.refs = new_refs
+
+    def writeCSV(s, basename):
+        c = s.config
+
+        csvfile = c.get('csvBoolFolder') + basename + '-revised.csv'
+        with open(csvfile, 'w+') as cfile:
+            cfile.write('C1\t' + '\t'.join(s.mscols) + '\n')
+            for idx, row in enumerate(s.csv):
+                cfile.write(s.refs[idx] + '\t' + '\t'.join(row) + '\n')
+            cfile.close()
 
     def generateExpressions(s, basename):
-        # from collections import OrderedDict
-        # OrderedDict(sorted(row[1:-1].to_dict().items()))
-        s.mscols = ['M' + x for x in s.df.columns.values[1:-1]]
-        pos_dbg = neg_dbg = ''
-        for ridx in range(0, s.df.shape[0]):
-            row = s.df.iloc[ridx]
-            out = s.df.iloc[ridx]['OUT']
-            label = s.df.iloc[ridx]['C1']
-            msrow = row[1:-1]
+        for ridx, row in enumerate(s.csv):
+            out = row[-1:][0]
+            label = s.refs[ridx]
+            msrow = row[:-1]
 
             expression = None
-            exp_dbg = label
-            for cidx in range(0, len(s.mscols)):
-                col = s.mscols[cidx]
+            for cidx, col in enumerate(s.mscols):
                 val = msrow[cidx]
                 if val == '-':
                     continue
 
                 exp = And(col) if str(val) == '1' else And(Not(col))
-                exp_dbg = exp_dbg + ' ' + str(val) + col
                 if expression:
                     expression = And(expression, exp)
                 else:
                     expression = exp
 
-            if out == 1:
+            d_key = str(expression.to_dnf())
+            if out == '1':
                 if s.positive:
                     s.positive = Or(s.positive, expression)
-                    pos_dbg = pos_dbg + '\n' + exp_dbg
                 else:
                     s.positive = Or(expression)
-                    pos_dbg = exp_dbg
-            elif out == 0:
+
+                if not d_key in s.caseMapOnes:
+                    s.caseMapOnes[d_key] = []
+                cases = s.caseMapOnes[d_key]
+                cases.append(label)
+                s.caseMapOnes[d_key] = cases
+            elif out == '0':
                 if s.negative:
                     s.negative = Or(s.negative, expression)
-                    neg_dbg = neg_dbg + '\n' + exp_dbg
                 else:
                     s.negative = Or(expression)
-                    neg_dbg = exp_dbg
 
-        dbgfile = s.config.get('csvBoolFolder') + basename + '-dbg-pos.txt'
-        with open(dbgfile, 'w+') as dfile:
-            dfile.write(pos_dbg)
-            dfile.close
-        dbgfile = s.config.get('csvBoolFolder') + basename + '-dbg-neg.txt'
-        with open(dbgfile, 'w+') as dfile:
-            dfile.write(neg_dbg)
-            dfile.close
-
+                if not d_key in s.caseMapZeros:
+                    s.caseMapZeros[d_key] = []
+                cases = s.caseMapZeros[d_key]
+                cases.append(label)
+                s.caseMapZeros[d_key] = cases
 
     def writeExpressions(s, basename):
         s.writeOutcomeExpr(basename, 'neg')
         s.writeOutcomeExpr(basename, 'pos')
 
+    def passOp(s, reconstr, col, slice):
+        if len(reconstr) == 0:
+            exp = And(col) if slice == 'pos' else And(Not(col))
+            reconstr.append(exp)
+            return reconstr
+        else:
+            new_rcstr = []
+            for exp in reconstr:
+                exp = And(exp, col) if slice == 'pos' else And(exp, Not(col))
+                new_rcstr.append(exp)
+            return new_rcstr
+
+    def insertOp(s, reconstr, col):
+        if len(reconstr) == 0:
+            reconstr.append(And(col))
+            reconstr.append(And(Not(col)))
+            return reconstr
+        else:
+            new_rcstr = []
+            for exp in reconstr:
+                # deep copy exp to exp2
+                exp2 = None
+                if 'AndOp' in str(type(exp)) or 'Complement' in str(type(exp)):
+                    exps = list(exp._lits)
+                    exps.sort(key=cmp_to_key(sortMsOps))
+                    for e in exps:
+                        e = str(e)
+                        ms = e[1:] if '~' == e[:1] else e
+                        if not exp2:
+                            exp2 = And(Not(ms)) if '~' == e[:1] else And(ms)
+                        else:
+                            exp2 = And(exp2, Not(ms)) if '~' == e[:1] else And(exp2, ms)
+                elif 'Variable' in str(type(exp)):
+                    exp2 = exprvar(exp.names[0])
+                else:
+                    raise ValueError('Unexpected type ' + str(type(exp)))
+
+                exp = And(exp, col)
+                exp2 = And(exp2, Not(col))
+                new_rcstr.append(exp)
+                new_rcstr.append(exp2)
+            return new_rcstr
+
+    def lookupMissingKeys(s, msops, caseMap):
+        cases = []
+        reconstr_ops = [] # list of And expressions
+
+        # Search for missing keys and insert plus/minus values
+        for col in s.mscols:
+            if exprvar(col) in msops:
+                reconstr_ops = s.passOp(reconstr_ops, col, 'pos')
+            elif Not(col) in msops:
+                reconstr_ops = s.passOp(reconstr_ops, col, 'neg')
+            else: # missing key!
+                reconstr_ops = s.insertOp(reconstr_ops, col)
+
+        # Assemble cases
+        for exp in reconstr_ops:
+            d_key = str(exp.to_dnf())
+            if d_key in caseMap:
+                cases.extend(caseMap[d_key])
+
+        return cases
+
     def writeOutcomeExpr(s, basename, outcome):
         c = s.config
 
         expressions = s.positive if outcome == 'pos' else s.negative
-        expfile = c.get('csvBoolFolder') + basename + '-expr-' + outcome + '.txt'
-        with open(expfile, 'w+') as efile:
-            efile.write(str(expressions))
-            efile.close
-
+        caseMap = s.caseMapOnes if outcome == 'pos' else s.caseMapZeros
         minimized = espresso_exprs(expressions)
-        minfile = c.get('csvBoolFolder') + basename + '-min-' + outcome + '.txt'
-        with open(minfile, 'w+') as mfile:
-            mfile.write(str(minimized))
-            mfile.close
 
         sorted_terms = []
-        trmfile = c.get('csvBoolFolder') + basename + '-' + outcome + '.txt'
-        with open(trmfile, 'w+') as tfile:
-            orset = minimized[0]._lits
-            for andset in orset:
-                msops = list(andset._lits)
-                msops.sort(key=cmp_to_key(sortMsOps))
-                sorted_terms.append(msops)
-                for msop in msops:
-                    tfile.write(str(msop) + '\t')
-                tfile.write('\n')
-            tfile.close
+        orset = minimized[0]._lits
+        for andset in orset:
+            msops = list(andset._lits)
+            msops.sort(key=cmp_to_key(sortMsOps))
+
+            d_key = str(andset.to_dnf())
+            cases = []
+            if d_key in caseMap:
+                cases = caseMap[d_key]
+                #s.info('key found:', d_key)
+            else:
+                #s.info('key not found:', d_key)
+                cases = s.lookupMissingKeys(msops, caseMap)
+            
+            sorted_terms.append((msops, cases))
 
         csvfile = c.get('csvBoolFolder') + basename + '-' + outcome + '.csv'
         with open(csvfile, 'w+') as cfile:
             col_str = '\t'.join(s.mscols)
-            cfile.write(col_str + '\n')
-            for expr in sorted_terms:
+            cfile.write(col_str + '\tCases\tReferences\n')
+            for (expr, cases) in sorted_terms:
                 exp_str = ' '.join(str(x) for x in expr) + ' ' # to match last MS with suffixed space
                 csv_line = ''
                 for ms in s.mscols:
@@ -183,6 +301,9 @@ class QCAAnalyzer:
                             csv_line = csv_line + '1' + '\t'
                     else:
                         csv_line = csv_line + '-\t'
+
+                csv_line = csv_line + str(len(cases))
+                csv_line = csv_line + '\t' + '; '.join(cases)
                 cfile.write(csv_line + '\n')
             cfile.close
 
@@ -205,6 +326,8 @@ class QCAAnalyzer:
         boolPath = c.get('csvBoolFolder') + boolFile
 
         s.loadCSV(boolPath)
+        s.prepareCSV()
+        s.writeCSV(basename)
         s.generateExpressions(basename)
         s.writeExpressions(basename)
 
