@@ -67,11 +67,16 @@ class QCAAnalyzer:
         s.mscols = []
         s.refs = []
         
-        s.positive = None
-        s.negative = None
+        s.raw_exprs_P = None
+        s.raw_exprs_N = None
 
         s.caseMapOnes = {}
         s.caseMapZeros = {}
+
+        s.minimized_exprs_P = []
+        s.minimized_exprs_N = []
+
+        s.all_exprs = []
 
     def info(s, *args):
         info = ''
@@ -172,10 +177,10 @@ class QCAAnalyzer:
 
             d_key = str(expression.to_dnf())
             if out == '1':
-                if s.positive:
-                    s.positive = Or(s.positive, expression)
+                if s.raw_exprs_P:
+                    s.raw_exprs_P = Or(s.raw_exprs_P, expression)
                 else:
-                    s.positive = Or(expression)
+                    s.raw_exprs_P = Or(expression)
 
                 if not d_key in s.caseMapOnes:
                     s.caseMapOnes[d_key] = []
@@ -183,10 +188,10 @@ class QCAAnalyzer:
                 cases.append(label)
                 s.caseMapOnes[d_key] = cases
             elif out == '0':
-                if s.negative:
-                    s.negative = Or(s.negative, expression)
+                if s.raw_exprs_N:
+                    s.raw_exprs_N = Or(s.raw_exprs_N, expression)
                 else:
-                    s.negative = Or(expression)
+                    s.raw_exprs_N = Or(expression)
 
                 if not d_key in s.caseMapZeros:
                     s.caseMapZeros[d_key] = []
@@ -194,9 +199,9 @@ class QCAAnalyzer:
                 cases.append(label)
                 s.caseMapZeros[d_key] = cases
 
-    def writeExpressions(s, basename):
-        s.writeOutcomeExpr(basename, 'neg')
-        s.writeOutcomeExpr(basename, 'pos')
+    def minimizeExpressions(s):
+        s.minimize('pos')
+        s.minimize('neg')
 
     def passOp(s, reconstr, col, slice):
         if len(reconstr) == 0:
@@ -241,7 +246,7 @@ class QCAAnalyzer:
                 new_rcstr.append(exp2)
             return new_rcstr
 
-    def lookupMissingKeys(s, msops, caseMap):
+    def lookupMissingKeys(s, msops, caseMap, min_key):
         cases = []
         reconstr_ops = [] # list of And expressions
 
@@ -260,38 +265,105 @@ class QCAAnalyzer:
             if d_key in caseMap:
                 cases.extend(caseMap[d_key])
 
+        # update with combined cases
+        caseMap[min_key] = cases
+
         return cases
 
-    def writeOutcomeExpr(s, basename, outcome):
-        c = s.config
-
-        expressions = s.positive if outcome == 'pos' else s.negative
+    def minimize(s, outcome):
+        raw_exprs = s.raw_exprs_P if outcome == 'pos' else s.raw_exprs_N
+        minimized_exprs = s.minimized_exprs_P if outcome == 'pos' else s.minimized_exprs_N
         caseMap = s.caseMapOnes if outcome == 'pos' else s.caseMapZeros
-        minimized = espresso_exprs(expressions)
 
-        sorted_terms = []
+        # Perform Boolean minimization
+        minimized = espresso_exprs(raw_exprs)
+
         orset = minimized[0]._lits
         for andset in orset:
             msops = list(andset._lits)
             msops.sort(key=cmp_to_key(sortMsOps))
 
+            # TODO: fix me! depends on order of input CSV
             d_key = str(andset.to_dnf())
             cases = []
             if d_key in caseMap:
                 cases = caseMap[d_key]
-                #s.info('key found:', d_key)
             else:
-                #s.info('key not found:', d_key)
-                cases = s.lookupMissingKeys(msops, caseMap)
-            
-            sorted_terms.append((msops, cases))
+                cases = s.lookupMissingKeys(msops, caseMap, d_key)
 
-        csvfile = c.get('csvBoolFolder') + basename + '-' + outcome + '.csv'
+            minimized_exprs.append((msops, cases, d_key))
+
+    def appendScores(s, expr, cases, dnf_key, incl, cov, outcome):
+        scores = {}
+        scores['expressions'] = expr
+        scores['cases'] = cases
+        scores['dnfKey'] = dnf_key
+        scores['inclusion'] = incl
+        scores['coverage'] = cov
+        scores['outcome'] = outcome
+
+        s.all_exprs.append(scores)
+
+    def computeScores(s):
+        # Total positive and negative cases for coverage
+        p_outcomes = 0
+        for (expr, cases, dnf_key) in s.minimized_exprs_P:
+            p_outcomes = p_outcomes + len(cases)
+
+        n_outcomes = 0
+        for (expr, cases, dnf_key) in s.minimized_exprs_N:
+            n_outcomes = n_outcomes + len(cases)
+
+        # Iterate positive outcomes and compare to negative
+        for (expr, cases, dnf_key) in s.minimized_exprs_P:
+            p_cases = len(cases)
+
+            # Number of negative cases for current expression
+            if dnf_key in s.caseMapZeros:
+                n_cases = len(s.caseMapZeros[dnf_key])
+            else:
+                n_cases = 1
+
+            inclusion = p_cases / (p_cases + n_cases) if n_cases != 1 else 1
+            inclusion = '%.4f' % round(inclusion, 4) if inclusion != 1 else '1.0'
+
+            coverage = p_cases / p_outcomes
+            coverage = '%.4f' % round(coverage, 4)
+
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1')
+
+        # Iterate negative outcomes and compare to positive
+        for (expr, cases, dnf_key) in s.minimized_exprs_N:
+            n_cases = len(cases)
+
+            # Number of positive cases for current expression
+            if dnf_key in s.caseMapOnes:
+                p_cases = len(s.caseMapOnes[dnf_key])
+            else:
+                p_cases = 1
+
+            inclusion = n_cases / (p_cases + n_cases) if p_cases != 1 else 1
+            inclusion = '%.4f' % round(inclusion, 4) if inclusion != 1 else '1.0'
+
+            coverage = n_cases / n_outcomes
+            coverage = '%.4f' % round(coverage, 4)
+
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0')
+
+        return None
+
+    def writeExpressions(s, basename):
+        c = s.config
+
+        csvfile = c.get('csvBoolFolder') + basename + '-results.csv'
         with open(csvfile, 'w+') as cfile:
             col_str = '\t'.join(s.mscols)
-            cfile.write(col_str + '\tCases\tReferences\n')
-            for (expr, cases) in sorted_terms:
-                exp_str = ' '.join(str(x) for x in expr) + ' ' # to match last MS with suffixed space
+            cfile.write(col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tReferences\tDNF\n')
+            for res in s.all_exprs:
+                ones = 0
+                dontCares = 0
+
+                exp_str = ' '.join(str(x) for x in res['expressions']) + ' ' # to match last MS with suffixed space
                 csv_line = ''
                 for ms in s.mscols:
                     if ms + ' ' in exp_str:
@@ -299,11 +371,19 @@ class QCAAnalyzer:
                             csv_line = csv_line + '0' + '\t'
                         else:
                             csv_line = csv_line + '1' + '\t'
+                            ones = ones + 1
                     else:
                         csv_line = csv_line + '-\t'
+                        dontCares = dontCares + 1
 
-                csv_line = csv_line + str(len(cases))
-                csv_line = csv_line + '\t' + '; '.join(cases)
+                csv_line = csv_line + res['outcome'] + '\t'
+                csv_line = csv_line + str(len(res['cases'])) + '\t'
+                csv_line = csv_line + str(res['inclusion']) + '\t'
+                csv_line = csv_line + str(res['coverage']) + '\t'
+                csv_line = csv_line + str(ones) + '\t'
+                csv_line = csv_line + str(dontCares) + '\t'
+                csv_line = csv_line + '; '.join(res['cases']) + '\t'
+                csv_line = csv_line + str(res['dnfKey'])
                 cfile.write(csv_line + '\n')
             cfile.close
 
@@ -313,7 +393,7 @@ class QCAAnalyzer:
 
         boolFile = None
         basename = ''
-        if type(o) is CommandLine:
+        if o.file:
             boolFile = o.file + '.csv'
             basename = o.file
         else:
@@ -329,6 +409,8 @@ class QCAAnalyzer:
         s.prepareCSV()
         s.writeCSV(basename)
         s.generateExpressions(basename)
+        s.minimizeExpressions()
+        s.computeScores()
         s.writeExpressions(basename)
 
         s.info('Done')
