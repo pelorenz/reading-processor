@@ -73,6 +73,10 @@ class QCAAnalyzer:
         s.caseMapOnes = {}
         s.caseMapZeros = {}
 
+        s.referenceMap = {}  # initial refs
+        s.assignedCases = {} # refs assigned by algorithm
+        s.manualCases = {}   # refs assigned manually
+
         s.minimized_exprs_P = []
         s.minimized_exprs_N = []
 
@@ -111,7 +115,7 @@ class QCAAnalyzer:
         csv = []
         refs = []
         for ridx, row in enumerate(vu_csv):
-            if row[:-1].count('0') + row[:-1].count('-') != len(row) - 1 and row[:-1].count('1') + row[:-1].count('-') != len(row) - 1:
+            if row[:-1].count('0') != len(row) - 1 and row[:-1].count('1') != len(row) - 1 and row[:-1].count('-') != len(row) - 1:
                 csv.append(row)
                 refs.append(vu_refs[ridx])
 
@@ -127,6 +131,7 @@ class QCAAnalyzer:
         new_refs = []
         vu_refs = []
 
+        # TODO: fix me! references required to be contiguous
         cur_ref = ''
         for ridx, ref in enumerate(s.refs):
             vuref = re.sub(r'[a-z]$', '', ref)
@@ -137,7 +142,7 @@ class QCAAnalyzer:
                 vu_refs = []
             elif ridx == len(s.refs) - 1: # last time
                 vu_csv.append(s.csv[ridx])
-                vu_refs.append(s.refs[rid])
+                vu_refs.append(s.refs[ridx])
                 s.filterRow(new_refs, new_csv, vu_refs, vu_csv)
                 break # Done!
 
@@ -159,8 +164,8 @@ class QCAAnalyzer:
 
     def generateExpressions(s, basename):
         for ridx, row in enumerate(s.csv):
-            out = row[-1:][0]
-            label = s.refs[ridx]
+            out = str(row[-1:][0])
+            ref = s.refs[ridx]
             msrow = row[:-1]
 
             expression = None
@@ -185,8 +190,9 @@ class QCAAnalyzer:
                 if not d_key in s.caseMapOnes:
                     s.caseMapOnes[d_key] = []
                 cases = s.caseMapOnes[d_key]
-                cases.append(label)
+                cases.append(ref)
                 s.caseMapOnes[d_key] = cases
+                s.referenceMap[ref] = { 'expression': expression, 'dnfKey': d_key, 'outcome': '1'}
             elif out == '0':
                 if s.raw_exprs_N:
                     s.raw_exprs_N = Or(s.raw_exprs_N, expression)
@@ -196,12 +202,35 @@ class QCAAnalyzer:
                 if not d_key in s.caseMapZeros:
                     s.caseMapZeros[d_key] = []
                 cases = s.caseMapZeros[d_key]
-                cases.append(label)
+                cases.append(ref)
                 s.caseMapZeros[d_key] = cases
+                s.referenceMap[ref] =  { 'expression': expression, 'dnfKey': d_key, 'outcome': '0'}
 
     def minimizeExpressions(s):
         s.minimize('pos')
         s.minimize('neg')
+
+        # manually add missing cases
+        for ref in s.refs:
+            if not ref in s.assignedCases:
+                if ref in s.referenceMap:
+                    ref_info = s.referenceMap[ref]
+
+                    # already in manual list?
+                    dnf_key = ref_info['dnfKey']
+                    if dnf_key in s.manualCases:
+                        expinf = s.manualCases[dnf_key]
+                        expinf['cases'].append(ref)
+                    else: # add new
+                        msops = list(ref_info['expression']._lits)
+                        expinf = {'msVars': msops, 'cases': [ref], 'dnfKey': dnf_key, 'source': 'manual'}
+
+                        if ref_info['outcome'] == '1':
+                            s.minimized_exprs_P.append(expinf)
+                        elif ref_info['outcome'] == '0':
+                            s.minimized_exprs_N.append(expinf)
+
+                        s.manualCases[dnf_key] = expinf
 
     def passOp(s, reconstr, col, slice):
         if len(reconstr) == 0:
@@ -291,9 +320,13 @@ class QCAAnalyzer:
             else:
                 cases = s.lookupMissingKeys(msops, caseMap, d_key)
 
-            minimized_exprs.append((msops, cases, d_key))
+            minimized_exprs.append({'msVars': msops, 'cases': cases, 'dnfKey': d_key, 'source': 'espresso'})
 
-    def appendScores(s, expr, cases, dnf_key, incl, cov, outcome, out_id):
+            # register cases assigned by espresso
+            for case in cases:
+                s.assignedCases[case] = (msops, d_key)
+
+    def appendScores(s, expr, cases, dnf_key, incl, cov, outcome, out_id, source):
         scores = {}
         scores['expressions'] = expr
         scores['cases'] = cases
@@ -302,6 +335,7 @@ class QCAAnalyzer:
         scores['coverage'] = cov
         scores['outcome'] = outcome
         scores['outcomeID'] = out_id
+        scores['source'] = source
 
         s.all_exprs.append(scores)
 
@@ -318,51 +352,61 @@ class QCAAnalyzer:
     def computeScores(s):
         # Total positive and negative cases for coverage
         p_outcomes = 0
-        for (expr, cases, dnf_key) in s.minimized_exprs_P:
-            p_outcomes = p_outcomes + len(cases)
+        for expinfo in s.minimized_exprs_P:
+            p_outcomes = p_outcomes + len(expinfo['cases'])
 
         n_outcomes = 0
-        for (expr, cases, dnf_key) in s.minimized_exprs_N:
-            n_outcomes = n_outcomes + len(cases)
+        for expinfo in s.minimized_exprs_N:
+            n_outcomes = n_outcomes + len(expinfo['cases'])
 
         # Iterate positive outcomes and compare to negative
         outcome_ctr = 1
-        for (expr, cases, dnf_key) in s.minimized_exprs_P:
+        for expinf in s.minimized_exprs_P:
+            expr = expinf['msVars']
+            cases = expinf['cases']
+            dnf_key = expinf['dnfKey']
+            source = expinf['source']
+
             p_cases = len(cases)
 
             # Number of negative cases for current expression
             if dnf_key in s.caseMapZeros:
                 n_cases = len(s.caseMapZeros[dnf_key])
             else:
-                n_cases = 1
+                n_cases = 0
 
-            inclusion = p_cases / (p_cases + n_cases) if n_cases != 1 else 1
+            inclusion = p_cases / (p_cases + n_cases) if n_cases > 0 else 1
             inclusion = '%.4f' % round(inclusion, 4) if inclusion != 1 else '1.0'
 
             coverage = p_cases / p_outcomes
             coverage = '%.4f' % round(coverage, 4)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1', s.generateOutcomeID('A', outcome_ctr))
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1', s.generateOutcomeID('A', outcome_ctr), source)
             outcome_ctr = outcome_ctr + 1
 
         # Iterate negative outcomes and compare to positive
         outcome_ctr = 1
-        for (expr, cases, dnf_key) in s.minimized_exprs_N:
+        for expinf in s.minimized_exprs_N:
+            expr = expinf['msVars']
+            cases = expinf['cases']
+            dnf_key = expinf['dnfKey']
+            source = expinf['source']
+
             n_cases = len(cases)
 
             # Number of positive cases for current expression
             if dnf_key in s.caseMapOnes:
                 p_cases = len(s.caseMapOnes[dnf_key])
             else:
-                p_cases = 1
+                p_cases = 0
 
-            inclusion = n_cases / (p_cases + n_cases) if p_cases != 1 else 1
+            inclusion = n_cases / (p_cases + n_cases) if p_cases > 0 else 1
             inclusion = '%.4f' % round(inclusion, 4) if inclusion != 1 else '1.0'
 
             coverage = n_cases / n_outcomes
             coverage = '%.4f' % round(coverage, 4)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0', s.generateOutcomeID('B', outcome_ctr))
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0', s.generateOutcomeID('B', outcome_ctr), source)
             outcome_ctr = outcome_ctr + 1
 
         return None
@@ -373,7 +417,7 @@ class QCAAnalyzer:
         csvfile = c.get('csvBoolFolder') + basename + '-results.csv'
         with open(csvfile, 'w+') as cfile:
             col_str = '\t'.join(s.mscols)
-            cfile.write('ID\t' + col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tReferences\tDNF\n')
+            cfile.write('ID\t' + col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tSource\tReferences\tDNF\n')
             for res in s.all_exprs:
                 ones = 0
                 dontCares = 0
@@ -397,6 +441,7 @@ class QCAAnalyzer:
                 csv_line = csv_line + str(res['coverage']) + '\t'
                 csv_line = csv_line + str(ones) + '\t'
                 csv_line = csv_line + str(dontCares) + '\t'
+                csv_line = csv_line + res['source'] + '\t'
                 csv_line = csv_line + '; '.join(res['cases']) + '\t'
                 csv_line = csv_line + str(res['dnfKey'])
                 cfile.write(csv_line + '\n')
