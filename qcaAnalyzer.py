@@ -111,7 +111,7 @@ class QCAAnalyzer:
         csv = []
         refs = []
         for ridx, row in enumerate(vu_csv):
-            if row.count('0') + row.count('-') != len(row) and row.count('1') + row.count('-') != len(row):
+            if row[:-1].count('0') + row[:-1].count('-') != len(row) - 1 and row[:-1].count('1') + row[:-1].count('-') != len(row) - 1:
                 csv.append(row)
                 refs.append(vu_refs[ridx])
 
@@ -293,7 +293,7 @@ class QCAAnalyzer:
 
             minimized_exprs.append((msops, cases, d_key))
 
-    def appendScores(s, expr, cases, dnf_key, incl, cov, outcome):
+    def appendScores(s, expr, cases, dnf_key, incl, cov, outcome, out_id):
         scores = {}
         scores['expressions'] = expr
         scores['cases'] = cases
@@ -301,8 +301,19 @@ class QCAAnalyzer:
         scores['inclusion'] = incl
         scores['coverage'] = cov
         scores['outcome'] = outcome
+        scores['outcomeID'] = out_id
 
         s.all_exprs.append(scores)
+
+    def generateOutcomeID(s, prefix, id):
+        oid = ''
+        if id < 10:
+            oid = prefix + '00' + str(id)
+        elif id < 100:
+            oid = prefix + '0' + str(id)
+        else:
+            oid = prefix + str(id)
+        return oid
 
     def computeScores(s):
         # Total positive and negative cases for coverage
@@ -315,6 +326,7 @@ class QCAAnalyzer:
             n_outcomes = n_outcomes + len(cases)
 
         # Iterate positive outcomes and compare to negative
+        outcome_ctr = 1
         for (expr, cases, dnf_key) in s.minimized_exprs_P:
             p_cases = len(cases)
 
@@ -330,9 +342,11 @@ class QCAAnalyzer:
             coverage = p_cases / p_outcomes
             coverage = '%.4f' % round(coverage, 4)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1')
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1', s.generateOutcomeID('A', outcome_ctr))
+            outcome_ctr = outcome_ctr + 1
 
         # Iterate negative outcomes and compare to positive
+        outcome_ctr = 1
         for (expr, cases, dnf_key) in s.minimized_exprs_N:
             n_cases = len(cases)
 
@@ -348,7 +362,8 @@ class QCAAnalyzer:
             coverage = n_cases / n_outcomes
             coverage = '%.4f' % round(coverage, 4)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0')
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0', s.generateOutcomeID('B', outcome_ctr))
+            outcome_ctr = outcome_ctr + 1
 
         return None
 
@@ -358,13 +373,13 @@ class QCAAnalyzer:
         csvfile = c.get('csvBoolFolder') + basename + '-results.csv'
         with open(csvfile, 'w+') as cfile:
             col_str = '\t'.join(s.mscols)
-            cfile.write(col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tReferences\tDNF\n')
+            cfile.write('ID\t' + col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tReferences\tDNF\n')
             for res in s.all_exprs:
                 ones = 0
                 dontCares = 0
 
                 exp_str = ' '.join(str(x) for x in res['expressions']) + ' ' # to match last MS with suffixed space
-                csv_line = ''
+                csv_line = res['outcomeID'] + '\t'
                 for ms in s.mscols:
                     if ms + ' ' in exp_str:
                         if '~' + ms + ' ' in exp_str:
