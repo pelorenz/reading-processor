@@ -77,6 +77,8 @@ class QCAAnalyzer:
         s.assignedCases = {} # refs assigned by algorithm
         s.manualCases = {}   # refs assigned manually
 
+        s.caseOutcomes = {}
+
         s.minimized_exprs_P = []
         s.minimized_exprs_N = []
 
@@ -169,12 +171,18 @@ class QCAAnalyzer:
             msrow = row[:-1]
 
             expression = None
+            attestingMSS = []
             for cidx, col in enumerate(s.mscols):
                 val = msrow[cidx]
                 if val == '-':
                     continue
 
-                exp = And(col) if str(val) == '1' else And(Not(col))
+                if str(val) == '1':
+                    exp = And(col)
+                    attestingMSS.append(col)
+                else:
+                    exp = And(Not(col))
+
                 if expression:
                     expression = And(expression, exp)
                 else:
@@ -192,7 +200,7 @@ class QCAAnalyzer:
                 cases = s.caseMapOnes[d_key]
                 cases.append(ref)
                 s.caseMapOnes[d_key] = cases
-                s.referenceMap[ref] = { 'expression': expression, 'dnfKey': d_key, 'outcome': '1'}
+                s.referenceMap[ref] = { 'expression': expression, 'dnfKey': d_key, 'attestingMSS': attestingMSS, 'outcome': '1'}
             elif out == '0':
                 if s.raw_exprs_N:
                     s.raw_exprs_N = Or(s.raw_exprs_N, expression)
@@ -204,7 +212,7 @@ class QCAAnalyzer:
                 cases = s.caseMapZeros[d_key]
                 cases.append(ref)
                 s.caseMapZeros[d_key] = cases
-                s.referenceMap[ref] =  { 'expression': expression, 'dnfKey': d_key, 'outcome': '0'}
+                s.referenceMap[ref] =  { 'expression': expression, 'dnfKey': d_key, 'attestingMSS': attestingMSS, 'outcome': '0'}
 
     def minimizeExpressions(s):
         s.minimize('pos')
@@ -285,7 +293,7 @@ class QCAAnalyzer:
                 reconstr_ops = s.passOp(reconstr_ops, col, 'pos')
             elif Not(col) in msops:
                 reconstr_ops = s.passOp(reconstr_ops, col, 'neg')
-            else: # missing key!
+            else: # missing key - actually an important element of the path
                 reconstr_ops = s.insertOp(reconstr_ops, col)
 
         # Assemble cases
@@ -349,6 +357,14 @@ class QCAAnalyzer:
             oid = prefix + str(id)
         return oid
 
+    def assignCases(s, out_id, cases):
+        for ref in cases:
+            outcomes = []
+            if ref in s.caseOutcomes:
+                outcomes = s.caseOutcomes[ref]
+            outcomes.append(out_id)
+            s.caseOutcomes[ref] = outcomes
+
     def computeScores(s):
         # Total positive and negative cases for coverage
         p_outcomes = 0
@@ -381,7 +397,10 @@ class QCAAnalyzer:
             coverage = p_cases / p_outcomes
             coverage = '%.4f' % round(coverage, 4)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1', s.generateOutcomeID('A', outcome_ctr), source)
+            out_id = s.generateOutcomeID('A', outcome_ctr)
+            s.assignCases(out_id, cases)
+
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1', out_id, source)
             outcome_ctr = outcome_ctr + 1
 
         # Iterate negative outcomes and compare to positive
@@ -406,10 +425,55 @@ class QCAAnalyzer:
             coverage = n_cases / n_outcomes
             coverage = '%.4f' % round(coverage, 4)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0', s.generateOutcomeID('B', outcome_ctr), source)
+            out_id = s.generateOutcomeID('B', outcome_ctr)
+            s.assignCases(out_id, cases)
+
+            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0', out_id, source)
             outcome_ctr = outcome_ctr + 1
 
         return None
+
+    def buildCaseStr(s, out_id, cases):
+        mssToCases = {}
+        msKeys = []
+        for case in cases:
+            if case in s.referenceMap:
+                ref_info = s.referenceMap[case]
+                a_mss = ref_info['attestingMSS']
+                a_mss = [m[1:] if m[:1] == 'M' else m for m in a_mss]
+                ms_key = '+'.join(a_mss)
+
+                c_list = []
+                if ms_key in mssToCases:
+                    c_list = mssToCases[ms_key]
+                else:
+                    msKeys.append(ms_key)
+                c_list.append(case)
+                mssToCases[ms_key] = c_list
+
+        casestr = ''
+        for key in msKeys:
+            casestr = casestr + '[' + key + '] '
+
+            cases = mssToCases[key]
+            for ref in cases:
+                o_str = ''
+                outcomes = []
+                if ref in s.caseOutcomes:
+                    outcomes = s.caseOutcomes[ref]
+                    if len(outcomes) > 1:
+                        o_str = ' ('
+                        for oc in outcomes:
+                            if oc == out_id:
+                                continue
+                            if o_str[-1:] != '(':
+                                o_str = o_str + ', '
+                            o_str = o_str + oc
+                        o_str = o_str + ')'
+
+                casestr = casestr + ref + o_str + '; '
+
+        return casestr[:-2] # subtract final semicolon and space
 
     def writeExpressions(s, basename):
         c = s.config
@@ -442,7 +506,7 @@ class QCAAnalyzer:
                 csv_line = csv_line + str(ones) + '\t'
                 csv_line = csv_line + str(dontCares) + '\t'
                 csv_line = csv_line + res['source'] + '\t'
-                csv_line = csv_line + '; '.join(res['cases']) + '\t'
+                csv_line = csv_line + s.buildCaseStr(res['outcomeID'], res['cases']) + '\t'
                 csv_line = csv_line + str(res['dnfKey'])
                 cfile.write(csv_line + '\n')
             cfile.close
