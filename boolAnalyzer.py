@@ -121,18 +121,19 @@ class BoolAnalyzer:
         for rms in s.referenceMSS:
             s.info('generating CSVs for', rms.gaNum)
 
+            l_layer = []
             d_layer = []
             dm_layer = []
 
             # selGL
-            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect', d_layer, dm_layer)
+            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect', d_layer, dm_layer, l_layer)
 
             # selG
-            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect', d_layer, dm_layer)
+            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect', d_layer, dm_layer, l_layer)
 
-            s.writeLayers(rms, 'allMSS', d_layer, dm_layer)
+            s.writeLayers(rms, 'allMSS', d_layer, dm_layer, l_layer)
 
-    def writeLayers(s, refMS, mss, d_layer, dm_layer):
+    def writeLayers(s, refMS, mss, d_layer, dm_layer, l_layer):
         c = s.config
 
         csvfile_D = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
@@ -147,7 +148,7 @@ class BoolAnalyzer:
             d_layer = sorted(d_layer, cmp=sortVariations)
 
             for w in d_layer:
-                file_D.write((w['reference'] + u'\t' + w['mediumLabel'] + u'\t' + w['description'] + u'\t' + w['sequence'] + u'\t2\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
+                file_D.write((w['reference'] + u'\t' + w['mediumLabel'] + u'\t' + w['description'] + u'\t' + w['sequence'] + u'\t' + w['layer'] + u'\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
 
             file_D.close()
 
@@ -163,11 +164,26 @@ class BoolAnalyzer:
             dm_layer = sorted(dm_layer, cmp=sortVariations)
 
             for w in dm_layer:
-                file_DM.write((w['reference'] + u'\t' + w['mediumLabel'] + u'\t' + w['description'] + u'\t' + w['sequence'] + u'\t2\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
+                file_DM.write((w['reference'] + u'\t' + w['mediumLabel'] + u'\t' + w['description'] + u'\t' + w['sequence'] + u'\t' + w['layer'] + u'\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
 
             file_DM.close()
 
-    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, d_layer, dm_layer):
+        csvfile_L = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'L.csv'
+        with open(csvfile_L, 'w+') as file_L:
+            hdr = []
+            for m in getattr(refMS, mss):
+                hdr.append(m)
+
+            file_L.write((u'C1\tC2\tC3\tSEQ\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(hdr) + u'\n').encode('utf-8'))
+
+            l_layer = sorted(l_layer, cmp=sortVariations)
+
+            for w in l_layer:
+                file_L.write((w['reference'] + u'\t' + w['mediumLabel'] + u'\t' + w['description'] + u'\t' + w['sequence'] + u'\t' + w['layer'] + u'\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
+
+            file_L.close()
+
+    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, d_layer, dm_layer, l_layer):
         c = s.config
 
         # Two CSV files: one for all variants, another for D-layer variants
@@ -238,6 +254,7 @@ class BoolAnalyzer:
                 vct_all = []
                 vct_D = []
                 vct_DM = []
+                vct_L = []
                 for idx, val in enumerate(refms_vect):
                     # D variants
                     m = getattr(refMS, mss)[idx]
@@ -246,6 +263,8 @@ class BoolAnalyzer:
 
                     if m[0] <> 'V' and m[0] <> 'v':
                         vct_DM.append(val)
+
+                    vct_L.append(val)
 
                     # All variants
                     vct_all.append(val)
@@ -256,6 +275,7 @@ class BoolAnalyzer:
                         'wrapped': var,
                         'reference': var.shortLabel(),
                         'sequence': sequence,
+                        'layer': str(layer).decode('utf-8'),
                         'witnesses': witness_str,
                         'excerpt': excerpt,
                         'mediumLabel': var.mediumLabel(witness_str),
@@ -270,6 +290,7 @@ class BoolAnalyzer:
                         'wrapped': var,
                         'reference': var.shortLabel(),
                         'sequence': sequence,
+                        'layer': str(layer).decode('utf-8'),
                         'witnesses': witness_str,
                         'excerpt': excerpt,
                         'mediumLabel': var.mediumLabel(witness_str),
@@ -283,6 +304,7 @@ class BoolAnalyzer:
                         'wrapped': var,
                         'reference': var.shortLabel(),
                         'sequence': sequence,
+                        'layer': str(layer).decode('utf-8'),
                         'witnesses': witness_str,
                         'excerpt': excerpt,
                         'mediumLabel': var.mediumLabel(witness_str),
@@ -291,6 +313,21 @@ class BoolAnalyzer:
                         'agreementVector': vct_DM
                     }
                     dm_layer.append(wrapperDM)
+                else:
+                    if layer == 3:
+                        wrapperL = {
+                            'wrapped': var,
+                            'reference': var.shortLabel(),
+                            'sequence': sequence,
+                            'layer': str(layer).decode('utf-8'),
+                            'witnesses': witness_str,
+                            'excerpt': excerpt,
+                            'mediumLabel': var.mediumLabel(witness_str),
+                            'description': longLabel,
+                            'languageCode': langCode,
+                            'agreementVector': vct_L
+                        }
+                        l_layer.append(wrapperL)
 
                 # All-variants CSV
                 file_all.write((var.shortLabel() + u'\t' + var.mediumLabel(witness_str) + u'\t' + longLabel + u'\t' + sequence + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_all) + u'\n').encode('utf-8'))

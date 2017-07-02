@@ -97,7 +97,7 @@ class QCAAnalyzer:
         s.info('processing', filename)
 
         csvdata = ''
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding='utf-8') as file:
             s.info('reading', filename)
             csvdata = file.read()
             file.close()
@@ -158,7 +158,7 @@ class QCAAnalyzer:
         c = s.config
 
         csvfile = c.get('csvBoolFolder') + basename + '-revised.csv'
-        with open(csvfile, 'w+') as cfile:
+        with open(csvfile, 'w+', encoding='utf-8') as cfile:
             cfile.write('C1\t' + '\t'.join(s.mscols) + '\n')
             for idx, row in enumerate(s.csv):
                 cfile.write(s.refs[idx] + '\t' + '\t'.join(row) + '\n')
@@ -479,7 +479,7 @@ class QCAAnalyzer:
         c = s.config
 
         csvfile = c.get('csvBoolFolder') + basename + '-results.csv'
-        with open(csvfile, 'w+') as cfile:
+        with open(csvfile, 'w+', encoding='utf-8') as cfile:
             col_str = '\t'.join(s.mscols)
             cfile.write('ID\t' + col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tSource\tReferences\tDNF\n')
             for res in s.all_exprs:
