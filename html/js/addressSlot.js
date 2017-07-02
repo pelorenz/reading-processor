@@ -187,7 +187,9 @@ DSS.Chapter.handleSave = function (event, isDiff) {
     'addresses': []
   };
   if (!isDiff) {
-    saveModel['manuscripts'] = this.manuscripts
+    var sortedMSS = this.manuscripts;
+    sortedMSS.sort(DSS.TextFormGroup.sortMSS);
+    saveModel['manuscripts'] = sortedMSS;
   }
   for (var i = 0; i < this.addresses.length; i++) {
     var address = this.addresses[i];
