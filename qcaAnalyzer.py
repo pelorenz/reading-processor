@@ -29,10 +29,26 @@ def sortMsOps(mo1, mo2):
     elif c1 != '0' and c2 == '0':
         return 1
 
+    if c1 == 'v' and c2 != 'v':
+        return 1
+    elif c1 != 'v' and c2 == 'v':
+        return -1
+
+    if c1 == 'V' and c2 != 'V':
+        return 1
+    elif c1 != 'V' and c2 == 'V':
+        return -1
+
     # to get here, both MSS must be the same denomination!
     if c1 == 'P' or c1 == '0':
         ms1 = ms1[1:]
         ms2 = ms2[1:]
+    elif c1 == 'V':
+        ms1 = ms1[2:]
+        ms2 = ms2[2:]
+    else: # vg, should not get here
+        ms1 = '1000'
+        ms2 = '1001'
 
     if int(ms1) < int(ms2):
         return -1
@@ -106,7 +122,11 @@ class QCAAnalyzer:
         for idx, row in enumerate(rows):
             parts = row.split('\t')
             if idx == 0: # colnames
-                s.mscols = ['M' + c for c in parts[1:] if re.match(r'^[\dP]', c)]
+                for m in parts[1:]:
+                    if re.match(r'^[\d]', m):
+                        s.mscols.append('M' + m)
+                    elif re.match(r'^[PVv]', m):
+                        s.mscols.append(m)
                 continue
 
             s.refs.append(parts[:1][0])
@@ -117,11 +137,11 @@ class QCAAnalyzer:
         csv = []
         refs = []
         for ridx, row in enumerate(vu_csv):
-            if row[:-1].count('0') != len(row) - 1 and row[:-1].count('1') != len(row) - 1 and row[:-1].count('-') != len(row) - 1:
+            if row[:-1].count('0') + row[:-1].count('-') != len(row) - 1 and row[:-1].count('1') != len(row) - 1 and row[:-1].count('-') != len(row) - 1:
                 csv.append(row)
                 refs.append(vu_refs[ridx])
 
-        if len(csv) == 0:
+        if len(csv) <= 1:
             return
 
         new_csv.extend(csv)
@@ -252,6 +272,25 @@ class QCAAnalyzer:
                 new_rcstr.append(exp)
             return new_rcstr
 
+    def deepCopyExpression(s, exp):
+        exp2 = None
+        if 'AndOp' in str(type(exp)) or 'Complement' in str(type(exp)):
+            exps = list(exp._lits)
+            exps.sort(key=cmp_to_key(sortMsOps))
+            for e in exps:
+                e = str(e)
+                ms = e[1:] if '~' == e[:1] else e
+                if not exp2:
+                    exp2 = And(Not(ms)) if '~' == e[:1] else And(ms)
+                else:
+                    exp2 = And(exp2, Not(ms)) if '~' == e[:1] else And(exp2, ms)
+        elif 'Variable' in str(type(exp)):
+            exp2 = exprvar(exp.names[0])
+        else:
+            raise ValueError('Unexpected type ' + str(type(exp)))
+
+        return exp2
+
     def insertOp(s, reconstr, col):
         if len(reconstr) == 0:
             reconstr.append(And(col))
@@ -259,28 +298,26 @@ class QCAAnalyzer:
             return reconstr
         else:
             new_rcstr = []
+
+            # exp is a combination of preceding columns
             for exp in reconstr:
+                # for cases where the missing column is attested 
+                # and either supports or opposes the pattern,
+                # generate two patterns, one supporting and the other
+                # opposing
+
                 # deep copy exp to exp2
-                exp2 = None
-                if 'AndOp' in str(type(exp)) or 'Complement' in str(type(exp)):
-                    exps = list(exp._lits)
-                    exps.sort(key=cmp_to_key(sortMsOps))
-                    for e in exps:
-                        e = str(e)
-                        ms = e[1:] if '~' == e[:1] else e
-                        if not exp2:
-                            exp2 = And(Not(ms)) if '~' == e[:1] else And(ms)
-                        else:
-                            exp2 = And(exp2, Not(ms)) if '~' == e[:1] else And(exp2, ms)
-                elif 'Variable' in str(type(exp)):
-                    exp2 = exprvar(exp.names[0])
-                else:
-                    raise ValueError('Unexpected type ' + str(type(exp)))
+                exp2 = s.deepCopyExpression(exp)
+
+                # for cases where the missing column is not attested,
+                # generate a third pattern lacking the column
+                exp3 = s.deepCopyExpression(exp)
 
                 exp = And(exp, col)
                 exp2 = And(exp2, Not(col))
                 new_rcstr.append(exp)
                 new_rcstr.append(exp2)
+                new_rcstr.append(exp3)
             return new_rcstr
 
     def lookupMissingKeys(s, msops, caseMap, min_key):

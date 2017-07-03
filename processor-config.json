@@ -30,6 +30,25 @@
   "nilExceptions": [
     "VL1","VL2","VL3"
   ],
+  "qcaMSS": [
+    "01", "03", "05", "032", "038", "28", "35", "79", "565", "700", "788", "13", "346", "543", "826", "828", "983", "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17", "vg"
+  ],
+  "booleanAggregates": [
+    {
+      "name": "f13",
+      "members": [ "13", "346", "543", "788", "826", "828", "983"],
+      "minOccurs": 1,
+      "langCodes": ["GL","G"],
+      "layers": [2, 3]
+    },
+    {
+      "name": "VL",
+      "members": [ "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"],
+      "minOccurs": 3,
+      "langCodes": ["GL"],
+      "layers": [2]
+    }
+  ],
   "ignoreChars": ["·","[","]",".",",",":",";","\"","̅","(",")","<",">"],
   "ignoreUnicode": ["\u030f", "\u0323"],
   "minClusters": 2,
