@@ -109,58 +109,6 @@ class BoolAnalyzer:
 
             s.referenceMSS.append(refMS)
 
-    def generateReferenceCSV(s):
-        c = s.config
-        s.info('')
-        for rms in s.referenceMSS:
-            s.info('generating CSVs for', rms.gaNum)
-
-            d_layer = []
-            dm_layer = []
-
-            # selGL
-            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect', d_layer, dm_layer)
-
-            # selG
-            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect', d_layer, dm_layer)
-
-            s.writeLayers(rms, 'allMSS', d_layer, dm_layer)
-
-    def writeLayers(s, refMS, mss, d_layer, dm_layer):
-        c = s.config
-
-        csvfile_D = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
-        with open(csvfile_D, 'w+') as file_D:
-            hdr = []
-            for m in getattr(refMS, mss):
-                if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
-                    hdr.append(m)
-
-            file_D.write((u'C1\tAggregate Support\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(hdr) + u'\n').encode('utf-8'))
-
-            d_layer = sorted(d_layer, cmp=sortVariations)
-
-            for w in d_layer:
-                file_D.write((w['reference'] + u'\t' + w['layer'] + u'\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
-
-            file_D.close()
-
-        csvfile_DM = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'DM.csv'
-        with open(csvfile_DM, 'w+') as file_DM:
-            hdr = []
-            for m in getattr(refMS, mss):
-                if m[0] <> 'V' and m[0] <> 'v':
-                    hdr.append(m)
-
-            file_DM.write((u'C1\tAggregate Support\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(hdr) + u'\n').encode('utf-8'))
-
-            dm_layer = sorted(dm_layer, cmp=sortVariations)
-
-            for w in dm_layer:
-                file_DM.write((w['reference'] + u'\t' + w['layer'] + u'\t' + w['witnesses'] + u'\t' + w['excerpt'] + u'\t' + u'\t'.join(w['agreementVector']) + u'\n').encode('utf-8'))
-
-            file_DM.close()
-
     def getAggregatesForLangCode(s, langCode):
         aggrs = []
         for aggr in s.booleanAggregates:
@@ -200,6 +148,37 @@ class BoolAnalyzer:
                 return True
         return False
 
+    def writeHeader(s, file, ref_id, l_aggregates, incl_latin):
+        c = s.config
+
+        l_cols = ''
+        qcaCols = [m for m in s.qcaMSS if m <> ref_id]
+        for ms in qcaCols:
+            if not incl_latin and (ms[:1] == 'V' or ms[:1] == 'v'):
+                continue
+
+            # MS can appear in only one aggregate,
+            # but several MSS can appear in the same aggregate,
+            # so consider each aggregate just once
+            if s.getAggregatesHasMS(l_aggregates, ms):
+                name = s.getAggregatesName(l_aggregates, ms)
+                parts = l_cols.split('\t')
+                if not name in parts: # Aggregate used?
+                    if len(l_cols) > 0:
+                        l_cols = l_cols + u'\t'
+                    l_cols = l_cols + name
+            else:
+                if len(l_cols) > 0:
+                    l_cols = l_cols + u'\t'
+                l_cols = l_cols + ms
+
+        # Affix OUT column
+        l_cols = l_cols + '\tOUT'
+
+        file.write((u'C1\tAggregate Support\tLayer\tWitnesses\tExcerpt\t' + l_cols + u'\n').encode('utf-8'))
+
+        return l_cols
+
     def getValueForColumn(s, mss_vct, val_vct, col):
         for idx, ms in enumerate(mss_vct):
             if ms == col:
@@ -231,8 +210,9 @@ class BoolAnalyzer:
 
         return ('0', '')
 
-    def genAggregateVect(s, l_cols, l_aggregates, mss_vct, val_vct, result_vct):
+    def genAggregateVect(s, l_cols, l_aggregates, mss_vct, val_vct):
         msval_str = ''
+        out_vct = []
         parts = l_cols.split('\t')
         for col in parts:
             if s.isAggregateName(l_aggregates, col):
@@ -246,206 +226,187 @@ class BoolAnalyzer:
             else:
                 val = s.getValueForColumn(mss_vct, val_vct, col)
             
-            result_vct.append(val)
+            out_vct.append(val)
 
-        return msval_str
+        return { 'msVals': msval_str, 'vect': out_vct}
 
-    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, d_layer, dm_layer):
+    def writeVector(s, file, layer, agdat, ref, witness_str, excerpt):
+        if agdat['vect'].count('0') != len(agdat['vect']) and agdat['vect'].count('1') != len(agdat['vect']):
+            file.write((ref + u'\t' + agdat['msVals'] + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(agdat['vect']) + u'\n').encode('utf-8'))
+
+    def generateReferenceCSV(s):
+        c = s.config
+        s.info('')
+        for rms in s.referenceMSS:
+            s.info('generating CSVs for', rms.gaNum)
+
+            d_layer = []
+            m_layer = []
+            l_cols = { 'layer_1': [], 'layer_2': [] }
+
+            # selGL
+            s.writeCSV(rms, 'GL', 'allMSS', 'all_nils', 'all_GL', 'allVect', d_layer, m_layer, l_cols)
+
+            # selG
+            s.writeCSV(rms, 'G', 'allGrMSS', 'allGr_nils', 'all_G', 'allGrVect', d_layer, m_layer, l_cols)
+
+            s.writeLayers(rms, 'allMSS', d_layer, m_layer)
+
+    def writeLayers(s, refMS, mss, d_layer, m_layer):
+        c = s.config
+
+        csvfile_D = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
+        with open(csvfile_D, 'a+') as file_D:
+            d_layer = sorted(d_layer, cmp=sortVariations)
+
+            for w in d_layer:
+                s.writeVector(file_D, w['layer'], w['aggregateData'], w['reference'], w['witnesses'], w['excerpt'])
+
+            file_D.close()
+
+        csvfile_M = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'M.csv'
+        with open(csvfile_M, 'a+') as file_M:
+            m_layer = sorted(m_layer, cmp=sortVariations)
+
+            for w in m_layer:
+                s.writeVector(file_M, w['layer'], w['aggregateData'], w['reference'], w['witnesses'], w['excerpt'])
+
+            file_M.close()
+
+    def writeCSV(s, refMS, langCode, mss, nils, vars, vect, d_layer, m_layer, l_cols):
         c = s.config
 
         aggregates = s.getAggregatesForLangCode(langCode)
+        l1_aggregates = s.getAggregatesForLayer(aggregates, 1)
         l2_aggregates = s.getAggregatesForLayer(aggregates, 2)
-        l3_aggregates = s.getAggregatesForLayer(aggregates, 3)
+        if langCode == 'GL':
+            l3_aggregates = s.getAggregatesForLayer(aggregates, 3)
 
         file_Dgl = None
         file_L = None
+        l1_cols = ''
+        l2gl_cols = ''
         l2_cols = ''
         l3_cols = ''
-        qcaCols = [m for m in s.qcaMSS if m <> refMS.gaNum]
-        if langCode == 'GL':
-            for ms in qcaCols:
-                # MS can appear in only one aggregate,
-                # but several MSS can appear in the same aggregate,
-                # so consider each aggregate just once
-                if s.getAggregatesHasMS(l2_aggregates, ms):
-                    name = s.getAggregatesName(l2_aggregates, ms)
-                    parts = l2_cols.split('\t')
-                    if not name in parts: # Aggregate used?
-                        if len(l2_cols) > 0:
-                            l2_cols = l2_cols + u'\t'
-                        l2_cols = l2_cols + name
-                else:
-                    if len(l2_cols) > 0:
-                        l2_cols = l2_cols + u'\t'
-                    l2_cols = l2_cols + ms
+        if langCode == 'GL': # GL must be called before G
+            file_pref = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum
+            csvfile = file_pref + 'Dgl.csv'
+            file_Dgl = open(csvfile, 'w+')
+            l2gl_cols = s.writeHeader(file_Dgl, refMS.gaNum, l2_aggregates, True)
 
-                if s.getAggregatesHasMS(l3_aggregates, ms):
-                    name = s.getAggregatesName(l3_aggregates, ms)
-                    parts = l3_cols.split('\t')
-                    if not name in parts: # Aggregate used?
-                        if len(l3_cols) > 0:
-                            l3_cols = l3_cols + u'\t'
-                        l3_cols = l3_cols + name
-                else:
-                    if len(l3_cols) > 0:
-                        l3_cols = l3_cols + u'\t'
-                    l3_cols = l3_cols + ms
+            csvfile = file_pref + 'L.csv'
+            file_L = open(csvfile, 'w+')
+            l3_cols = s.writeHeader(file_L, refMS.gaNum, l3_aggregates, True)
 
-            # Affix OUT column
-            l2_cols = l2_cols + '\t' + refMS.gaNum
-            l3_cols = l3_cols + '\t' + refMS.gaNum
+            csvfile = file_pref + 'D.csv'
+            file_D = open(csvfile, 'w+')
+            l_cols['layer_2'] = s.writeHeader(file_D, refMS.gaNum, l2_aggregates, False)
+            if file_D: file_D.close()
 
-            csvfile_Dgl = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'Dgl.csv'
-            file_Dgl = open(csvfile_Dgl, 'w+')
-            file_Dgl.write((u'C1\tAggregate Support\tLayer\tWitnesses\tExcerpt\t' + l2_cols + u'\n').encode('utf-8'))
+            csvfile = file_pref + 'M.csv'
+            file_M = open(csvfile, 'w+')
+            l_cols['layer_1'] = s.writeHeader(file_M, refMS.gaNum, l1_aggregates, False)
+            if file_M: file_M.close()
 
-            csvfile_L = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'L.csv'
-            file_L = open(csvfile_L, 'w+')
-            file_L.write((u'C1\tAggregate Support\tLayer\tWitnesses\tExcerpt\t' + l3_cols + u'\n').encode('utf-8'))
+        for var in getattr(refMS, vars):
+            refms_vect = []
+            witness_str = ''
+            v_witnesses = []
+            latin_counter = 0
+            greek_counter = 0
+            has35 = False
+            for i, m in enumerate(getattr(refMS, mss)):
+                refms_vect.append(getattr(var, vect)[i])
+                if (getattr(var, vect))[i] == '1':
+                    if m[0] == 'V' or m[0] == 'v':
+                        v_witnesses.append(m)
+                        latin_counter = latin_counter + 1
+                    else:
+                        if len(witness_str) > 0:
+                            witness_str = witness_str + ' '
+                        witness_str = witness_str + m
+                        greek_counter = greek_counter + 1
+                        if m == '35': has35 = True
 
-        csvfile_all = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + langCode + '.csv'
-        with open(csvfile_all, 'w+') as file_all:
-            file_all.write((u'C1\tAggregate Support\tLayer\tWitnesses\tExcerpt\t' + u'\t'.join(getattr(refMS, mss)) + u'\n').encode('utf-8'))
+            # compute layer of ref MS reading
+            layer = refMS.getLayer(var)
 
-            # write CSV content
-            for var in getattr(refMS, vars):
-                refms_vect = []
-                witness_str = ''
-                v_witnesses = []
-                latin_counter = 0
-                greek_counter = 0
-                has35 = False
-                for i, m in enumerate(getattr(refMS, mss)):
-                    refms_vect.append(getattr(var, vect)[i])
-                    if (getattr(var, vect))[i] == '1':
-                        if m[0] == 'V' or m[0] == 'v':
-                            v_witnesses.append(m)
-                            latin_counter = latin_counter + 1
-                        else:
-                            if len(witness_str) > 0:
-                                witness_str = witness_str + ' '
-                            witness_str = witness_str + m
-                            greek_counter = greek_counter + 1
-                            if m == '35': has35 = True
-
-                # is vect all zeroes or all ones (minus unattested cols)?
-                if refms_vect.count('0') == len(refms_vect) - refms_vect.count('9') or refms_vect.count('1') == len(refms_vect) - refms_vect.count('9'):
-                    continue
-
-                # compute layer of ref MS reading
-                layer = refMS.getLayer(var)
-
-                # group VL witnesses
-                v_str = ''
-                hasVulgate = False
-                for m in v_witnesses:
-                    if m[0:2] == 'VL':
-                        if len(v_str) > 0:
-                            v_str = v_str + ' '
-                        v_str = v_str + m[2:]
-                    elif m == 'vg':
-                        hasVulgate = True
-
-                if len(v_str) > 0:
-                    v_str = 'VL(' + v_str + ')'
-
-                if hasVulgate:
+            # build witness string
+            v_str = ''
+            hasVulgate = False
+            for m in v_witnesses:
+                if m[0:2] == 'VL':
                     if len(v_str) > 0:
                         v_str = v_str + ' '
-                    v_str = v_str + 'V'
+                    v_str = v_str + m[2:]
+                elif m == 'vg':
+                    hasVulgate = True
 
-                if len(witness_str) > 0:
-                    if len(v_str) > 0:
-                        witness_str = witness_str + ' ' + v_str
-                else:
-                    if len(v_str) > 0:
-                        witness_str = v_str
+            if len(v_str) > 0:
+                v_str = 'VL(' + v_str + ')'
 
-                excerpt = var.variationUnit.getExcerpt(var.reading, witness_str, False)
-                longLabel = var.longLabel(var.reading, witness_str, getattr(refMS, mss))
+            if hasVulgate:
+                if len(v_str) > 0:
+                    v_str = v_str + ' '
+                v_str = v_str + 'V'
 
-                # construct vectors
-                vct_all = []
-                vct_D = []
-                vct_Dgl = []
-                vct_DM = []
-                vct_L = []
-                for idx, val in enumerate(refms_vect):
-                    # D variants
-                    m = getattr(refMS, mss)[idx]
-                    if m[0] <> 'V' and m[0] <> 'v' and m <> '35':
-                        vct_D.append(val)
+            if len(witness_str) > 0:
+                if len(v_str) > 0:
+                    witness_str = witness_str + ' ' + v_str
+            else:
+                if len(v_str) > 0:
+                    witness_str = v_str
 
-                    if m[0] <> 'V' and m[0] <> 'v':
-                        vct_DM.append(val)
+            # reading summary excerpt
+            excerpt = var.variationUnit.getExcerpt(var.reading, witness_str, False)
 
-                    # All variants
-                    vct_all.append(val)
+            # construct vectors
+            if layer == 1:
+                agdat_M = s.genAggregateVect(l_cols['layer_1'], l1_aggregates, getattr(refMS, mss), getattr(var, vect))
 
-                # Generate D-GL readings vector with aggregates
-                aggMSVals_Dgl = s.genAggregateVect(l2_cols, l2_aggregates, getattr(refMS, mss), getattr(var, vect), vct_Dgl)
+            if layer == 2:
+                agdat_D = s.genAggregateVect(l_cols['layer_2'], l2_aggregates, getattr(refMS, mss), getattr(var, vect))
 
-                # Generate L-GL readings vector with aggregates
-                aggMSVals_L = s.genAggregateVect(l3_cols, l3_aggregates, getattr(refMS, mss), getattr(var, vect), vct_L)
+            # D layer CSV with Latin witnesses
+            if langCode == 'GL' and layer == 2:
+                # Generate readings vector with aggregates
+                agdat_Dgl = s.genAggregateVect(l2gl_cols, l2_aggregates, getattr(refMS, mss), getattr(var, vect))
 
-                # D-variants CSV
-                if layer == 1:
-                    wrapperDM = {
-                        'wrapped': var,
-                        'reference': var.shortLabel(),
-                        'layer': str(layer).decode('utf-8'),
-                        'witnesses': witness_str,
-                        'excerpt': excerpt,
-                        'mediumLabel': var.mediumLabel(witness_str),
-                        'description': longLabel,
-                        'languageCode': langCode,
-                        'agreementVector': vct_DM
-                    }
-                    dm_layer.append(wrapperDM)
-                elif layer == 2:
-                    # Truncate Latin witnesses
-                    wrapperD = {
-                        'wrapped': var,
-                        'reference': var.shortLabel(),
-                        'layer': str(layer).decode('utf-8'),
-                        'witnesses': witness_str,
-                        'excerpt': excerpt,
-                        'mediumLabel': var.mediumLabel(witness_str),
-                        'description': longLabel,
-                        'languageCode': langCode,
-                        'agreementVector': vct_D
-                    }
-                    d_layer.append(wrapperD)
+                s.writeVector(file_Dgl, layer, agdat_Dgl, var.shortLabel(), witness_str, excerpt)
 
-                    wrapperDM = {
-                        'wrapped': var,
-                        'reference': var.shortLabel(),
-                        'layer': str(layer).decode('utf-8'),
-                        'witnesses': witness_str,
-                        'excerpt': excerpt,
-                        'mediumLabel': var.mediumLabel(witness_str),
-                        'description': longLabel,
-                        'languageCode': langCode,
-                        'agreementVector': vct_DM
-                    }
-                    dm_layer.append(wrapperDM)
+            # Latin layer CSV
+            if langCode == 'GL' and layer == 3:
+                # Generate readings vector with aggregates
+                agdat_L = s.genAggregateVect(l3_cols, l3_aggregates, getattr(refMS, mss), getattr(var, vect))
 
-                # D layer CSV with Latin witnesses
-                if file_Dgl and layer == 2:
-                    file_Dgl.write((var.shortLabel() + u'\t' + aggMSVals_Dgl + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_Dgl) + u'\n').encode('utf-8'))
+                s.writeVector(file_L, layer, agdat_L, var.shortLabel(), witness_str, excerpt)
 
-                # Latin layer CSV
-                if file_L and layer == 3:
-                    file_L.write((var.shortLabel() + u'\t' + aggMSVals_L + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_L) + u'\n').encode('utf-8'))
+            # D-variants CSV
+            if layer == 1:
+                wrapperM = {
+                    'wrapped': var, # used for sort
+                    'reference': var.shortLabel(),
+                    'layer': str(layer).decode('utf-8'),
+                    'witnesses': witness_str,
+                    'excerpt': excerpt,
+                    'aggregateData': agdat_M
+                }
+                m_layer.append(wrapperM)
+            elif layer == 2:
+                wrapperD = {
+                    'wrapped': var, # used for sort
+                    'reference': var.shortLabel(),
+                    'layer': str(layer).decode('utf-8'),
+                    'witnesses': witness_str,
+                    'excerpt': excerpt,
+                    'aggregateData': agdat_D
+                }
+                d_layer.append(wrapperD)
 
-                # All-variants CSV
-                file_all.write((var.shortLabel() + u'\t\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(vct_all) + u'\n').encode('utf-8'))
-
-            file_all.close()
-            if file_Dgl:
-                file_Dgl.close()
-            if file_L:
-                file_L.close()
+        if file_Dgl:
+            file_Dgl.close()
+        if file_L:
+            file_L.close()
 
 # END analyzer
 #########################
@@ -468,8 +429,6 @@ class BoolAnalyzer:
             s.generateVariants()
 
             s.generateReferenceCSV()
-
-            #s.runStats()
         except ValueError as e:
             print e
             print 'If loading JSON, try removing the UTF-8 BOM.'

@@ -39,7 +39,7 @@
       "members": [ "13", "346", "543", "788", "826", "828", "983"],
       "minOccurs": 1,
       "langCodes": ["GL","G"],
-      "layers": [2, 3]
+      "layers": [1, 2, 3]
     },
     {
       "name": "VL",
