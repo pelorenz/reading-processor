@@ -82,6 +82,7 @@ class QCAAnalyzer:
         s.csv = []
         s.mscols = []
         s.refs = []
+        s.aggregateData = []
         
         s.raw_exprs_P = None
         s.raw_exprs_N = None
@@ -121,16 +122,22 @@ class QCAAnalyzer:
         rows = csvdata.split('\n')
         for idx, row in enumerate(rows):
             parts = row.split('\t')
+            if len(parts) == 1:
+                continue
             if idx == 0: # colnames
-                for m in parts[1:]:
+                for m in parts[5:]:
+                    if m == 'OUT':
+                        continue
+
                     if re.match(r'^[\d]', m):
                         s.mscols.append('M' + m)
-                    elif re.match(r'^[PVv]', m):
+                    elif re.match(r'^[A-Za-z]', m):
                         s.mscols.append(m)
                 continue
 
             s.refs.append(parts[:1][0])
-            s.csv.append(parts[1:])
+            s.aggregateData.append(parts[1:2][0])
+            s.csv.append(parts[5:])
 
     def filterRow(s, new_refs, new_csv, vu_refs, vu_csv):
         # All-zero/one rows?
@@ -552,27 +559,32 @@ class QCAAnalyzer:
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
 
-        boolFile = None
         basename = ''
         if o.file:
-            boolFile = o.file + '.csv'
             basename = o.file
         else:
-            boolFile = c.get('boolFile')
-            basename = boolFile[:-4]
+            basename = c.get('qcaBaseFileName')
 
-        if not boolFile:
+        if not basename:
             return
 
-        boolPath = c.get('csvBoolFolder') + boolFile
+        qcaPaths = []
+        qcaPaths.append(c.get('csvBoolFolder') + basename + 'D.csv')
+        qcaPaths.append(c.get('csvBoolFolder') + basename + 'L.csv')
+        qcaPaths.append(c.get('csvBoolFolder') + basename + 'Dgl.csv')
+        qcaPaths.append(c.get('csvBoolFolder') + basename + 'M.csv')
 
-        s.loadCSV(boolPath)
-        s.prepareCSV()
-        s.writeCSV(basename)
-        s.generateExpressions(basename)
-        s.minimizeExpressions()
-        s.computeScores()
-        s.writeExpressions(basename)
+        for path in qcaPaths:
+            basename = path[len(c.get('csvBoolFolder')):-4]
+
+            s.__init__()
+            s.loadCSV(path)
+            s.prepareCSV()
+            s.writeCSV(basename)
+            s.generateExpressions(basename)
+            s.minimizeExpressions()
+            s.computeScores()
+            s.writeExpressions(basename)
 
         s.info('Done')
 
