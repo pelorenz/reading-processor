@@ -125,8 +125,8 @@ class QCAAnalyzer:
         s.csv = []
         s.mscols = []
         s.refs = []
-        s.aggregateData = []
-        
+        s.metaData = []
+
         s.raw_exprs_P = None
         s.raw_exprs_N = None
 
@@ -179,29 +179,34 @@ class QCAAnalyzer:
                 continue
 
             s.refs.append(parts[:1][0])
-            s.aggregateData.append(parts[1:2][0])
+            s.metaData.append({'aggregateData': parts[1:2][0], 'witnessStr': parts[3:4][0], 'excerpt': parts[4:5][0]})
             s.csv.append(parts[5:])
 
-    def filterRow(s, new_refs, new_csv, vu_refs, vu_csv):
+    def filterRow(s, new_refs, new_metaData, new_csv, vu_refs, vu_csv, vu_mdata):
         # All-zero/one rows?
         csv = []
         refs = []
+        m_data = []
         for ridx, row in enumerate(vu_csv):
             if row[:-1].count('0') + row[:-1].count('-') != len(row) - 1 and row[:-1].count('1') != len(row) - 1 and row[:-1].count('-') != len(row) - 1:
                 csv.append(row)
                 refs.append(vu_refs[ridx])
+                m_data.append(vu_mdata[ridx])
 
         if len(csv) <= 1:
             return
 
         new_csv.extend(csv)
         new_refs.extend(refs)
+        new_metaData.extend(m_data)
 
     def prepareCSV(s):
         new_csv = []
         vu_csv = []
         new_refs = []
         vu_refs = []
+        new_metaData = []
+        vu_mdata = []
 
         # TODO: fix me! references required to be contiguous
         cur_ref = ''
@@ -209,20 +214,24 @@ class QCAAnalyzer:
             vuref = re.sub(r'[a-z]$', '', ref)
             if vuref != cur_ref:
                 cur_ref = vuref
-                s.filterRow(new_refs, new_csv, vu_refs, vu_csv)
+                s.filterRow(new_refs, new_metaData, new_csv, vu_refs, vu_csv, vu_mdata)
                 vu_csv = []
                 vu_refs = []
+                vu_mdata = []
             elif ridx == len(s.refs) - 1: # last time
                 vu_csv.append(s.csv[ridx])
                 vu_refs.append(s.refs[ridx])
-                s.filterRow(new_refs, new_csv, vu_refs, vu_csv)
+                vu_mdata.append(s.metaData[ridx])
+                s.filterRow(new_refs, new_metaData, new_csv, vu_refs, vu_csv, vu_mdata)
                 break # Done!
 
             vu_csv.append(s.csv[ridx])
             vu_refs.append(s.refs[ridx])
+            vu_mdata.append(s.metaData[ridx])
 
         s.csv = new_csv
         s.refs = new_refs
+        s.metaData = new_metaData
 
     def writeCSV(s, basename):
         c = s.config
@@ -238,6 +247,7 @@ class QCAAnalyzer:
         for ridx, row in enumerate(s.csv):
             out = str(row[-1:][0])
             ref = s.refs[ridx]
+            m_data = s.metaData[ridx]
             msrow = row[:-1]
 
             expression = None
@@ -270,7 +280,7 @@ class QCAAnalyzer:
                 cases = s.caseMapOnes[d_key]
                 cases.append(ref)
                 s.caseMapOnes[d_key] = cases
-                s.referenceMap[ref] = { 'expression': expression, 'dnfKey': d_key, 'attestingMSS': attestingMSS, 'outcome': '1'}
+                s.referenceMap[ref] = { 'expression': expression, 'dnfKey': d_key, 'attestingMSS': attestingMSS, 'outcome': '1', 'aggregateData': m_data['aggregateData'], 'witnessStr': m_data['witnessStr'], 'excerpt': m_data['excerpt'] }
             elif out == '0':
                 if s.raw_exprs_N:
                     s.raw_exprs_N = Or(s.raw_exprs_N, expression)
@@ -282,7 +292,7 @@ class QCAAnalyzer:
                 cases = s.caseMapZeros[d_key]
                 cases.append(ref)
                 s.caseMapZeros[d_key] = cases
-                s.referenceMap[ref] =  { 'expression': expression, 'dnfKey': d_key, 'attestingMSS': attestingMSS, 'outcome': '0'}
+                s.referenceMap[ref] =  { 'expression': expression, 'dnfKey': d_key, 'attestingMSS': attestingMSS, 'outcome': '0', 'aggregateData': m_data['aggregateData'], 'witnessStr': m_data['witnessStr'], 'excerpt': m_data['excerpt'] }
 
     def minimizeExpressions(s):
         s.minimize('pos')
@@ -528,7 +538,7 @@ class QCAAnalyzer:
 
         s.all_exprs.sort(key=cmp_to_key_exprs(sortExpressions))
 
-    def buildCaseStr(s, out_id, cases):
+    def buildCaseStr(s, out_id, cases, isHTML):
         mssToCases = {}
         msKeys = []
         for case in cases:
@@ -548,7 +558,10 @@ class QCAAnalyzer:
 
         casestr = ''
         for key in msKeys:
-            casestr = casestr + '[' + key + '] '
+            if isHTML:
+                casestr = casestr + '<b>[' + key + ']</b> '
+            else:
+                casestr = casestr + '[' + key + '] '
 
             cases = mssToCases[key]
             for ref in cases:
@@ -570,6 +583,35 @@ class QCAAnalyzer:
 
         return casestr[:-2] # subtract final semicolon and space
 
+    def buildDetails(s, cases):
+        mssToCases = {}
+        msKeys = []
+        for case in cases:
+            if case in s.referenceMap:
+                ref_info = s.referenceMap[case]
+                a_mss = ref_info['attestingMSS']
+                a_mss = [m[1:] if m[:1] == 'M' else m for m in a_mss]
+                ms_key = '+'.join(a_mss)
+
+                c_list = []
+                if ms_key in mssToCases:
+                    c_list = mssToCases[ms_key]
+                else:
+                    msKeys.append(ms_key)
+                c_list.append(case)
+                mssToCases[ms_key] = c_list
+
+        details = '<div>.</div>'
+        for key in msKeys:
+            #details = details + '<div>[' + key + ']</div>'
+
+            cases = mssToCases[key]
+            for ref in cases:
+                ref_info = s.referenceMap[ref]
+                details = details + '<div><b>' + ref + '</b> ' + ref_info['witnessStr'] + ': ' + ref_info['excerpt'] + '</div><div>.</div>'
+
+        return details[:-2] # subtract final returns
+
     def writeExpressions(s, basename):
         c = s.config
 
@@ -587,7 +629,7 @@ class QCAAnalyzer:
         cols = [m[1:] if m[:1] == 'M' else m for m in s.mscols]
         with open(htmlfile, 'w+', encoding='utf-8') as hfile:
             col_str = '</td><td class="ms">'.join(cols)
-            hfile.write('<table cellspacing="0" cellpadding="0" id="qca-hdr"><tr class="qca"><td class="id">ID</td><td class="ms">' + col_str + '</td><td class="ms">Out</td><td class="small">Cs</td><td class="medium">Inc</td><td class="medium">Cov</td><td class="small">1s</td><td class="small">DC</td><td class="small">Sc</td><td class="ref">References</td></tr></table>')
+            hfile.write('<table cellspacing="0" cellpadding="0" id="qca-hdr"><tr class="qca"><td class="id">ID</td><td class="ms">' + col_str + '</td><td class="ms">Out</td><td class="small">Cs</td><td class="medium">Inc</td><td class="medium">Cov</td><td class="small">1s</td><td class="small">DC</td><td class="small">Sc</td><td class="ref-head">References</td></tr></table>')
 
             hfile.close()
 
@@ -623,8 +665,9 @@ class QCAAnalyzer:
                 src = 'E' if res['source'] == 'espresso' else 'M'
                 hfile.write('<td class="small">' + src + '</td>')
 
-                case_str = s.buildCaseStr(res['outcomeID'], res['cases'])
-                hfile.write('<td class="ref" title="' + str(res['dnfKey']) + '">' + case_str + '</td></tr>')
+                case_str = s.buildCaseStr(res['outcomeID'], res['cases'], True)
+                details = s.buildDetails(res['cases'])
+                hfile.write('<td class="ref" onclick="DSS.refClick(event)">' + case_str + '<div class="ref-body ref-hidden">' + details + '</div></td></tr>')
 
             hfile.write('</table></div>')
             hfile.close
@@ -658,7 +701,7 @@ class QCAAnalyzer:
 
                 csv_line = csv_line + res['source'] + '\t'
 
-                case_str = s.buildCaseStr(res['outcomeID'], res['cases'])
+                case_str = s.buildCaseStr(res['outcomeID'], res['cases'], False)
                 csv_line = csv_line + case_str + '\t'
                 csv_line = csv_line + str(res['dnfKey'])
 
