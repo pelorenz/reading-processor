@@ -6,6 +6,7 @@
     "mark-14a.json","mark-14a-lat.json"
   ],
   "qcaBaseFileName": "c01-05",
+  "statsFolder": "static/stats/",
   "morphCache": "morph.json",
   "htmlFolder": "html/",
   "htmlInitialFragment": "initial_fragment.htm",

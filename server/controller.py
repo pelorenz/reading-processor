@@ -1,6 +1,7 @@
-import web, os, json
+import web, os, json, re
 
 from object.analyzer import *
+from object.qcaRunner import *
 from utility.config import *
 
 from server.util import *
@@ -16,7 +17,7 @@ def sortWitnesses(w1, w2):
 class Controller:
     def __init__(s):
         s.config = Config('web-config.json')
-        s.templates = web.template.render('templates/')
+        s.templates = web.template.render('templates/', globals={'re': re})
 
     def GET(s, operation):
         method = getattr(s, operation, lambda: "")
@@ -27,7 +28,23 @@ class Controller:
         return method()
 
     # actions
-    def analyze(s):
+    def boolanalyze(s):
+        udata = web.input()
+        refMSS = []
+        for key in udata:
+            if key[:3] == 'rms':
+                refMSS.append(key[3:])
+        QCARunner().analyze(udata.chapter, udata.inputfile, refMSS)
+
+        args = {}
+        args['config'] = s.config
+        args['dirs'] = Util().listDirs()
+        args['keys'] = sorted(args['dirs']['directoryMap'], cmp=sortLabels)
+        fragment = s.templates.dirlist(args)
+
+        return fragment
+
+    def clustanalyze(s):
         udata = web.input()
         refMSS = []
         for key in udata:

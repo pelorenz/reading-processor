@@ -1,5 +1,11 @@
 ;DSS = {
-  analyze: function() {
+  clustAnalyze: function() {
+    DSS.analyze('clustanalyze')
+  },
+  boolAnalyze: function() {
+    DSS.analyze('boolanalyze')
+  },
+  analyze: function(action) {
     var inputfile = $('#inputfile').val();
     var chapter = $('#inputfile option:selected').text().trim();
     var data = {
@@ -18,21 +24,24 @@
       return;
     }
 
-    $("#analyze").addClass('disable-link');
+    $("#canalyze").addClass('disable-link');
+    $("#banalyze").addClass('disable-link');
     $('#messages').text('Please wait ...');
 
-    $.ajax({url: '/app/analyze',
+    $.ajax({url: '/app/' + action,
       data: data,
       success: function(response) {
         $('#messages').text('Done!');
-        $("#analyze").removeClass('disable-link');
+        $("#canalyze").removeClass('disable-link');
+        $("#banalyze").removeClass('disable-link');
 
         $('#dirslist').empty();
         $('#dirslist').html(response);
       },
       error: function(xhr, status, error) {
         $('#messages').html('Error');
-        $("#analyze").removeClass('disable-link');
+        $("#canalyze").removeClass('disable-link');
+        $("#banalyze").removeClass('disable-link');
     }});
   },
   accordionClick: function(event) {
@@ -109,5 +118,25 @@
       error: function(xhr, status, error) {
         $('#messages').html('Error');
     }});
+  },
+  viewQCA: function(dir, filebase) {
+    $('#content').empty();
+    $.ajax({url: '/static/stats/' + dir + '/' + filebase + '-header.html',
+      async: false,
+      success: function(response) {
+        $('#content').append(response);
+        $('#messages').text('Done!');
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+      }});
+    $.ajax({url: '/static/stats/' + dir + '/' + filebase + '.html',
+      success: function(response) {
+        $('#content').append(response);
+        $('#messages').text('Done!');
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+      }});
   }
 }

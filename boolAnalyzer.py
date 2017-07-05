@@ -1,19 +1,15 @@
 #! python2.7
 # -*- coding: utf-8 -*-
 
-from utility.options import *
+import sys, os, string, json
 
-#########################
-# BEGIN analyzer
-
-import sys, os, string
-
+from object.jsonDecoder import *
 from object.referenceManuscript import *
 from object.referenceVariant import *
 from object.util import *
 
+from utility.options import *
 from utility.config import *
-from utility.env import *
 
 class BoolAnalyzer:
 
@@ -21,6 +17,7 @@ class BoolAnalyzer:
         s.chapter = ''
         s.variantModel = []
         s.referenceMSS = []
+        s.refMS_IDs = []
 
         s.qcaMSS = []
         s.booleanAggregates = []
@@ -37,6 +34,16 @@ class BoolAnalyzer:
         if nils_map.has_key(ms):
             nils = nils_map.get(ms) + 1
         nils_map[ms] = nils
+
+    def loadVariants(s, varfile):
+        model = ''
+        with open(varfile, 'r') as file:
+            model = file.read().decode('utf-8-sig') # Remove BOM
+            model = model.encode('utf-8') # Reencode without BOM
+            file.close()
+
+        # Load JSON
+        return json.loads(model, cls=ComplexDecoder)
 
     def generateVector(s, refMS, refVar, vu, reading, mss, nils, vars, vect, outcome):
         v = []
@@ -57,9 +64,11 @@ class BoolAnalyzer:
         getattr(refMS, vars).append(refVar)
 
     def generateVariants(s):
+        c = s.config
+
         s.info('')
         num2alpha = dict(zip(range(1, 27), string.ascii_lowercase))
-        for rms in s.env.refMS_IDs:
+        for rms in s.refMS_IDs:
             s.info('generating variants for', rms)
             refMS = ReferenceManuscript(rms)
 
@@ -69,7 +78,7 @@ class BoolAnalyzer:
             for ms in refMS.allMSS:
                 refMS.all_nils[ms] = 0
 
-            refMS.allGrMSS = [m for m in refMS.allMSS if m not in s.env.latinMSS]
+            refMS.allGrMSS = [m for m in refMS.allMSS if m not in c.get('latinMSS')]
             if not 'OUT' in refMS.allGrMSS:
                 refMS.allGrMSS.append('OUT')
             for ms in refMS.allGrMSS:
@@ -408,19 +417,30 @@ class BoolAnalyzer:
         if file_L:
             file_L.close()
 
-# END analyzer
-#########################
-
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
 
-        s.env = Env(s.config, s.options)
+        vfile = ''
+        if o.file:
+            vfile = o.file
+        else:
+            vfile = c.get('variantFile')
 
-        s.chapter = s.env.chapter()
-        varfile = s.env.varFile()
-        s.variantModel = s.env.loadVariants(varfile)
+        if o.chapter:
+            s.chapter = o.chapter
+        else:
+            s.chapter = c.get('variantChapter')
+
+        if o.refMSS:
+            s.refMS_IDs = o.refMSS.split(',')
+        else:
+            s.refMS_IDs = c.get('referenceMSS')
+
+        varfile = s.config.get('variantFolder') + s.chapter + '/' + vfile + '.json'
+
         s.info('loading', varfile)
+        s.variantModel = s.loadVariants(varfile)
 
         s.qcaMSS = s.config.get('qcaMSS')
         s.booleanAggregates = s.config.get('booleanAggregates')
@@ -438,4 +458,5 @@ class BoolAnalyzer:
 # Invoke via entry point
 # boolAnalyzer.py -v -C [chapter] -f [filename minus suffix]
 # boolAnalyzer.py -v -C c01 -f mark-01a-all
+# boolAnalyzer.py -v -C c01 -R 032,05 -f mark-01a-all
 BoolAnalyzer().main(sys.argv[1:])

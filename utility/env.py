@@ -49,7 +49,9 @@ class  Env:
         return json.loads(model, cls=ComplexDecoder)
 
     def refMSS_IDs(s):
-        if type(s.options) is dict and s.options.has_key('refMSS_IDs'):
+        if type(s.options) is CommandLine:
+            return s.options.refMSS
+        elif type(s.options) is dict and s.options.has_key('refMSS_IDs'):
             return s.options['refMSS_IDs']
         else:
             return s.config.get('referenceMSS')
