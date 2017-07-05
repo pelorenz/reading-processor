@@ -23,7 +23,7 @@
   overflow-y: scroll;
 }
 #qca-div {
-  height:780px;
+  height:800px;
   overflow-y: scroll;
   border-top: 1px solid black;
 }
@@ -65,6 +65,10 @@ div.ref-body {
 }
 div.ref-hidden {
   display: none;
+}
+span.expr {
+  font-weight: 600;
+  color: #c00;
 }
 .clear {
   clear: both;
@@ -230,13 +234,13 @@ tr.X032, td.X032 {
   background-color: #66b3ff;
 }
 tr.X038, td.X038 {
-  background-color: #ffff66;
+  background-color: #ff6;
 }
 tr.X043, td.X043 {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 tr.X28, td.X28 {
-  background-color: #ffff66;
+  background-color: #ff6;
 }
 tr.X35, td.X35 {
   background-color: #ff4d4d;
@@ -245,38 +249,50 @@ tr.X79, td.X79 {
   background-color: #b3ff66;
 }
 tr.X348 {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 tr.X427 {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 tr.X565, td.X565 {
-  background-color: #ffff66;
+  background-color: #ff6;
 }
 tr.X700, td.X700 {
-  background-color: #ffff66;
+  background-color: #ff6;
 }
 tr.X788, td.X788 {
-  background-color: #ffff66;
+  background-color: #ff6;
 }
 tr.X892, td.X892 {
   background-color: #d9b3ff;
 }
 tr.X1241 {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 tr.X1337 {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 tr.X1342 {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 tr.X1424 {
-  background-color: #ffffff;
+  background-color: #fff;
 }
 tr.X2542 {
-  background-color: #ffffff;
+  background-color: #fff;
+}
+td.c56 {
+  background-color: #fcf;
+}
+td.f03 {
+  background-color: #d9b3ff;
 }
 td.f13 {
-  background-color: #ffff66;
+  background-color: #fc6;
+}
+td.VL {
+  background-color: #84e184;
+}
+td.vg {
+  background-color: #b3ffe6;
 }

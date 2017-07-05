@@ -559,7 +559,7 @@ class QCAAnalyzer:
         casestr = ''
         for key in msKeys:
             if isHTML:
-                casestr = casestr + '<b>[' + key + ']</b> '
+                casestr = casestr + '<span class="expr">[' + key + ']</span> '
             else:
                 casestr = casestr + '[' + key + '] '
 
@@ -608,7 +608,10 @@ class QCAAnalyzer:
             cases = mssToCases[key]
             for ref in cases:
                 ref_info = s.referenceMap[ref]
-                details = details + '<div><b>' + ref + '</b> ' + ref_info['witnessStr'] + ': ' + ref_info['excerpt'] + '</div><div>.</div>'
+                details = details + '<div><b>' + ref + '</b> ' + ref_info['witnessStr'] + ': ' + ref_info['excerpt'] + '</div>'
+                if ref_info['aggregateData']:
+                    details = details + '<div>' + ref_info['aggregateData'] + '</div>'
+                details = details + '<div>.</div>'
 
         return details[:-2] # subtract final returns
 
@@ -669,7 +672,23 @@ class QCAAnalyzer:
                 details = s.buildDetails(res['cases'])
                 hfile.write('<td class="ref" onclick="DSS.refClick(event)">' + case_str + '<div class="ref-body ref-hidden">' + details + '</div></td></tr>')
 
-            hfile.write('</table></div>')
+            hfile.write('</table>')
+            hfile.write('<div>.</div>')
+            hfile.write('<div>Chapter: ' + re.sub(r'\-[0-9VLvgP]{1,4}[LDMgl]{1,3}$', '', basename) + '</div>')
+            witness = re.sub(r'^c\d{2,2}\-', '', basename)
+            witness = re.sub(r'[LDMgl]{1,3}$', '', witness)
+            hfile.write('<div>Reference witness: ' + witness + '</div>')
+
+            vars = {}
+            for ref in s.refs:
+                ref = re.sub(r'[a-z]$', '', ref)
+                vars[ref] = None
+            hfile.write('<div>Variation units: ' + str(len(vars)) + '</div>')
+            hfile.write('<div>Readings: ' + str(len(s.csv)) + '</div>')
+            hfile.write('<div>Expressions: ' + str(len(s.all_exprs)) + '</div>')
+            hfile.write('<div>Positive outcomes: ' + str(len(s.minimized_exprs_P)) + '</div>')
+            hfile.write('<div>Negative outcomes: ' + str(len(s.minimized_exprs_N)) + '</div>')
+            hfile.write('</div>')
             hfile.close
 
         csvfile = c.get('csvBoolFolder') + basename + '-results.csv'
