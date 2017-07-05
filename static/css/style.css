@@ -25,11 +25,11 @@
 #qca-div {
   height:780px;
   overflow-y: scroll;
+  border-top: 1px solid black;
 }
 #qca-hdr {
   table-layout: fixed;
   width: 100%;
-  border-bottom: 1px solid black;
 }
 #qca-table {
   table-layout: fixed;
@@ -38,26 +38,39 @@
 tr.qca {
 }
 td.id {
-  width: 41px;
+  width: 40px;
 }
 td.ms {
-  width: 30px;
-}
-td.ms {
-  width: 30px;
+  width: 25px;
 }
 td.small {
-  width: 22px;
+  width: 20px;
 }
 td.medium {
-  width: 50px;
+  width: 45px;
+}
+td.ref-head {
 }
 td.ref {
+  cursor: pointer;
+}
+td.ref:hover {
+  background-color: #eeeeee;
+}
+td.ref:active {
+  background-color: #cccccc;
+}
+div.ref-body {
+  font-size: smaller;
+}
+div.ref-hidden {
+  display: none;
 }
 .clear {
   clear: both;
 }
 table {
+  border-collapse: collapse;
 }
 th {
   text-align: left;
@@ -69,6 +82,9 @@ td {
   vertical-align:top;
   padding: 0px;
   margin: 0px;
+  border: rgba(0,0,255,0.1);
+  border-style: solid;
+  border-width: 1px;
 }
 div.accordion {
   background-color: #eee;

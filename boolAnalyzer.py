@@ -1,7 +1,7 @@
 #! python2.7
 # -*- coding: utf-8 -*-
 
-import sys, os, string, json
+import sys, os, string, json, re
 
 from object.jsonDecoder import *
 from object.referenceManuscript import *
@@ -234,13 +234,14 @@ class BoolAnalyzer:
                     msval_str = msval_str + result[1]
             else:
                 val = s.getValueForColumn(mss_vct, val_vct, col)
-            
+
             out_vct.append(val)
 
         return { 'msVals': msval_str, 'vect': out_vct}
 
     def writeVector(s, file, layer, agdat, ref, witness_str, excerpt):
         if agdat['vect'].count('0') != len(agdat['vect']) and agdat['vect'].count('1') != len(agdat['vect']):
+            witness_str = re.sub(r' OUT', '', witness_str)
             file.write((ref + u'\t' + agdat['msVals'] + u'\t' + str(layer).decode('utf-8') + u'\t' + witness_str + u'\t' + excerpt + u'\t' + u'\t'.join(agdat['vect']) + u'\n').encode('utf-8'))
 
     def generateReferenceCSV(s):
