@@ -3,7 +3,7 @@ $def with (args)
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Manuscript Analysis Dashboard</title>
+  <title>Textual Layers Analysis</title>
   <link rel="shortcut icon" href="static/favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="static/css/style.css">
   <script src="static/js/jquery-3.2.1.js"></script>
@@ -12,7 +12,7 @@ $def with (args)
 
   <div id='container'>
     <div id='header'>
-      <div id='title'>Manuscript Analysis Dashboard</div><div id='messages'></div>
+      <div id='title'>Textual Layers Analysis Dashboard</div><div id='messages'></div>
     </div>
     <div id='sidecol'>
       <ul>
@@ -27,8 +27,8 @@ $def with (args)
       <ul>
         <li>
           <ul class='list2'>
-            <li><a id='analyze' href='javascript:DSS.analyze()'>Analyze</a></li>
-            <li><a id='analyze' href='javascript:DSS.analyze()'>Analyze 2</a>
+            <li><a id='canalyze' href='javascript:DSS.clustAnalyze()'>Cluster Analysis</a></li>
+            <li><a id='banalyze' href='javascript:DSS.boolAnalyze()'>Boolean Analysis</a>
             </li>
       </ul>
       <div id='dirslist'>
@@ -86,6 +86,16 @@ $def with (args)
                   <ul class='list2'>
                       <li><a href='javascript:DSS.viewClusterMerge("$dir", "clustmerge")'>CMrg</a></li>
                       <li><a href='javascript:DSS.viewClusterMerge("$dir", "witnessdistribmerge")'>WMrg</a></li>
+                  </ul>
+              $if 'QCA' in dir:
+                  $code:
+                      filebase = re.sub(r'^Mark ', '', dir)
+                      filebase = re.sub(r'QCA$', '', filebase)
+                  <ul class='list4'>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L")'>L</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl")'>Dgl</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "D")'>D</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "M")'>M</a></li>
                   </ul>
               </div>
             </li>

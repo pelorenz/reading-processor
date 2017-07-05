@@ -9,6 +9,7 @@ class  CommandLine:
         self.parser.add_argument('-c', '--config', help='Configuration filename with optional path. The config file must be placed in the script directory if a path is not provided. [processor-config.json]', default='processor-config.json')
         self.parser.add_argument('-f', '--file', help='Base file name for CSV and JSON input.')
         self.parser.add_argument('-C', '--chapter', help='Chapter name for variant diffs and other chapter-specific input.')
+        self.parser.add_argument('-R', '--refMSS', help='Comma-delimited list of reference manuscripts.')
         self.parser.add_argument('-v', '--verbose', help='Display verbose output', action='store_true')
         self.parser.add_argument('-s', '--silent', help='Prevent output', action='store_true')
 

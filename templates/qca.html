@@ -54,16 +54,6 @@ $for dir in args['keys']:
               <li><a href='javascript:DSS.viewClusterMerge("$dir", "clustmerge")'>CMrg</a></li>
               <li><a href='javascript:DSS.viewClusterMerge("$dir", "witnessdistribmerge")'>WMrg</a></li>
           </ul>
-      $if 'QCA' in dir:
-          $code:
-              filebase = re.sub(r'^Mark ', '', dir)
-              filebase = re.sub(r'QCA$', '', filebase)
-          <ul class='list4'>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L")'>L</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl")'>Dgl</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "D")'>D</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "M")'>M</a></li>
-          </ul>
       </div>
     </li>
 </ul>

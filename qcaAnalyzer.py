@@ -1,7 +1,7 @@
 #! python3.6
 # -*- coding: utf-8 -*-
 
-import sys, os, string, re
+import sys, os, string, re, errno
 
 from object.util import *
 
@@ -522,10 +522,69 @@ class QCAAnalyzer:
     def writeExpressions(s, basename):
         c = s.config
 
+        subdir = re.sub(r'^c', '', basename)
+        subdir = re.sub(r'[DLMgl]{1,3}$', '', subdir)
+        subdir = 'Mark ' + subdir + 'QCA'
+        htmldir = c.get('statsFolder') + subdir + '/'
+        try:
+            os.makedirs(htmldir)
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
+
+        htmlfile = htmldir + basename + '-header.html'
+        cols = [m[1:] if m[:1] == 'M' else m for m in s.mscols]
+        with open(htmlfile, 'w+', encoding='utf-8') as hfile:
+            col_str = '</td><td class="ms">'.join(cols)
+            hfile.write('<table cellspacing="0" cellpadding="0" id="qca-hdr"><tr class="qca"><td class="id">ID</td><td class="ms">' + col_str + '</td><td class="ms">Out</td><td class="small">Cs</td><td class="medium">Inc</td><td class="medium">Cov</td><td class="small">1s</td><td class="small">DC</td><td class="small">Sc</td><td class="ref">References</td></tr></table>')
+
+            hfile.close()
+
+        htmlfile = htmldir + basename + '.html'
+        with open(htmlfile, 'w+', encoding='utf-8') as hfile:
+            hfile.write('<div id="qca-div"><table cellspacing="0" cellpadding="0" id="qca-table">\n')
+
+            for res in s.all_exprs:
+                ones = 0
+                dontCares = 0
+
+                exp_str = ' '.join(str(x) for x in res['expressions']) + ' ' # to match last MS with suffixed space
+
+                hfile.write('<tr class="qca"><td class="id">' + res['outcomeID'] + '</td>')
+                for ms in s.mscols:
+                    m_disp = ms[1:] if ms[:1] == 'M' else ms
+                    hilite = 'X' + m_disp if m_disp[:1].isdigit() else m_disp
+                    if ms + ' ' in exp_str:
+                        if '~' + ms + ' ' in exp_str:
+                            hfile.write('<td class="ms">' + '0' + '</td>')
+                        else:
+                            hfile.write('<td class="ms ' + hilite + '">' + '1' + '</td>')
+                            ones = ones + 1
+                    else:
+                        hfile.write('<td class="ms dontcare">' + '-' + '</td>')
+                        dontCares = dontCares + 1
+
+                hfile.write('<td class="ms">' + res['outcome'] + '</td>')
+                hfile.write('<td class="small">' + str(len(res['cases'])) + '</td>')
+                hfile.write('<td class="medium">' + str(res['inclusion']) + '</td>')
+                hfile.write('<td class="medium">' + str(res['coverage']) + '</td>')
+                hfile.write('<td class="small">' + str(ones) + '</td>')
+                hfile.write('<td class="small">' + str(dontCares) + '</td>')
+
+                src = 'E' if res['source'] == 'espresso' else 'M'
+                hfile.write('<td class="small">' + src + '</td>')
+
+                case_str = s.buildCaseStr(res['outcomeID'], res['cases'])
+                hfile.write('<td class="ref" title="' + str(res['dnfKey']) + '">' + case_str + '</td></tr>')
+
+            hfile.write('</table></div>')
+            hfile.close
+
         csvfile = c.get('csvBoolFolder') + basename + '-results.csv'
         with open(csvfile, 'w+', encoding='utf-8') as cfile:
             col_str = '\t'.join(s.mscols)
             cfile.write('ID\t' + col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tSource\tReferences\tDNF\n')
+
             for res in s.all_exprs:
                 ones = 0
                 dontCares = 0
@@ -549,10 +608,15 @@ class QCAAnalyzer:
                 csv_line = csv_line + str(res['coverage']) + '\t'
                 csv_line = csv_line + str(ones) + '\t'
                 csv_line = csv_line + str(dontCares) + '\t'
+
                 csv_line = csv_line + res['source'] + '\t'
-                csv_line = csv_line + s.buildCaseStr(res['outcomeID'], res['cases']) + '\t'
+
+                case_str = s.buildCaseStr(res['outcomeID'], res['cases'])
+                csv_line = csv_line + case_str + '\t'
                 csv_line = csv_line + str(res['dnfKey'])
+
                 cfile.write(csv_line + '\n')
+             
             cfile.close
 
     def main(s, argv):

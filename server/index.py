@@ -1,4 +1,4 @@
-import web
+import web, re
 
 from utility.config import *
 
@@ -7,7 +7,7 @@ from server.util import *
 class Index:
     def __init__(s):
         s.config = Config('web-config.json')
-        s.templates = web.template.render('templates/')
+        s.templates = web.template.render('templates/', globals={'re': re})
 
     def GET(s):
         args = {}

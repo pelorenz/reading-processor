@@ -14,8 +14,8 @@ def sortLabels(lab1, lab2):
     elif ch1 > ch2:
         return 1
 
-    ms1 = lab1[8:].replace('G', '').replace('L', '').replace('D', '')
-    ms2 = lab2[8:].replace('G', '').replace('L', '').replace('D', '')
+    ms1 = lab1[8:].replace('G', '').replace('L', '').replace('D', '').replace('QCA', '')
+    ms2 = lab2[8:].replace('G', '').replace('L', '').replace('D', '').replace('QCA', '')
     if ms1[:1] == '0' and ms2[:1] != '0':
         return -1
     elif ms1[:1] != '0' and ms2[:1] == '0':
@@ -41,11 +41,15 @@ def sortLabels(lab1, lab2):
 
     if 'GL' in lab1: cod1 = 'GL'
     elif 'L' in lab1: cod1 = 'L'
-    else: cod1 = 'D'
+    else:
+        if 'QCA' in lab1: cod1 = 'QCA'
+        else: cod1 = 'D'
 
     if 'GL' in lab2: cod2 = 'GL'
     elif 'L' in lab2: cod2 = 'L'
-    else: cod2 = 'D'
+    else:
+        if 'QCA' in lab2: cod2 = 'QCA'
+        else: cod2 = 'D'
 
     if cod1 < cod2:
         return -1
