@@ -10,6 +10,49 @@ from utility.options import *
 
 from pyeda.inter import *
 
+# Expressions sort
+def sortExpressions(e1, e2):
+    if e1['source'] == 'espresso' and e2['source'] != 'espresso':
+        return -1
+    elif e1['source'] != 'espresso' and e2['source'] == 'espresso':
+        return 1
+
+    if e1['outcome'] == '1' and e2['outcome'] != '1':
+        return -1
+    elif e1['outcome'] != '1' and e2['outcome'] == '1':
+        return 1
+
+    if e1['ones'] < e2['ones']:
+        return -1
+    elif e1['ones'] > e2['ones']:
+        return 1
+
+    if len(e1['cases']) > len(e2['cases']):
+        return -1
+    elif len(e1['cases']) < len(e2['cases']):
+        return 1
+
+    return 0
+
+def cmp_to_key_exprs(sortExpressions):
+    # Convert a cmp= function into a key= function
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return sortExpressions(self.obj, other.obj) < 0
+        def __gt__(self, other):
+            return sortExpressions(self.obj, other.obj) > 0
+        def __eq__(self, other):
+            return sortExpressions(self.obj, other.obj) == 0
+        def __le__(self, other):
+            return sortExpressions(self.obj, other.obj) <= 0  
+        def __ge__(self, other):
+            return sortExpressions(self.obj, other.obj) >= 0
+        def __ne__(self, other):
+            return sortExpressions(self.obj, other.obj) != 0
+    return K
+
 # Greek-only MS sort
 def sortMsOps(mo1, mo2):
     mo1 = str(mo1)
@@ -57,7 +100,7 @@ def sortMsOps(mo1, mo2):
 
     return 0 # same MS!
 
-def cmp_to_key(sortMsOps):
+def cmp_to_key_msops(sortMsOps):
     # Convert a cmp= function into a key= function
     class K(object):
         def __init__(self, obj, *args):
@@ -283,7 +326,7 @@ class QCAAnalyzer:
         exp2 = None
         if 'AndOp' in str(type(exp)) or 'Complement' in str(type(exp)):
             exps = list(exp._lits)
-            exps.sort(key=cmp_to_key(sortMsOps))
+            exps.sort(key=cmp_to_key_msops(sortMsOps))
             for e in exps:
                 e = str(e)
                 ms = e[1:] if '~' == e[:1] else e
@@ -362,7 +405,7 @@ class QCAAnalyzer:
         orset = minimized[0]._lits
         for andset in orset:
             msops = list(andset._lits)
-            msops.sort(key=cmp_to_key(sortMsOps))
+            msops.sort(key=cmp_to_key_msops(sortMsOps))
 
             # TODO: fix me! depends on order of input CSV
             d_key = str(andset.to_dnf())
@@ -378,9 +421,9 @@ class QCAAnalyzer:
             for case in cases:
                 s.assignedCases[case] = (msops, d_key)
 
-    def appendScores(s, expr, cases, dnf_key, incl, cov, outcome, out_id, source):
+    def appendScores(s, exprs, cases, dnf_key, incl, cov, outcome, out_id, source):
         scores = {}
-        scores['expressions'] = expr
+        scores['expressions'] = exprs
         scores['cases'] = cases
         scores['dnfKey'] = dnf_key
         scores['inclusion'] = incl
@@ -388,6 +431,14 @@ class QCAAnalyzer:
         scores['outcome'] = outcome
         scores['outcomeID'] = out_id
         scores['source'] = source
+
+        # Compute number of 1's, for sorting
+        ones = 0
+        exp_str = ' '.join(str(x) for x in exprs) + ' '
+        for ms in s.mscols:
+            if ms + ' ' in exp_str and not '~' + ms + ' ' in exp_str:
+                ones = ones + 1
+        scores['ones'] = ones
 
         s.all_exprs.append(scores)
 
@@ -475,7 +526,7 @@ class QCAAnalyzer:
             s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0', out_id, source)
             outcome_ctr = outcome_ctr + 1
 
-        return None
+        s.all_exprs.sort(key=cmp_to_key_exprs(sortExpressions))
 
     def buildCaseStr(s, out_id, cases):
         mssToCases = {}
@@ -545,7 +596,6 @@ class QCAAnalyzer:
             hfile.write('<div id="qca-div"><table cellspacing="0" cellpadding="0" id="qca-table">\n')
 
             for res in s.all_exprs:
-                ones = 0
                 dontCares = 0
 
                 exp_str = ' '.join(str(x) for x in res['expressions']) + ' ' # to match last MS with suffixed space
@@ -559,7 +609,6 @@ class QCAAnalyzer:
                             hfile.write('<td class="ms">' + '0' + '</td>')
                         else:
                             hfile.write('<td class="ms ' + hilite + '">' + '1' + '</td>')
-                            ones = ones + 1
                     else:
                         hfile.write('<td class="ms dontcare">' + '-' + '</td>')
                         dontCares = dontCares + 1
@@ -568,7 +617,7 @@ class QCAAnalyzer:
                 hfile.write('<td class="small">' + str(len(res['cases'])) + '</td>')
                 hfile.write('<td class="medium">' + str(res['inclusion']) + '</td>')
                 hfile.write('<td class="medium">' + str(res['coverage']) + '</td>')
-                hfile.write('<td class="small">' + str(ones) + '</td>')
+                hfile.write('<td class="small">' + str(res['ones']) + '</td>')
                 hfile.write('<td class="small">' + str(dontCares) + '</td>')
 
                 src = 'E' if res['source'] == 'espresso' else 'M'
@@ -586,7 +635,6 @@ class QCAAnalyzer:
             cfile.write('ID\t' + col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tSource\tReferences\tDNF\n')
 
             for res in s.all_exprs:
-                ones = 0
                 dontCares = 0
 
                 exp_str = ' '.join(str(x) for x in res['expressions']) + ' ' # to match last MS with suffixed space
@@ -597,7 +645,6 @@ class QCAAnalyzer:
                             csv_line = csv_line + '0' + '\t'
                         else:
                             csv_line = csv_line + '1' + '\t'
-                            ones = ones + 1
                     else:
                         csv_line = csv_line + '-\t'
                         dontCares = dontCares + 1
@@ -606,7 +653,7 @@ class QCAAnalyzer:
                 csv_line = csv_line + str(len(res['cases'])) + '\t'
                 csv_line = csv_line + str(res['inclusion']) + '\t'
                 csv_line = csv_line + str(res['coverage']) + '\t'
-                csv_line = csv_line + str(ones) + '\t'
+                csv_line = csv_line + str(res['ones']) + '\t'
                 csv_line = csv_line + str(dontCares) + '\t'
 
                 csv_line = csv_line + res['source'] + '\t'
