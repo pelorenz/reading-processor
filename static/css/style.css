@@ -49,6 +49,9 @@ td.small {
 td.medium {
   width: 45px;
 }
+td.cases, td.ones {
+  background-color: #eeeeee;
+}
 td.ref-head {
 }
 td.ref {
@@ -194,6 +197,9 @@ img {
 td.dontcare {
   background-color: #efe8d8;
 }
+tr.VL1 {
+  background-color: #47d147;
+}
 tr.VL2 {
   background-color: #47d147;
 }
@@ -284,8 +290,14 @@ tr.X2542 {
 td.c56 {
   background-color: #fcf;
 }
+td.c79 {
+  background-color: #b3ff66;
+}
 td.f03 {
   background-color: #d9b3ff;
+}
+td.f1 {
+  background-color: #ebadd5;
 }
 td.f13 {
   background-color: #fc6;
