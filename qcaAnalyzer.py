@@ -321,10 +321,211 @@ class QCAAnalyzer:
                         s.manualCases[dnf_key] = expinf
 
         # merge expressions that differ only in 0's and dc's
-        s.minimized_exprs_P = s.mergeExpressions(s.minimized_exprs_P)
-        s.minimized_exprs_N = s.mergeExpressions(s.minimized_exprs_N)
+        s.minimized_exprs_P = s.mergeDCExpressions(s.minimized_exprs_P)
+        s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
 
-    def mergeExpressions(s, exprs):
+        # detect and merge expressions with mutual dc to 1, 1 to dc loops
+        s.minimized_exprs_P = s.detectDCLoops(s.minimized_exprs_P)
+        s.minimized_exprs_N = s.detectDCLoops(s.minimized_exprs_N)
+
+    def countOnes(s, expinf):
+        ones = 0
+        for var in expinf['msVars']:
+            if 'Variable' in str(type(var)) or 'AndOp' in str(type(var)):
+                ones = ones + 1
+        return ones
+
+    def hasDCLoop(s, ex1, ex2, ones):
+        loop_1s = []
+        shared_1s = []
+
+        var1_str = ' '.join(str(x) for x in ex1['msVars']) + ' '
+        var2_str = ' '.join(str(x) for x in ex2['msVars']) + ' '
+        for ms in s.mscols:
+            # are 1's part of loop?
+            if ms + ' ' in var1_str and not '~' + ms + ' ' in var1_str:
+
+                if not ms + ' ' in var2_str:
+                    # ms must attest '1' at least once among cases - check below!
+                    loop_1s.append(ms) # ex1 == 1, ex2 == dc
+                elif ms + ' ' in var2_str and not '~' + ms + ' ' in var2_str:
+                    shared_1s.append(ms) # ex1 == 1, ex2 == 1
+
+            elif ms + ' ' in var2_str and not '~' + ms + ' ' in var2_str:
+
+                if not ms + ' ' in var1_str:
+                    # ms must attest '1' at least once among cases - check below!
+                    loop_1s.append(ms) # ex1 == dc, ex2 == 1
+                elif ms + ' ' in var1_str and not '~' + ms + ' ' in var1_str:
+                    shared_1s.append(ms) # ex1 == 1, ex2 == 1
+
+        has_loop = False
+        if len(loop_1s) >= 2 and len(loop_1s) + len(shared_1s) == ones * 2:
+            has_loop = True
+
+        return { 'loop1s': loop_1s, 'shared1s': shared_1s, 'hasLoop': has_loop }
+
+    def isMatchDCLoopPattern(s, vars, loopInfo):
+        var_str = ' '.join(str(x) for x in vars) + ' '
+        for ms in s.mscols:
+            if ms + ' ' in var_str:
+                if '~' + ms + ' ' in var_str: # 0
+                    if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
+                        return False
+                else: # 1
+                    if not ms in loopInfo['loop1s'] and not ms in loopInfo['shared1s']:
+                        return False
+            else: # dc - allow if loop info != '1'
+                if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
+                    return False
+
+        return True
+
+    def isMatchDCMovePattern(s, vars, loopInfo):
+        var_str = ' '.join(str(x) for x in vars) + ' '
+        for ms in s.mscols:
+            if ms + ' ' in var_str:
+                if '~' + ms + ' ' in var_str: # 0
+                    if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
+                        return False
+            else: # dc - allow if loop info != '1'
+                if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
+                    return False
+
+        return True
+
+    def searchDCLoopPattern(s, oBuckets, loopInfo, ones):
+        for i in range(ones, len(s.mscols)):
+            bucket = None
+            if str(i)in oBuckets:
+                bucket = oBuckets[str(i)]
+
+            if bucket:
+                for expinf in bucket:
+                    if s.isMatchDCLoopPattern(expinf['msVars'], loopInfo):
+                        return expinf
+
+        return None
+
+    def moveDCCases(s, ex, join_ex, loopInfo):
+        keep_cases = []
+        for case in ex['cases']:
+            ref_info = s.referenceMap[case]
+            c_ex = ref_info['expression']
+            if s.isMatchDCMovePattern(list(c_ex._lits), loopInfo):
+                if not case in join_ex['cases']:
+                    join_ex['cases'].append(case)
+            else:
+                keep_cases.append(case)
+
+        return keep_cases
+
+    def buildExpressionsFromCases(s, expinf):
+        build_parts = []
+        for case in expinf['cases']:
+            ref_info = s.referenceMap[case]
+            if not build_parts:
+                build_vars = list(ref_info['expression']._lits)
+                build_str = ' '.join(str(x) for x in build_vars)
+                build_parts = build_str.split(' ')
+            else: # combine
+                case_vars = list(ref_info['expression']._lits)
+                case_str = ' '.join(str(x) for x in case_vars) + ' '
+                case_parts = case_str.split(' ')
+
+                work_parts = []
+                for ms in s.mscols:
+                    if ms in case_parts and ms in build_parts:
+                        work_parts.append(ms)
+
+                    if '~' + ms in case_parts and '~' + ms in build_parts:
+                        work_parts.append('~' + ms)
+
+                build_parts = work_parts
+
+        vars = []
+        for part in build_parts:
+            if part[:1] == '~':
+                vars.append(Not(part[1:]))
+            else:
+                vars.append(exprvar(part))
+
+        expinf['msVars'] = vars
+
+        # build expression
+        expression = None
+        for var in vars:
+            if not expression:
+                expression = var
+            else:
+                expression = And(expression, var)
+        expinf['dnfKey'] = str(expression.to_dnf())
+
+    def extractDCLoop(s, ex1, ex2, oBuckets, loopInfo, ones):
+        join_ex = s.searchDCLoopPattern(oBuckets, loopInfo, ones)
+        if not join_ex:
+            # generate loop expression
+            src = 'espresso' if ex1['source'] == 'espresso' or ex2['source'] == 'espresso' else 'manual'
+            join_ex = {'msVars': [], 'cases': [], 'dnfKey': '', 'source': src}
+
+        ex1_cases = s.moveDCCases(ex1, join_ex, loopInfo)
+        ex2_cases = s.moveDCCases(ex2, join_ex, loopInfo)
+
+        if join_ex['cases']:
+            ex1['cases'] = ex1_cases
+            ex2['cases'] = ex2_cases
+
+            s.buildExpressionsFromCases(ex1)
+            s.buildExpressionsFromCases(ex2)
+            s.buildExpressionsFromCases(join_ex)
+
+            # add new expression to appropriate bucket
+            bucket = []
+            join_ones = len(loopInfo['loop1s']) + len(loopInfo['shared1s'])
+            if str(join_ones) in oBuckets:
+                bucket = oBuckets[str(join_ones)]
+            bucket.append(join_ex)
+            oBuckets[str(join_ones)] = bucket
+
+            return True
+        else:
+            # abort! - this can occur if one of the join MSS is unattested at some of the cases rather than simply "don't care"
+            return False
+
+    def detectDCLoops(s, exprs):
+        exprs_list = []
+
+        oBuckets = {}
+        for expinf in exprs:
+            # assign to buckets per number of 1's
+            ones = s.countOnes(expinf)
+            bucket = []
+            if str(ones) in oBuckets:
+                bucket = oBuckets[str(ones)]
+            bucket.append(expinf)
+            oBuckets[str(ones)] = bucket
+
+        # search each i=count(ones) bucket for dc<->1 'loops'
+        for i in range(1, len(s.mscols)):
+            bucket = None
+            if str(i)in oBuckets:
+                bucket = oBuckets[str(i)]
+
+            if bucket and len(bucket) > 1: # multiple exprs found with count=i of 1's
+                for ex1 in bucket:
+                    sub_b = [inf for inf in bucket if inf is not ex1]
+                    for ex2 in sub_b:
+                        loop_info = s.hasDCLoop(ex1, ex2, i)
+                        if loop_info['hasLoop']:
+                            s.extractDCLoop(ex1, ex2, oBuckets, loop_info, i)
+
+        for ones, bucket in oBuckets.items():
+            for expinf in bucket:
+                exprs_list.append(expinf)
+
+        return exprs_list
+
+    def mergeDCExpressions(s, exprs):
         exprs_list = []
 
         infoMap = {}
@@ -390,7 +591,7 @@ class QCAAnalyzer:
                 if inf['source'] == 'espresso':
                     m_source = 'espresso'
 
-            exprs_list.append({'msVars': m_vars, 'cases': m_cases, 'dnfKey': dnf_key, 'source': m_source, 'originalExpressions': inf_list})
+            exprs_list.append({'msVars': m_vars, 'cases': m_cases, 'dnfKey': dnf_key, 'source': m_source})
 
         return exprs_list
 
