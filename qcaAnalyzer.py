@@ -310,8 +310,8 @@ class QCAAnalyzer:
                         expinf = s.manualCases[dnf_key]
                         expinf['cases'].append(ref)
                     else: # add new
-                        msops = list(ref_info['expression']._lits)
-                        expinf = {'msVars': msops, 'cases': [ref], 'dnfKey': dnf_key, 'source': 'manual'}
+                        vars = list(ref_info['expression']._lits)
+                        expinf = {'msVars': vars, 'cases': [ref], 'dnfKey': dnf_key, 'source': 'manual'}
 
                         if ref_info['outcome'] == '1':
                             s.minimized_exprs_P.append(expinf)
@@ -319,6 +319,80 @@ class QCAAnalyzer:
                             s.minimized_exprs_N.append(expinf)
 
                         s.manualCases[dnf_key] = expinf
+
+        # merge expressions that differ only in 0's and dc's
+        s.minimized_exprs_P = s.mergeExpressions(s.minimized_exprs_P)
+        s.minimized_exprs_N = s.mergeExpressions(s.minimized_exprs_N)
+
+    def mergeExpressions(s, exprs):
+        exprs_list = []
+
+        infoMap = {}
+        onesMap = {}
+        dcMap = {}
+
+        # merge expressions that differ only in 0's and dc's
+        for expinf in exprs:
+            key = ''
+            ones_mss = []
+            dc_mss = []
+            var_str = ' '.join(str(x) for x in expinf['msVars']) + ' '
+            for ms in s.mscols:
+                # treat 0's and dc's the same for purpose of key
+                if ms + ' ' in var_str:
+                    if '~' + ms + ' ' in var_str: # 0
+                        key = key + '0'
+                    else: # 1
+                        key = key + '1'
+                        ones_mss.append(ms)
+                else: # dc
+                    key = key + '0'
+                    dc_mss.append(ms)
+
+            inf_list = []
+            if key in infoMap:
+                inf_list = infoMap[key]
+            inf_list.append(expinf)
+            infoMap[key] = inf_list
+
+            dc_list = []
+            if key in dcMap:
+                dc_list = dcMap[key]
+            dc_list.extend(dc_mss)
+            dcMap[key] = dc_list
+
+            # replacing each time ok bc ones in same position in key
+            onesMap[key] = ones_mss
+
+        # now merge the info objects
+        for key, inf_list in infoMap.items():
+            m_cases = []
+            m_source = 'manual'
+            m_vars = []
+            expr = None
+            for ms in s.mscols:
+                var = None
+                if ms in onesMap[key]: # 1
+                    var = exprvar(ms)
+                elif not ms in dcMap[key]: # 0
+                    var = Not(ms)
+
+                if var:
+                    m_vars.append(var)
+                    expr = And(expr, var) if expr else var
+
+            dnf_key = str(expr.to_dnf())
+            for inf in inf_list:
+                for case in inf['cases']:
+                    if not case in m_cases:
+                        m_cases.append(case)
+                
+                if inf['source'] == 'espresso':
+                    m_source = 'espresso'
+
+            exprs_list.append({'msVars': m_vars, 'cases': m_cases, 'dnfKey': dnf_key, 'source': m_source, 'originalExpressions': inf_list})
+
+        return exprs_list
 
     def passOp(s, reconstr, col, slice):
         if len(reconstr) == 0:
@@ -414,8 +488,8 @@ class QCAAnalyzer:
 
         orset = minimized[0]._lits
         for andset in orset:
-            msops = list(andset._lits)
-            msops.sort(key=cmp_to_key_msops(sortMsOps))
+            vars = list(andset._lits)
+            vars.sort(key=cmp_to_key_msops(sortMsOps))
 
             # TODO: fix me! depends on order of input CSV
             d_key = str(andset.to_dnf())
@@ -423,17 +497,17 @@ class QCAAnalyzer:
             if d_key in caseMap:
                 cases = caseMap[d_key]
             else:
-                cases = s.lookupMissingKeys(msops, caseMap, d_key)
+                cases = s.lookupMissingKeys(vars, caseMap, d_key)
 
-            minimized_exprs.append({'msVars': msops, 'cases': cases, 'dnfKey': d_key, 'source': 'espresso'})
+            minimized_exprs.append({'msVars': vars, 'cases': cases, 'dnfKey': d_key, 'source': 'espresso'})
 
             # register cases assigned by espresso
             for case in cases:
-                s.assignedCases[case] = (msops, d_key)
+                s.assignedCases[case] = (vars, d_key)
 
-    def appendScores(s, exprs, cases, dnf_key, incl, cov, outcome, out_id, source):
+    def appendScores(s, msVars, cases, dnf_key, incl, cov, outcome, out_id, source):
         scores = {}
-        scores['expressions'] = exprs
+        scores['msVars'] = msVars
         scores['cases'] = cases
         scores['dnfKey'] = dnf_key
         scores['inclusion'] = incl
@@ -444,9 +518,9 @@ class QCAAnalyzer:
 
         # Compute number of 1's, for sorting
         ones = 0
-        exp_str = ' '.join(str(x) for x in exprs) + ' '
+        var_str = ' '.join(str(x) for x in msVars) + ' '
         for ms in s.mscols:
-            if ms + ' ' in exp_str and not '~' + ms + ' ' in exp_str:
+            if ms + ' ' in var_str and not '~' + ms + ' ' in var_str:
                 ones = ones + 1
         scores['ones'] = ones
 
@@ -483,7 +557,7 @@ class QCAAnalyzer:
         # Iterate positive outcomes and compare to negative
         outcome_ctr = 1
         for expinf in s.minimized_exprs_P:
-            expr = expinf['msVars']
+            msVars = expinf['msVars']
             cases = expinf['cases']
             dnf_key = expinf['dnfKey']
             source = expinf['source']
@@ -505,13 +579,13 @@ class QCAAnalyzer:
             out_id = s.generateOutcomeID('A', outcome_ctr)
             s.assignCases(out_id, cases)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '1', out_id, source)
+            s.appendScores(msVars, cases, dnf_key, inclusion, coverage, '1', out_id, source)
             outcome_ctr = outcome_ctr + 1
 
         # Iterate negative outcomes and compare to positive
         outcome_ctr = 1
         for expinf in s.minimized_exprs_N:
-            expr = expinf['msVars']
+            msVars = expinf['msVars']
             cases = expinf['cases']
             dnf_key = expinf['dnfKey']
             source = expinf['source']
@@ -533,7 +607,7 @@ class QCAAnalyzer:
             out_id = s.generateOutcomeID('B', outcome_ctr)
             s.assignCases(out_id, cases)
 
-            s.appendScores(expr, cases, dnf_key, inclusion, coverage, '0', out_id, source)
+            s.appendScores(msVars, cases, dnf_key, inclusion, coverage, '0', out_id, source)
             outcome_ctr = outcome_ctr + 1
 
         s.all_exprs.sort(key=cmp_to_key_exprs(sortExpressions))
@@ -632,7 +706,7 @@ class QCAAnalyzer:
         cols = [m[1:] if m[:1] == 'M' else m for m in s.mscols]
         with open(htmlfile, 'w+', encoding='utf-8') as hfile:
             col_str = '</td><td class="ms">'.join(cols)
-            hfile.write('<table cellspacing="0" cellpadding="0" id="qca-hdr"><tr class="qca"><td class="id">ID</td><td class="ms">' + col_str + '</td><td class="ms">Out</td><td class="small">Cs</td><td class="medium">Inc</td><td class="medium">Cov</td><td class="small">1s</td><td class="small">DC</td><td class="small">Sc</td><td class="ref-head">References</td></tr></table>')
+            hfile.write('<table cellspacing="0" cellpadding="0" id="qca-hdr"><tr class="qca"><td class="id">ID</td><td class="ms">' + col_str + '</td><td class="ms">Out</td><td class="small">Cs</td><td class="small">1s</td><td class="small">DC</td><td class="medium">Inc</td><td class="medium">Cov</td><td class="small">Sc</td><td class="ref-head">References</td></tr></table>')
 
             hfile.close()
 
@@ -643,14 +717,14 @@ class QCAAnalyzer:
             for res in s.all_exprs:
                 dontCares = 0
 
-                exp_str = ' '.join(str(x) for x in res['expressions']) + ' ' # to match last MS with suffixed space
+                var_str = ' '.join(str(x) for x in res['msVars']) + ' ' # to match last MS with suffixed space
 
                 hfile.write('<tr class="qca"><td class="id">' + res['outcomeID'] + '</td>')
                 for ms in s.mscols:
                     m_disp = ms[1:] if ms[:1] == 'M' else ms
                     hilite = 'X' + m_disp if m_disp[:1].isdigit() else m_disp
-                    if ms + ' ' in exp_str:
-                        if '~' + ms + ' ' in exp_str:
+                    if ms + ' ' in var_str:
+                        if '~' + ms + ' ' in var_str:
                             hfile.write('<td class="ms">' + '0' + '</td>')
                         else:
                             hfile.write('<td class="ms ' + hilite + '">' + '1' + '</td>')
@@ -659,11 +733,11 @@ class QCAAnalyzer:
                         dontCares = dontCares + 1
 
                 hfile.write('<td class="ms">' + res['outcome'] + '</td>')
-                hfile.write('<td class="small">' + str(len(res['cases'])) + '</td>')
+                hfile.write('<td class="small cases">' + str(len(res['cases'])) + '</td>')
+                hfile.write('<td class="small ones">' + str(res['ones']) + '</td>')
+                hfile.write('<td class="small">' + str(dontCares) + '</td>')
                 hfile.write('<td class="medium">' + str(res['inclusion']) + '</td>')
                 hfile.write('<td class="medium">' + str(res['coverage']) + '</td>')
-                hfile.write('<td class="small">' + str(res['ones']) + '</td>')
-                hfile.write('<td class="small">' + str(dontCares) + '</td>')
 
                 src = 'E' if res['source'] == 'espresso' else 'M'
                 hfile.write('<td class="small">' + src + '</td>')
@@ -699,11 +773,11 @@ class QCAAnalyzer:
             for res in s.all_exprs:
                 dontCares = 0
 
-                exp_str = ' '.join(str(x) for x in res['expressions']) + ' ' # to match last MS with suffixed space
+                var_str = ' '.join(str(x) for x in res['msVars']) + ' ' # to match last MS with suffixed space
                 csv_line = res['outcomeID'] + '\t'
                 for ms in s.mscols:
-                    if ms + ' ' in exp_str:
-                        if '~' + ms + ' ' in exp_str:
+                    if ms + ' ' in var_str:
+                        if '~' + ms + ' ' in var_str:
                             csv_line = csv_line + '0' + '\t'
                         else:
                             csv_line = csv_line + '1' + '\t'
