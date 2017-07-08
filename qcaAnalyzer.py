@@ -12,11 +12,6 @@ from pyeda.inter import *
 
 # Expressions sort
 def sortExpressions(e1, e2):
-    if e1['source'] == 'espresso' and e2['source'] != 'espresso':
-        return -1
-    elif e1['source'] != 'espresso' and e2['source'] == 'espresso':
-        return 1
-
     if e1['outcome'] == '1' and e2['outcome'] != '1':
         return -1
     elif e1['outcome'] != '1' and e2['outcome'] == '1':
@@ -117,6 +112,33 @@ def cmp_to_key_msops(sortMsOps):
             return sortMsOps(self.obj, other.obj) >= 0
         def __ne__(self, other):
             return sortMsOps(self.obj, other.obj) != 0
+    return K
+
+def sortDC(ex1, ex2):
+    if len(ex1['msVars']) > len(ex2['msVars']):
+        return -1
+    elif len(ex1['msVars']) < len(ex2['msVars']):
+        return 1
+    else:
+        return 0
+
+def cmp_to_key_dc(sortDC):
+    # Convert a cmp= function into a key= function
+    class K(object):
+        def __init__(self, obj, *args):
+            self.obj = obj
+        def __lt__(self, other):
+            return sortDC(self.obj, other.obj) < 0
+        def __gt__(self, other):
+            return sortDC(self.obj, other.obj) > 0
+        def __eq__(self, other):
+            return sortDC(self.obj, other.obj) == 0
+        def __le__(self, other):
+            return sortDC(self.obj, other.obj) <= 0  
+        def __ge__(self, other):
+            return sortDC(self.obj, other.obj) >= 0
+        def __ne__(self, other):
+            return sortDC(self.obj, other.obj) != 0
     return K
 
 class QCAAnalyzer:
@@ -325,100 +347,8 @@ class QCAAnalyzer:
         s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
 
         # detect and merge expressions with mutual dc to 1, 1 to dc loops
-        s.minimized_exprs_P = s.detectDCLoops(s.minimized_exprs_P)
-        s.minimized_exprs_N = s.detectDCLoops(s.minimized_exprs_N)
-
-    def countOnes(s, expinf):
-        ones = 0
-        for var in expinf['msVars']:
-            if 'Variable' in str(type(var)) or 'AndOp' in str(type(var)):
-                ones = ones + 1
-        return ones
-
-    def hasDCLoop(s, ex1, ex2, ones):
-        loop_1s = []
-        shared_1s = []
-
-        var1_str = ' '.join(str(x) for x in ex1['msVars']) + ' '
-        var2_str = ' '.join(str(x) for x in ex2['msVars']) + ' '
-        for ms in s.mscols:
-            # are 1's part of loop?
-            if ms + ' ' in var1_str and not '~' + ms + ' ' in var1_str:
-
-                if not ms + ' ' in var2_str:
-                    # ms must attest '1' at least once among cases - check below!
-                    loop_1s.append(ms) # ex1 == 1, ex2 == dc
-                elif ms + ' ' in var2_str and not '~' + ms + ' ' in var2_str:
-                    shared_1s.append(ms) # ex1 == 1, ex2 == 1
-
-            elif ms + ' ' in var2_str and not '~' + ms + ' ' in var2_str:
-
-                if not ms + ' ' in var1_str:
-                    # ms must attest '1' at least once among cases - check below!
-                    loop_1s.append(ms) # ex1 == dc, ex2 == 1
-                elif ms + ' ' in var1_str and not '~' + ms + ' ' in var1_str:
-                    shared_1s.append(ms) # ex1 == 1, ex2 == 1
-
-        has_loop = False
-        if len(loop_1s) >= 2 and len(loop_1s) + len(shared_1s) == ones * 2:
-            has_loop = True
-
-        return { 'loop1s': loop_1s, 'shared1s': shared_1s, 'hasLoop': has_loop }
-
-    def isMatchDCLoopPattern(s, vars, loopInfo):
-        var_str = ' '.join(str(x) for x in vars) + ' '
-        for ms in s.mscols:
-            if ms + ' ' in var_str:
-                if '~' + ms + ' ' in var_str: # 0
-                    if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
-                        return False
-                else: # 1
-                    if not ms in loopInfo['loop1s'] and not ms in loopInfo['shared1s']:
-                        return False
-            else: # dc - allow if loop info != '1'
-                if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
-                    return False
-
-        return True
-
-    def isMatchDCMovePattern(s, vars, loopInfo):
-        var_str = ' '.join(str(x) for x in vars) + ' '
-        for ms in s.mscols:
-            if ms + ' ' in var_str:
-                if '~' + ms + ' ' in var_str: # 0
-                    if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
-                        return False
-            else: # dc - allow if loop info != '1'
-                if ms in loopInfo['loop1s'] or ms in loopInfo['shared1s']:
-                    return False
-
-        return True
-
-    def searchDCLoopPattern(s, oBuckets, loopInfo, ones):
-        for i in range(ones, len(s.mscols)):
-            bucket = None
-            if str(i)in oBuckets:
-                bucket = oBuckets[str(i)]
-
-            if bucket:
-                for expinf in bucket:
-                    if s.isMatchDCLoopPattern(expinf['msVars'], loopInfo):
-                        return expinf
-
-        return None
-
-    def moveDCCases(s, ex, join_ex, loopInfo):
-        keep_cases = []
-        for case in ex['cases']:
-            ref_info = s.referenceMap[case]
-            c_ex = ref_info['expression']
-            if s.isMatchDCMovePattern(list(c_ex._lits), loopInfo):
-                if not case in join_ex['cases']:
-                    join_ex['cases'].append(case)
-            else:
-                keep_cases.append(case)
-
-        return keep_cases
+        s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P)
+        s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N)
 
     def buildExpressionsFromCases(s, expinf):
         build_parts = []
@@ -459,69 +389,179 @@ class QCAAnalyzer:
                 expression = var
             else:
                 expression = And(expression, var)
-        expinf['dnfKey'] = str(expression.to_dnf())
+        try:
+            expinf['dnfKey'] = str(expression.to_dnf())
+        except AttributeError as e:
+            raise
 
-    def extractDCLoop(s, ex1, ex2, oBuckets, loopInfo, ones):
-        join_ex = s.searchDCLoopPattern(oBuckets, loopInfo, ones)
-        if not join_ex:
-            # generate loop expression
-            src = 'espresso' if ex1['source'] == 'espresso' or ex2['source'] == 'espresso' else 'manual'
-            join_ex = {'msVars': [], 'cases': [], 'dnfKey': '', 'source': src}
-
-        ex1_cases = s.moveDCCases(ex1, join_ex, loopInfo)
-        ex2_cases = s.moveDCCases(ex2, join_ex, loopInfo)
-
-        if join_ex['cases']:
-            ex1['cases'] = ex1_cases
-            ex2['cases'] = ex2_cases
-
-            s.buildExpressionsFromCases(ex1)
-            s.buildExpressionsFromCases(ex2)
-            s.buildExpressionsFromCases(join_ex)
-
-            # add new expression to appropriate bucket
-            bucket = []
-            join_ones = len(loopInfo['loop1s']) + len(loopInfo['shared1s'])
-            if str(join_ones) in oBuckets:
-                bucket = oBuckets[str(join_ones)]
-            bucket.append(join_ex)
-            oBuckets[str(join_ones)] = bucket
-
-            return True
-        else:
-            # abort! - this can occur if one of the join MSS is unattested at some of the cases rather than simply "don't care"
+    def isMatch(s, baseEx, testEx):
+        if not baseEx['cases'] or not testEx['cases']:
             return False
 
-    def detectDCLoops(s, exprs):
+        base_str = ' '.join(str(x) for x in baseEx['msVars']) + ' '
+        test_str = ' '.join(str(x) for x in testEx['msVars']) + ' '
+        for ms in s.mscols:
+            base_val = ''
+            if ms + ' ' in base_str:
+                if '~' + ms + ' ' in base_str: # 0
+                    base_val = '0'
+                else: # 1
+                    base_val = '1'
+            else: # dc
+                base_val = '-'
+
+            test_val = ''
+            if ms + ' ' in test_str:
+                if '~' + ms + ' ' in test_str: # 0
+                    test_val = '0'
+                else: # 1
+                    test_val = '1'
+            else: # dc
+                test_val = '-'
+
+            if base_val == '1' and test_val == '0':
+                return False
+            elif base_val == '0' and test_val == '1':
+                return False
+
+        return True
+
+    def findMatches(s, expinf, exprs):
+        matches = []
+        for ei in exprs:
+            if s.isMatch(expinf, ei):
+                if not matches:
+                    matches.append(expinf)
+                matches.append(ei)
+        return matches
+
+    def selectBaseMatch(s, exprs):
+        base = None
+
+        # find with most 1's
+        max_ones = 0
+        for ex in exprs:
+            var_count = len(ex['msVars'])
+            var_str = ' '.join(str(x) for x in ex['msVars'])
+            tilde_count = var_str.count('~')
+            ones = var_count - tilde_count
+
+            if ones > max_ones:
+                max_ones = ones
+                base = ex
+
+        base_str = ' '.join(str(x) for x in base['msVars'])
+        base_parts = base_str.split(' ')
+        base_parts = [ex for ex in base_parts if ex[:1] != '~']
+
+        sub_list = [ex for ex in exprs if ex is not base]
+        for ex in sub_list:
+            ex_str = ' '.join(str(x) for x in ex['msVars'])
+            ex_parts = ex_str.split(' ')
+            ex_parts = [ex for ex in ex_parts if ex[:1] != '~']
+
+            if not set(ex_parts).issubset(set(base_parts)):
+                base = None # base does not represent all member vars!
+                break
+
+        return base
+
+    def computeProfile(s, exprs):
+        profile = set()
+        for ex in exprs:
+            ex_str = ' '.join(str(x) for x in ex['msVars'])
+            ex_parts = ex_str.split(' ')
+            ex_parts = [ex for ex in ex_parts if ex[:1] != '~']
+
+            profile = profile.union(ex_parts)
+
+        return profile
+
+    def isMatchProfile(s, vars, profile):
+        var_str = ' '.join(str(x) for x in vars)
+        var_parts = var_str.split(' ')
+        var_parts = [ex for ex in var_parts if ex[:1] != '~']
+
+        if profile.issubset(set(var_parts)):
+            return True
+
+        return False
+
+    def moveMatches(s, expinf, base, profile):
+        keep_cases = []
+        for case in expinf['cases']:
+            ref_info = s.referenceMap[case]
+            c_ex = ref_info['expression']
+
+            if s.isMatchProfile(list(c_ex._lits), profile):
+                if not case in base['cases']:
+                    base['cases'].append(case)
+            else:
+                keep_cases.append(case)
+
+        return keep_cases
+
+    def combineMatches(s, exprs):
+        base = s.selectBaseMatch(exprs)
+        if not base:
+            base = {'msVars': [], 'cases': [], 'dnfKey': '', 'source': 'postprocess'}
+
+        sub_list = [ex for ex in exprs if ex is not base]
+        profile = s.computeProfile(exprs)
+        for ex in sub_list:
+            case_count = len(ex['cases'])
+            ex['cases'] = s.moveMatches(ex, base, profile)
+            if ex['cases'] and len(ex['cases']) < case_count:
+                s.buildExpressionsFromCases(ex)
+
+        if base['cases']:
+            s.buildExpressionsFromCases(base)
+            sub_list.append(base)
+
+        return sub_list
+
+    def detectMatches(s, exprs):
         exprs_list = []
-
-        oBuckets = {}
         for expinf in exprs:
-            # assign to buckets per number of 1's
-            ones = s.countOnes(expinf)
-            bucket = []
-            if str(ones) in oBuckets:
-                bucket = oBuckets[str(ones)]
-            bucket.append(expinf)
-            oBuckets[str(ones)] = bucket
+            exprs_list.append(expinf)
 
-        # search each i=count(ones) bucket for dc<->1 'loops'
-        for i in range(1, len(s.mscols)):
-            bucket = None
-            if str(i)in oBuckets:
-                bucket = oBuckets[str(i)]
+        # sort from fewer to more dc's
+        exprs_list.sort(key=cmp_to_key_dc(sortDC))
 
-            if bucket and len(bucket) > 1: # multiple exprs found with count=i of 1's
-                for ex1 in bucket:
-                    sub_b = [inf for inf in bucket if inf is not ex1]
-                    for ex2 in sub_b:
-                        loop_info = s.hasDCLoop(ex1, ex2, i)
-                        if loop_info['hasLoop']:
-                            s.extractDCLoop(ex1, ex2, oBuckets, loop_info, i)
+        # First pass
+        match_groups = []
+        for expinf in exprs_list:
+            group = s.findMatches(expinf, [ex for ex in exprs_list if ex is not expinf])
+            match_groups.append(group)
 
-        for ones, bucket in oBuckets.items():
-            for expinf in bucket:
-                exprs_list.append(expinf)
+        for group in match_groups:
+            g_survivors = [ex for ex in group if ex in exprs_list]
+            if len(g_survivors) > 1:
+                for ex in g_survivors:
+                    if ex in exprs_list:
+                        exprs_list.remove(ex)
+
+                match_results = s.combineMatches(g_survivors)
+                exprs_list.extend(match_results)
+
+        # sort from fewer to more dc's - again
+        exprs_list.sort(key=cmp_to_key_dc(sortDC))
+
+        # Second pass
+        match_groups = []
+        for expinf in exprs_list:
+            group = s.findMatches(expinf, [ex for ex in exprs_list if ex is not expinf])
+            match_groups.append(group)
+
+        for group in match_groups:
+            g_survivors = [ex for ex in group if ex in exprs_list]
+            if len(g_survivors) > 1:
+                for ex in g_survivors:
+                    if ex in exprs_list:
+                        exprs_list.remove(ex)
+
+                match_results = s.combineMatches(g_survivors)
+                exprs_list.extend(match_results)
 
         return exprs_list
 
@@ -730,8 +770,6 @@ class QCAAnalyzer:
     def generateOutcomeID(s, prefix, id):
         oid = ''
         if id < 10:
-            oid = prefix + '00' + str(id)
-        elif id < 100:
             oid = prefix + '0' + str(id)
         else:
             oid = prefix + str(id)
@@ -940,7 +978,7 @@ class QCAAnalyzer:
                 hfile.write('<td class="medium">' + str(res['inclusion']) + '</td>')
                 hfile.write('<td class="medium">' + str(res['coverage']) + '</td>')
 
-                src = 'E' if res['source'] == 'espresso' else 'M'
+                src = res['source'][:1].upper()
                 hfile.write('<td class="small">' + src + '</td>')
 
                 case_str = s.buildCaseStr(res['outcomeID'], res['cases'], True)
