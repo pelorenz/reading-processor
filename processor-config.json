@@ -17,8 +17,8 @@
   "inputFolder": "input/",
   "outputFolder": "output/",
   "variantFolder": "variant-data/",
-  "variantChapter": "c01/",
-  "variantFile": "mark-01a-all",
+  "variantChapter": "c15/",
+  "variantFile": "mark-15a-all",
   "referenceMSS": [
     "05","032"
   ],
