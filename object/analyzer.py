@@ -284,6 +284,8 @@ class Analyzer:
                             'description': longLabel,
                             'languageCode': langCode
                         }
+                        if (witness_str == 'VL(5)'):
+                            layer = 4 # move VL(5) readings to singular layer
                         layersMap[layer].append(wrapper)
                         variantsMap[label] = layer
 
@@ -370,12 +372,11 @@ class Analyzer:
 
         j_layer = { 
           'index': '4',
-          'size': str(len(rms.singular)).decode('utf-8'),
           'witnesses': [],
           'readings': []
         }
 
-        # create readings
+        # create singular readings
         disp_counter = 1
         for vu in rms.singular:
             excerpt = vu.getExcerpt(vu.getReadingForManuscript(rms.gaNum), '', True)
@@ -392,6 +393,23 @@ class Analyzer:
 
             disp_counter = disp_counter + 1
 
+        # append singular readings with VL(5)
+        sorted_variations = sorted(layersMap[4], cmp=sortVariations)
+
+        # create readings
+        for var in sorted_variations:
+            j_var = {
+                'reference': var['wrapped'].variationUnit.label,
+                'languageCode': var['languageCode'],
+                'sequence': var['sequence'],
+                'layer': '4',
+                'witnesses': var['witnesses'],
+                'excerpt': var['excerpt'],
+                'description': var['description']
+            }
+            j_layer['readings'].append(j_var)
+
+        j_layer['size'] = str(len(rms.singular) + len(sorted_variations)).decode('utf-8')
         j_layers['clusters'].append(j_layer)
 
         jsonfile = c.get('layersFolder') + 'Mark ' + s.chapter[1:] + '-' + rms.gaNum + '.json'
@@ -411,6 +429,7 @@ class Analyzer:
             layersMap[1] = []
             layersMap[2] = []
             layersMap[3] = []
+            layersMap[4] = []
 
             # layers keyed by variant label
             variantsMap = {}
@@ -420,6 +439,7 @@ class Analyzer:
             witnessesMap[1] = {}
             witnessesMap[2] = {}
             witnessesMap[3] = {}
+            witnessesMap[4] = {}
 
             # selGL
             s.writeCSV(rms, 'GL', 'selMSS', 'sel_nils', 'sel_GL', 'selVect', layersMap, variantsMap, witnessesMap)

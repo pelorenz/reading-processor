@@ -125,6 +125,7 @@ DSS.Chapter.processUploadDiffs = function (event) {
                   var j_ru = j_subreading['readingUnits'][n];
                   var ru = new DSS.ReadingUnit(j_ru['tokenIndex'], j_ru['verse'], j_ru['addressIndex'], j_ru['text']);
                   subreading.readingUnits.push(ru);
+                  vu.addresses.push(DSS.chapter.getAddress(j_ru['verse'], j_ru['addressIndex']));
                 }
                 subreading.displayValue = j_subreading['displayValue'];
                 subreading.manuscripts = j_subreading['manuscripts'];
@@ -139,6 +140,7 @@ DSS.Chapter.processUploadDiffs = function (event) {
                 var j_ru = j_reading['readingUnits'][m];
                 var ru = new DSS.ReadingUnit(j_ru['tokenIndex'], j_ru['verse'], j_ru['addressIndex'], j_ru['text']);
                 reading.readingUnits.push(ru);
+                vu.addresses.push(DSS.chapter.getAddress(j_ru['verse'], j_ru['addressIndex']));
               }
               reading.displayValue = j_reading['displayValue'];
               reading.manuscripts = j_reading['manuscripts'];
