@@ -289,7 +289,7 @@ class Analyzer:
                             'description': longLabel,
                             'languageCode': langCode
                         }
-                        if (witness_str == 'VL(5)'):
+                        if (refMS.gaNum == '05' and witness_str == 'VL(5)'):
                             layer = 4 # move VL(5) readings to singular layer
                         layersMap[layer].append(wrapper)
                         variantsMap[label] = layer

@@ -209,4 +209,5 @@ class Processor:
 
 # Invoke via entry point
 # csvProcessor.py -v -f [filename minus suffix]
+# csvProcessor.py -v -f mark-03a
 Processor().main(sys.argv[1:])
