@@ -55,13 +55,13 @@
     target.children('div').first().removeClass('ref-hidden');
   },
   chFromDir: function(dir) {
-    return dir.replace(/Mark (\d{2,2})\-\d{1,4}[GL]{1,2}/gi, '$1');
+    return dir.replace(/Mark (\d{2,2}(?:(?:pt[12]){0,1}))\-\d{1,4}[GL]{1,2}/gi, '$1');
   },
   msFromDir: function(dir) {
-    return dir.replace(/Mark \d{2,2}\-(\d{1,4})[GL]{1,2}/gi, '$1');
+    return dir.replace(/Mark \d{2,2}(?:(?:pt[12]){0,1})\-(\d{1,4})[GL]{1,2}/gi, '$1');
   },
   stripLangCode: function(dir) {
-    return dir.replace(/(Mark \d{2,2}\-\d{1,4})[GL]{1,2}/gi, '$1');
+    return dir.replace(/(Mark \d{2,2}(?:(?:pt[12]){0,1})\-\d{1,4})[GL]{1,2}/gi, '$1');
   },
   viewClusterPlot: function(dir, subdir, filename, title, isGL) {
     $('#content').empty();
