@@ -350,8 +350,8 @@ class QCAAnalyzer:
         s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
 
         # detect and merge expressions with mutual dc to 1, 1 to dc loops
-        s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P)
-        s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N)
+        s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P, 1)
+        s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N, 0)
 
     def buildExpressionsFromCases(s, expinf):
         build_parts = []
@@ -516,7 +516,7 @@ class QCAAnalyzer:
 
         return keep_cases
 
-    def combineMatches(s, exprs):
+    def combineMatches(s, exprs, outcome):
         base = s.selectBaseMatch(exprs)
         if not base:
             base = {'msVars': [], 'cases': [], 'dnfKey': '', 'source': 'postprocess'}
@@ -533,9 +533,17 @@ class QCAAnalyzer:
             s.buildExpressionsFromCases(base)
             sub_list.append(base)
 
+        dnf_key = base['dnfKey']
+        if outcome == 1:
+            if not dnf_key in s.caseMapOnes:
+                s.caseMapOnes[dnf_key] = base['cases']
+        else:
+            if not dnf_key in s.caseMapZeros:
+                s.caseMapZeros[dnf_key] = base['cases']
+
         return sub_list
 
-    def detectMatches(s, exprs):
+    def detectMatches(s, exprs, outcome):
         exprs_list = []
         for expinf in exprs:
             exprs_list.append(expinf)
@@ -556,7 +564,7 @@ class QCAAnalyzer:
                     if ex in exprs_list:
                         exprs_list.remove(ex)
 
-                match_results = s.combineMatches(g_survivors)
+                match_results = s.combineMatches(g_survivors, outcome)
                 exprs_list.extend(match_results)
 
         # sort from fewer to more dc's - again
@@ -575,7 +583,7 @@ class QCAAnalyzer:
                     if ex in exprs_list:
                         exprs_list.remove(ex)
 
-                match_results = s.combineMatches(g_survivors)
+                match_results = s.combineMatches(g_survivors, outcome)
                 exprs_list.extend(match_results)
 
         # Third pass
@@ -591,7 +599,7 @@ class QCAAnalyzer:
                     if ex in exprs_list:
                         exprs_list.remove(ex)
 
-                match_results = s.combineMatches(g_survivors)
+                match_results = s.combineMatches(g_survivors, outcome)
                 exprs_list.extend(match_results)
 
         return exprs_list
@@ -835,10 +843,10 @@ class QCAAnalyzer:
             p_cases = len(cases)
 
             # Number of negative cases for current expression
-            if dnf_key in s.caseMapZeros:
-                n_cases = len(s.caseMapZeros[dnf_key])
-            else:
-                n_cases = 0
+            n_cases = 0
+            for ei in s.minimized_exprs_N:
+                if s.isMatch(expinf, ei):
+                    n_cases = n_cases + len(ei['cases'])
 
             inclusion = p_cases / (p_cases + n_cases) if n_cases > 0 else 1
             inclusion = '%.4f' % round(inclusion, 4) if inclusion != 1 else '1.0'
@@ -863,10 +871,10 @@ class QCAAnalyzer:
             n_cases = len(cases)
 
             # Number of positive cases for current expression
-            if dnf_key in s.caseMapOnes:
-                p_cases = len(s.caseMapOnes[dnf_key])
-            else:
-                p_cases = 0
+            p_cases = 0
+            for ei in s.minimized_exprs_P:
+                if s.isMatch(expinf, ei):
+                    p_cases = p_cases + len(ei['cases'])
 
             inclusion = n_cases / (p_cases + n_cases) if p_cases > 0 else 1
             inclusion = '%.4f' % round(inclusion, 4) if inclusion != 1 else '1.0'
