@@ -78,21 +78,21 @@ class JSONProcessor:
             file.write(s.htmldata.encode('utf-8'))
             file.close()
 
-    def main(s, argv):
-        o = s.options = CommandLine(argv).getOptions()
-        c = s.config = Config(o.config)
+    #def main(s, argv):
+    #    o = s.options = CommandLine(argv).getOptions()
+    #    c = s.config = Config(o.config)
 
-        if o.file:
-            files = [o.file + '.json', o.file + '-lat.json']
-        else:
-            files = c.get('jsonFiles')
+    #    if o.file:
+    #        files = [o.file + '.json', o.file + '-lat.json']
+    #    else:
+    #        files = c.get('jsonFiles')
 
-        if (files):
-            for filename in files:
-                s.processJSON(filename)
-            s.render(files[0])
+    #    if (files):
+    #        for filename in files:
+    #            s.processJSON(filename)
+    #        s.render(files[0])
 
 # DON'T RUN DIRECTLY - CALL csvProcessor.py -v -f [filename minus suffix]
 # Invoke via entry point
 # jsonProcessor.py -v > out2.txt
-JSONProcessor().main(sys.argv[1:])
+#JSONProcessor().main(sys.argv[1:])

@@ -214,6 +214,9 @@ class QCAAnalyzer:
                 csv.append(row)
                 refs.append(vu_refs[ridx])
                 m_data.append(vu_mdata[ridx])
+            elif row[-1] == '1':
+                # are we removing the positive outcome? if so, discard entire vu
+                return
 
         if len(csv) <= 1:
             return
@@ -432,7 +435,19 @@ class QCAAnalyzer:
             if s.isMatch(expinf, ei):
                 if not matches:
                     matches.append(expinf)
-                matches.append(ei)
+
+                # new element must match everything already in the group!
+                is_matches_group = True
+                for m_ei in matches:
+                    if m_ei == expinf:
+                        continue
+
+                    if not s.isMatch(ei, m_ei):
+                        is_matches_group = False
+                        break
+
+                if is_matches_group:
+                    matches.append(ei)
         return matches
 
     def selectBaseMatch(s, exprs):
@@ -548,6 +563,22 @@ class QCAAnalyzer:
         exprs_list.sort(key=cmp_to_key_dc(sortDC))
 
         # Second pass
+        match_groups = []
+        for expinf in reversed(exprs_list):
+            group = s.findMatches(expinf, [ex for ex in exprs_list if ex is not expinf])
+            match_groups.append(group)
+
+        for group in match_groups:
+            g_survivors = [ex for ex in group if ex in exprs_list]
+            if len(g_survivors) > 1:
+                for ex in g_survivors:
+                    if ex in exprs_list:
+                        exprs_list.remove(ex)
+
+                match_results = s.combineMatches(g_survivors)
+                exprs_list.extend(match_results)
+
+        # Third pass
         match_groups = []
         for expinf in exprs_list:
             group = s.findMatches(expinf, [ex for ex in exprs_list if ex is not expinf])
