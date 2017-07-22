@@ -10,6 +10,7 @@ class QCARunner:
     def __init__(s):
         s.chapter = ''
         s.inputfile = ''
+        s.qcaset = ''
         s.refMSS = []
 
     def info(s, *args):
@@ -19,7 +20,7 @@ class QCARunner:
             info += str(arg).strip()
         print info
 
-    def analyze(s, chapter, inputfile, refMSS):
+    def analyze(s, chapter, inputfile, refMSS, qcaset):
         c = s.config = Config('processor-config.json')
 
         s.info('Calling analysis with chapter', chapter, 'and input file', inputfile)
@@ -27,6 +28,7 @@ class QCARunner:
 
         s.chapter = chapter
         s.inputfile = inputfile
+        s.qcaset = qcaset
         s.refMSS = refMSS
 
         for ms in refMSS:
@@ -40,6 +42,8 @@ class QCARunner:
             p.append(s.refMSS)
             p.append('-f')
             p.append(s.inputfile)
+            p.append('-q')
+            p.append(s.qcaset)
             proc = subprocess.Popen(p, stdout=subprocess.PIPE, shell=True)
             (out, err) = proc.communicate()
 
@@ -55,6 +59,8 @@ class QCARunner:
             p.append('-v')
             p.append('-f')
             p.append(s.chapter + '-' + ms)
+            p.append('-q')
+            p.append(s.qcaset)
             proc = subprocess.Popen(p, env=py3_env, stdout=subprocess.PIPE, shell=True)
             (out, err) = proc.communicate()
         s.info('Done')
