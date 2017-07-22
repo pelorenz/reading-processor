@@ -12,6 +12,9 @@ def sortLabels(lab1, lab2):
     ptA = lab1[7:10]
     ptB = lab2[7:10]
 
+    ms1 = lab1[8:] if ptA[:1] != 'p' else lab1[11:]
+    ms2 = lab2[8:] if ptB[:1] != 'p' else lab2[11:]
+
     ptA = int(ptA[2:]) if ptA[:1] == 'p' else 0
     ptB = int(ptB[2:]) if ptB[:1] == 'p' else 0
 
@@ -25,8 +28,8 @@ def sortLabels(lab1, lab2):
     elif ptA > ptB:
         return 1
 
-    ms1 = lab1[8:].replace('G', '').replace('L', '').replace('D', '')
-    ms2 = lab2[8:].replace('G', '').replace('L', '').replace('D', '')
+    ms1 = ms1.replace('G', '').replace('L', '').replace('D', '')
+    ms2 = ms2.replace('G', '').replace('L', '').replace('D', '')
 
     ms1 = re.sub(r'QCA\-[a-zA-Z0-9]+', '', ms1)
     ms2 = re.sub(r'QCA\-[a-zA-Z0-9]+', '', ms2)
