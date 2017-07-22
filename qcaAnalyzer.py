@@ -576,37 +576,22 @@ class QCAAnalyzer:
         # sort from fewer to more dc's - again
         exprs_list.sort(key=cmp_to_key_dc(sortDC))
 
-        # Second pass
-        match_groups = []
-        for expinf in reversed(exprs_list):
-            group = s.findMatches(expinf, [ex for ex in exprs_list if ex is not expinf])
-            match_groups.append(group)
+        # Multiple passes
+        for i in range(1,5):
+            match_groups = []
+            for expinf in reversed(exprs_list):
+                group = s.findMatches(expinf, [ex for ex in exprs_list if ex is not expinf])
+                match_groups.append(group)
 
-        for group in match_groups:
-            g_survivors = [ex for ex in group if ex in exprs_list]
-            if len(g_survivors) > 1:
-                for ex in g_survivors:
-                    if ex in exprs_list:
-                        exprs_list.remove(ex)
+            for group in match_groups:
+                g_survivors = [ex for ex in group if ex in exprs_list]
+                if len(g_survivors) > 1:
+                    for ex in g_survivors:
+                        if ex in exprs_list:
+                            exprs_list.remove(ex)
 
-                match_results = s.combineMatches(g_survivors, outcome)
-                exprs_list.extend(match_results)
-
-        # Third pass
-        match_groups = []
-        for expinf in exprs_list:
-            group = s.findMatches(expinf, [ex for ex in exprs_list if ex is not expinf])
-            match_groups.append(group)
-
-        for group in match_groups:
-            g_survivors = [ex for ex in group if ex in exprs_list]
-            if len(g_survivors) > 1:
-                for ex in g_survivors:
-                    if ex in exprs_list:
-                        exprs_list.remove(ex)
-
-                match_results = s.combineMatches(g_survivors, outcome)
-                exprs_list.extend(match_results)
+                    match_results = s.combineMatches(g_survivors, outcome)
+                    exprs_list.extend(match_results)
 
         return exprs_list
 
@@ -828,15 +813,16 @@ class QCAAnalyzer:
             outcomes.append(out_id)
             s.caseOutcomes[ref] = outcomes
 
+    def computeTotalCases(s, exprs):
+        cases = 0
+        for expinfo in exprs:
+            cases = cases + len(expinfo['cases'])
+        return cases
+
     def computeScores(s):
         # Total positive and negative cases for coverage
-        p_outcomes = 0
-        for expinfo in s.minimized_exprs_P:
-            p_outcomes = p_outcomes + len(expinfo['cases'])
-
-        n_outcomes = 0
-        for expinfo in s.minimized_exprs_N:
-            n_outcomes = n_outcomes + len(expinfo['cases'])
+        p_outcomes = s.computeTotalCases(s.minimized_exprs_P)
+        n_outcomes = s.computeTotalCases(s.minimized_exprs_N)
 
         # Iterate positive outcomes and compare to negative
         outcome_ctr = 1
@@ -998,6 +984,10 @@ class QCAAnalyzer:
         with open(htmlfile, 'w+', encoding='utf-8') as hfile:
             hfile.write('<div id="qca-div"><table cellspacing="0" cellpadding="0" id="qca-table">\n')
 
+            msdata = {}
+            for ms in s.mscols:
+                msdata[ms] = { 'A1s': 0, 'A0s': 0, 'ADCs': 0, 'ACases1': 0, 'ACases0': 0, 'ACasesDC': 0, 'B1s': 0, 'B0s': 0, 'BDCs': 0, 'BCases1': 0, 'BCases0': 0, 'BCasesDC': 0 }
+
             for res in s.all_exprs:
                 dontCares = 0
 
@@ -1010,11 +1000,32 @@ class QCAAnalyzer:
                     if ms + ' ' in var_str:
                         if '~' + ms + ' ' in var_str:
                             hfile.write('<td class="ms">' + '0' + '</td>')
+
+                            if res['outcome'] == '1':
+                                msdata[ms]['A0s'] = msdata[ms]['A0s'] + 1
+                                msdata[ms]['ACases0'] = msdata[ms]['ACases0'] + len(res['cases'])
+                            else:
+                                msdata[ms]['B0s'] = msdata[ms]['B0s'] + 1
+                                msdata[ms]['BCases0'] = msdata[ms]['BCases0'] + len(res['cases'])
                         else:
                             hfile.write('<td class="ms ' + hilite + '">' + '1' + '</td>')
+
+                            if res['outcome'] == '1':
+                                msdata[ms]['A1s'] = msdata[ms]['A1s'] + 1
+                                msdata[ms]['ACases1'] = msdata[ms]['ACases1'] + len(res['cases'])
+                            else:
+                                msdata[ms]['B1s'] = msdata[ms]['B1s'] + 1
+                                msdata[ms]['BCases1'] = msdata[ms]['BCases1'] + len(res['cases'])
                     else:
                         hfile.write('<td class="ms dontcare">' + '-' + '</td>')
                         dontCares = dontCares + 1
+
+                        if res['outcome'] == '1':
+                            msdata[ms]['ADCs'] = msdata[ms]['ADCs'] + 1
+                            msdata[ms]['ACasesDC'] = msdata[ms]['ACasesDC'] + len(res['cases'])
+                        else:
+                            msdata[ms]['BDCs'] = msdata[ms]['BDCs'] + 1
+                            msdata[ms]['BCasesDC'] = msdata[ms]['BCasesDC'] + len(res['cases'])
 
                 hfile.write('<td class="ms">' + res['outcome'] + '</td>')
                 hfile.write('<td class="small cases">' + str(len(res['cases'])) + '</td>')
@@ -1037,6 +1048,9 @@ class QCAAnalyzer:
             witness = re.sub(r'[LDMgl]{1,3}$', '', witness)
             hfile.write('<div>Reference witness: ' + witness + '</div>')
 
+            p_cases = s.computeTotalCases(s.minimized_exprs_P)
+            n_cases = s.computeTotalCases(s.minimized_exprs_N)
+
             vars = {}
             for ref in s.refs:
                 ref = re.sub(r'[a-z]$', '', ref)
@@ -1044,8 +1058,131 @@ class QCAAnalyzer:
             hfile.write('<div>Variation units: ' + str(len(vars)) + '</div>')
             hfile.write('<div>Readings: ' + str(len(s.csv)) + '</div>')
             hfile.write('<div>Expressions: ' + str(len(s.all_exprs)) + '</div>')
-            hfile.write('<div>Positive outcomes: ' + str(len(s.minimized_exprs_P)) + '</div>')
-            hfile.write('<div>Negative outcomes: ' + str(len(s.minimized_exprs_N)) + '</div>')
+            hfile.write('<div>Positive expressions: ' + str(len(s.minimized_exprs_P)) + '</div>')
+            hfile.write('<div>Positive cases: ' + str(p_cases) + '</div>')
+            hfile.write('<div>Negative expressions: ' + str(len(s.minimized_exprs_N)) + '</div>')
+            hfile.write('<div>Negative cases: ' + str(n_cases) + '</div>')
+            hfile.write('<div>.</div>')
+            hfile.write('<div>MANUSCRIPT DATA</div>')
+            hfile.write('<div>Positive Outcomes</div>')
+            hfile.write('<table>')
+            hfile.write('<tr>')
+            hfile.write('<th>MS</th>')
+            hfile.write('<th>A1s</th>')
+            hfile.write('<th>A1%</th>')
+            hfile.write('<th>A0s</th>')
+            hfile.write('<th>A0%</th>')
+            hfile.write('<th>ADCs</th>')
+            hfile.write('<th>ADC%</th>')
+            hfile.write('<th>A1 Cases</th>')
+            hfile.write('<th>A1% Cases</th>')
+            hfile.write('<th>A0 Cases</th>')
+            hfile.write('<th>A0% Cases</th>')
+            hfile.write('<th>ADC Cases</th>')
+            hfile.write('<th>ADC% Cases</th>')
+            hfile.write('</tr>')
+            for ms in s.mscols:
+                hfile.write('<tr>')
+                hfile.write('<th>' + ms + '</th>')
+                hfile.write('<td>' + str(msdata[ms]['A1s']) + '</td>')
+
+                pc = msdata[ms]['A1s'] / len(s.minimized_exprs_P)
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['A0s']) + '</td>')
+
+                pc = msdata[ms]['A0s'] / len(s.minimized_exprs_P)
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['ADCs']) + '</td>')
+
+                pc = msdata[ms]['ADCs'] / len(s.minimized_exprs_P)
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['ACases1']) + '</td>')
+
+                pc = msdata[ms]['ACases1'] / p_cases
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['ACases0']) + '</td>')
+
+                pc = msdata[ms]['ACases0'] / p_cases
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['ACasesDC']) + '</td>')
+
+                pc = msdata[ms]['ACasesDC'] / p_cases
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('</tr>')
+            hfile.write('</table>')
+
+            hfile.write('<div>.</div>')
+            hfile.write('<div>Negative Outcomes</div>')
+            hfile.write('<table>')
+            hfile.write('<tr>')
+            hfile.write('<th>MS</th>')
+            hfile.write('<th>B1s</th>')
+            hfile.write('<th>B1%</th>')
+            hfile.write('<th>B0s</th>')
+            hfile.write('<th>B0%</th>')
+            hfile.write('<th>BDCs</th>')
+            hfile.write('<th>BDC%</th>')
+            hfile.write('<th>B1 Cases</th>')
+            hfile.write('<th>B1% Cases</th>')
+            hfile.write('<th>B0 Cases</th>')
+            hfile.write('<th>B0% Cases</th>')
+            hfile.write('<th>BDC Cases</th>')
+            hfile.write('<th>BDC% Cases</th>')
+            hfile.write('</tr>')
+            for ms in s.mscols:
+                hfile.write('<tr>')
+                hfile.write('<th>' + ms + '</th>')
+                hfile.write('<td>' + str(msdata[ms]['B1s']) + '</td>')
+
+                pc = msdata[ms]['B1s'] / len(s.minimized_exprs_N)
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['B0s']) + '</td>')
+
+                pc = msdata[ms]['B0s'] / len(s.minimized_exprs_N)
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['BDCs']) + '</td>')
+
+                pc = msdata[ms]['BDCs'] / len(s.minimized_exprs_N)
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['BCases1']) + '</td>')
+
+                pc = msdata[ms]['BCases1'] / n_cases
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['BCases0']) + '</td>')
+
+                pc = msdata[ms]['BCases0'] / n_cases
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('<td>' + str(msdata[ms]['BCasesDC']) + '</td>')
+
+                pc = msdata[ms]['BCasesDC'] / n_cases
+                pc = '%.2f' % round(pc, 2)
+                hfile.write('<td>' + pc + '</td>')
+
+                hfile.write('</tr>')
+            hfile.write('</table>')
+
             hfile.write('</div>')
             hfile.close
 
