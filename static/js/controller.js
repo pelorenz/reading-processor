@@ -8,8 +8,10 @@
   analyze: function(action) {
     var inputfile = $('#inputfile').val();
     var chapter = $('#inputfile option:selected').text().trim();
+    var qcaset = $('#qcaset option:selected').text().trim();
     var data = {
         'inputfile': inputfile,
+        'qcaset': qcaset,
         'chapter': chapter
     };
     var hasRefMSS = false;

@@ -34,7 +34,7 @@ class Controller:
         for key in udata:
             if key[:3] == 'rms':
                 refMSS.append(key[3:])
-        QCARunner().analyze(udata.chapter, udata.inputfile, refMSS)
+        QCARunner().analyze(udata.chapter, udata.inputfile, refMSS, udata.qcaset)
 
         args = {}
         args['config'] = s.config

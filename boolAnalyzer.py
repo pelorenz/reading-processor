@@ -18,6 +18,8 @@ class BoolAnalyzer:
         s.variantModel = []
         s.referenceMSS = []
         s.refMS_IDs = []
+        s.qcaSet = 'default'
+        s.boolDir = ''
 
         s.qcaMSS = []
         s.booleanAggregates = []
@@ -265,7 +267,7 @@ class BoolAnalyzer:
     def writeLayers(s, refMS, mss, d_layer, m_layer):
         c = s.config
 
-        csvfile_D = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
+        csvfile_D = s.boolDir + s.chapter + '-' + refMS.gaNum + 'D.csv'
         with open(csvfile_D, 'a+') as file_D:
             d_layer = sorted(d_layer, cmp=sortVariations)
 
@@ -274,7 +276,7 @@ class BoolAnalyzer:
 
             file_D.close()
 
-        csvfile_M = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum + 'M.csv'
+        csvfile_M = s.boolDir + s.chapter + '-' + refMS.gaNum + 'M.csv'
         with open(csvfile_M, 'a+') as file_M:
             m_layer = sorted(m_layer, cmp=sortVariations)
 
@@ -299,7 +301,7 @@ class BoolAnalyzer:
         l2_cols = ''
         l3_cols = ''
         if langCode == 'GL': # GL must be called before G
-            file_pref = c.get('csvBoolFolder') + s.chapter + '-' + refMS.gaNum
+            file_pref = s.boolDir + s.chapter + '-' + refMS.gaNum
             csvfile = file_pref + 'Dgl.csv'
             file_Dgl = open(csvfile, 'w+')
             l2gl_cols = s.writeHeader(file_Dgl, refMS.gaNum, l2_aggregates, True)
@@ -438,13 +440,23 @@ class BoolAnalyzer:
         else:
             s.refMS_IDs = c.get('referenceMSS')
 
+        if o.qcaSet:
+            s.qcaSet = o.qcaSet
+        else:
+            s.qcaSet = c.get('qcaSet')
+
         varfile = s.config.get('variantFolder') + s.chapter + '/' + vfile + '.json'
 
         s.info('loading', varfile)
         s.variantModel = s.loadVariants(varfile)
 
-        s.qcaMSS = s.config.get('qcaMSS')
-        s.booleanAggregates = s.config.get('booleanAggregates')
+        s.qcaMSS = s.config.get('qcaSets')[s.qcaSet]['qcaMSS']
+        s.booleanAggregates = s.config.get('qcaSets')[s.qcaSet]['aggregates']
+
+        # ensure output directory exists
+        s.boolDir = c.get('csvBoolFolder') + s.qcaSet + '/'
+        if not os.path.exists(s.boolDir):
+            os.makedirs(s.boolDir)
 
         try:
             s.generateVariants()

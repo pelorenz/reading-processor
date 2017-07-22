@@ -31,46 +31,79 @@
   "nilExceptions": [
     "VL1","VL2","VL3"
   ],
-  "qcaMSS": [
-    "01", "03", "05", "019", "032", "038", "1", "13", "28", "35", "79", "346", "543", "565", "700", "788", "826", "828", "892", "983", "1582", "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17", "vg"
-  ],
-  "booleanAggregates": [
-    {
-      "name": "f03",
-      "members": [ "01", "03", "019", "892"],
-      "minOccurs": 1,
-      "langCodes": ["GL","G"],
-      "layers": [1, 2, 3]
+  "qcaSet": "default",
+  "qcaSets": {
+    "default": {
+      "qcaMSS": [
+        "01", "03", "05", "019", "032", "038", "1", "13", "28", "35", "79", "346", "543", "565", "700", "788", "826", "828", "892", "983", "1582", "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17", "vg"
+      ],
+      "aggregates": [
+        {
+          "name": "f03",
+          "members": [ "01", "03", "019", "892"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "c56",
+          "members": [ "038", "565", "700"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "f13",
+          "members": [ "13", "346", "543", "788", "826", "828", "983"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "f1",
+          "members": [ "1", "1582"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "VL",
+          "members": [ "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"],
+          "minOccurs": 3,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        }
+      ]
     },
-    {
-      "name": "c56",
-      "members": [ "038", "565", "700"],
-      "minOccurs": 1,
-      "langCodes": ["GL","G"],
-      "layers": [1, 2, 3]
-    },
-    {
-      "name": "f13",
-      "members": [ "13", "346", "543", "788", "826", "828", "983"],
-      "minOccurs": 1,
-      "langCodes": ["GL","G"],
-      "layers": [1, 2, 3]
-    },
-    {
-      "name": "f1",
-      "members": [ "1", "1582"],
-      "minOccurs": 1,
-      "langCodes": ["GL","G"],
-      "layers": [1, 2, 3]
-    },
-    {
-      "name": "VL",
-      "members": [ "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"],
-      "minOccurs": 3,
-      "langCodes": ["GL"],
-      "layers": [2, 3]
+    "Lake": {
+      "qcaMSS": [
+        "03", "05", "038", "1", "13", "28", "346", "543", "565", "700", "788", "826", "828", "983", "1582", "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17", "vg"
+      ],
+      "aggregates": [
+        {
+          "name": "f13",
+          "members": [ "13", "346", "543", "788", "826", "828", "983"],
+          "minOccurs": 4,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "f1",
+          "members": [ "1", "1582"],
+          "minOccurs": 2,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "VL",
+          "members": [ "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"],
+          "minOccurs": 3,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        }
+      ]
     }
-  ],
+  },
   "ignoreChars": ["·","[","]",".",",",":",";","\"","̅","(",")","<",">"],
   "ignoreUnicode": ["\u030f", "\u0323"],
   "minClusters": 2,

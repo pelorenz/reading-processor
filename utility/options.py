@@ -10,6 +10,7 @@ class  CommandLine:
         self.parser.add_argument('-f', '--file', help='Base file name for CSV and JSON input.')
         self.parser.add_argument('-C', '--chapter', help='Chapter name for variant diffs and other chapter-specific input.')
         self.parser.add_argument('-R', '--refMSS', help='Comma-delimited list of reference manuscripts.')
+        self.parser.add_argument('-q', '--qcaSet', help='Set of QCA aggregates to apply.', default='default')
         self.parser.add_argument('-v', '--verbose', help='Display verbose output', action='store_true')
         self.parser.add_argument('-s', '--silent', help='Prevent output', action='store_true')
 

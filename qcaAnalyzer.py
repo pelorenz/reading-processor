@@ -144,6 +144,19 @@ def cmp_to_key_dc(sortDC):
 class QCAAnalyzer:
 
     def __init__(s):
+        s.qcaSet = 'default'
+        s.boolDir = ''
+
+        s.clear()
+
+    def info(s, *args):
+        info = ''
+        for i, arg in enumerate(args):
+            if i > 0: info += ' '
+            info += str(arg).strip()
+        print(info)
+
+    def clear(s):
         s.csv = []
         s.mscols = []
         s.refs = []
@@ -165,13 +178,6 @@ class QCAAnalyzer:
         s.minimized_exprs_N = []
 
         s.all_exprs = []
-
-    def info(s, *args):
-        info = ''
-        for i, arg in enumerate(args):
-            if i > 0: info += ' '
-            info += str(arg).strip()
-        print(info)
 
     def loadCSV(s, filename):
         c = s.config
@@ -261,7 +267,7 @@ class QCAAnalyzer:
     def writeCSV(s, basename):
         c = s.config
 
-        csvfile = c.get('csvBoolFolder') + basename + '-revised.csv'
+        csvfile = s.boolDir + basename + '-revised.csv'
         with open(csvfile, 'w+', encoding='utf-8') as cfile:
             cfile.write('C1\t' + '\t'.join(s.mscols) + '\n')
             for idx, row in enumerate(s.csv):
@@ -973,7 +979,7 @@ class QCAAnalyzer:
         subdir = re.sub(r'^c', '', basename)
         subdir = re.sub(r'[DLMgl]{1,3}$', '', subdir)
         subdir = 'Mark ' + subdir + 'QCA'
-        htmldir = c.get('statsFolder') + subdir + '/'
+        htmldir = c.get('statsFolder') + subdir + '-' + s.qcaSet + '/'
         try:
             os.makedirs(htmldir)
         except OSError as exception:
@@ -1043,7 +1049,7 @@ class QCAAnalyzer:
             hfile.write('</div>')
             hfile.close
 
-        csvfile = c.get('csvBoolFolder') + basename + '-results.csv'
+        csvfile = s.boolDir + basename + '-results.csv'
         with open(csvfile, 'w+', encoding='utf-8') as cfile:
             col_str = '\t'.join(s.mscols)
             cfile.write('ID\t' + col_str + '\tOutcome\tCases\tInclusion\tCoverage\tOnes\tDon\'t Cares\tSource\tReferences\tDNF\n')
@@ -1093,16 +1099,23 @@ class QCAAnalyzer:
         if not basename:
             return
 
+        if o.qcaSet:
+            s.qcaSet = o.qcaSet
+        else:
+            s.qcaSet = c.get('qcaSet')
+
+        s.boolDir = c.get('csvBoolFolder') + s.qcaSet + '/'
+
         qcaPaths = []
-        qcaPaths.append(c.get('csvBoolFolder') + basename + 'D.csv')
-        qcaPaths.append(c.get('csvBoolFolder') + basename + 'L.csv')
-        qcaPaths.append(c.get('csvBoolFolder') + basename + 'Dgl.csv')
-        qcaPaths.append(c.get('csvBoolFolder') + basename + 'M.csv')
+        qcaPaths.append(s.boolDir + basename + 'D.csv')
+        qcaPaths.append(s.boolDir + basename + 'L.csv')
+        qcaPaths.append(s.boolDir + basename + 'Dgl.csv')
+        qcaPaths.append(s.boolDir + basename + 'M.csv')
 
         for path in qcaPaths:
-            basename = path[len(c.get('csvBoolFolder')):-4]
+            basename = path[len(s.boolDir):-4]
 
-            s.__init__()
+            s.clear()
             s.loadCSV(path)
             s.prepareCSV()
             s.writeCSV(basename)
@@ -1115,5 +1128,5 @@ class QCAAnalyzer:
 
 # Invoke via entry point
 # qcaAnalyzer.py -v -f [filename minus suffix]
-# qcaAnalyzer.py -v -f test4
+# qcaAnalyzer.py -v -f c01-05
 QCAAnalyzer().main(sys.argv[1:])

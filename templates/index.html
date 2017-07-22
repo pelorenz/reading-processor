@@ -16,10 +16,23 @@ $def with (args)
     </div>
     <div id='sidecol'>
       <ul>
-        <li>Chapter <select id='inputfile'>
-        $for key in args['config'].get('files'):
-            <option value='$args['config'].get("files")[key]'>$key
+        <li>
+          <ul class='list2'>
+            <li>Chapter 
+              <select id='inputfile'>
+              $for key in args['config'].get('files'):
+                  <option value='$args['config'].get("files")[key]'>$key</option>
+              </select>
+            </li>
+            <li>QCASet
+              <select id='qcaset'>
+              $for qcaset in args['config'].get('qcaSets'):
+                  <option value='$qcaset'>$qcaset</option>
+              </select>
+            </li>
+          </ul>
         </select>
+      </ul>
       <ul class='list3'>
         $for ms in args['config'].get('referenceMSS'):
             <li><input id='refms$ms' type='checkbox' value='$ms'> $ms
@@ -90,7 +103,7 @@ $def with (args)
               $if 'QCA' in dir:
                   $code:
                       filebase = re.sub(r'^Mark ', '', dir)
-                      filebase = re.sub(r'QCA$', '', filebase)
+                      filebase = re.sub(r'QCA\-[a-zA-Z0-9]+$', '', filebase)
                   <ul class='list4'>
                       <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L")'>L</a></li>
                       <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl")'>Dgl</a></li>

@@ -18,5 +18,6 @@
   "referenceMSS": [
     "01","03","05","032","038","vg"
   ],
-  "statsDir": "C:/Data/Workspace/reading-processor/static/stats/"
+  "statsDir": "C:/Data/Workspace/reading-processor/static/stats/",
+  "qcaSets": ["default","Lake"]
 }

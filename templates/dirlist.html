@@ -57,7 +57,7 @@ $for dir in args['keys']:
       $if 'QCA' in dir:
           $code:
               filebase = re.sub(r'^Mark ', '', dir)
-              filebase = re.sub(r'QCA$', '', filebase)
+              filebase = re.sub(r'QCA\-[a-zA-Z0-9]+$', '', filebase)
           <ul class='list4'>
               <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L")'>L</a></li>
               <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl")'>Dgl</a></li>
