@@ -19,5 +19,6 @@
     "01","03","05","032","038","vg"
   ],
   "statsDir": "C:/Data/Workspace/reading-processor/static/stats/",
-  "qcaSets": ["default","Lake"]
+  "boolDir": "C:/Data/Workspace/reading-processor/csv-bool/",
+  "qcaSets": ["default","nByz","nByz2","Lake"]
 }

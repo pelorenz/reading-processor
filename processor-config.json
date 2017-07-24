@@ -29,7 +29,7 @@
     "VL1","VL2","VL3","VL4","VL5","VL6","VL8","VL10","VL13","VL14","VL15","VL16","VL17","VL19","vg","19A"
   ],
   "nilExceptions": [
-    "VL1","VL2","VL3"
+    "VL1","VL2","VL3","VL16"
   ],
   "qcaSet": "default",
   "qcaSets": {
@@ -75,9 +75,107 @@
         }
       ]
     },
+    "nByz": {
+      "qcaMSS": [
+        "01", "03", "05", "019", "032", "038", "1", "13", "28", "346", "543", "565", "700", "788", "826", "828", "892", "983", "1582", "VL1", "VL2", "VL3", "VL4", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"
+      ],
+      "aggregates": [
+        {
+          "name": "f03",
+          "members": [ "01", "03", "019", "892"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "c56",
+          "members": [ "038", "565", "700"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "f13",
+          "members": [ "13", "346", "543", "788", "826", "828", "983"],
+          "minOccurs": 4,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "f1",
+          "members": [ "1", "1582"],
+          "minOccurs": 2,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "AF",
+          "members": [ "VL1", "VL2", "VL3", "VL16"],
+          "minOccurs": 1,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        },
+        {
+          "name": "IT",
+          "members": [ "VL4", "VL8", "VL10", "VL13", "VL14", "VL15", "VL17"],
+          "minOccurs": 3,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        }
+      ]
+    },
+    "nByz2": {
+      "qcaMSS": [
+        "01", "03", "05", "019", "032", "038", "13", "28", "346", "543", "565", "700", "788", "826", "828", "892", "983", "VL1", "VL2", "VL3", "VL4", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"
+      ],
+      "aggregates": [
+        {
+          "name": "f03",
+          "members": [ "01", "03", "019", "892"],
+          "minOccurs": 2,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "c56",
+          "members": [ "038", "565", "700"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "f13",
+          "members": [ "13", "346", "543", "788", "826", "828", "983"],
+          "minOccurs": 4,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "AF",
+          "members": [ "VL1", "VL2"],
+          "minOccurs": 1,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        },
+        {
+          "name": "EU",
+          "members": [ "VL3", "VL16"],
+          "minOccurs": 1,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        },
+        {
+          "name": "IT",
+          "members": [ "VL3", "VL4", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"],
+          "minOccurs": 3,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        }
+      ]
+    },
     "Lake": {
       "qcaMSS": [
-        "03", "05", "038", "1", "13", "28", "346", "543", "565", "700", "788", "826", "828", "983", "1582", "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17", "vg"
+        "03", "05", "038", "1", "13", "28", "346", "543", "565", "700", "788", "826", "828", "983", "1582", "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"
       ],
       "aggregates": [
         {

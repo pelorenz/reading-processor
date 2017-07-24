@@ -35,6 +35,9 @@
   table-layout: fixed;
   width: 100%;
 }
+#kmap-table {
+  table-layout: fixed;
+}
 #container {
   height: 825px;
 }
@@ -65,6 +68,20 @@ td.ref:hover {
 }
 td.ref:active {
   background-color: #cccccc;
+}
+div.kmap {
+  width: 40px;
+  overflow:hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+td.kmap-hdr {
+  width: 40px;
+  overflow:hidden;
+}
+td.kmap-cover {
+  width: 25px;
+  overflow:hidden;
 }
 div.ref-body {
   font-size: smaller;
@@ -305,9 +322,27 @@ td.f1 {
 td.f13 {
   background-color: #fc6;
 }
+td.AF {
+  background-color: #80ffd4;
+}
+td.EU {
+  background-color: #9fff80;
+}
+td.IT {
+  background-color: #84e184;
+}
 td.VL {
   background-color: #84e184;
 }
 td.vg {
   background-color: #b3ffe6;
+}
+div.kmap-pos {
+  background-color: #eaeaea;
+}
+div.kmap-neg {
+  background-color: #fff2f2;
+}
+div.kmap-conflict {
+  background-color: #ffffe0;
 }

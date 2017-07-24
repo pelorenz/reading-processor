@@ -145,5 +145,21 @@
       error: function(xhr, status, error) {
         $('#messages').html('Error');
       }});
+  },
+  viewKMap: function(dir, filebase) {
+    var data = {
+      'dir': dir,
+      'filebase': filebase
+    };
+    $.ajax({url: '/app/kmap',
+      data: data,
+      success: function(response) {
+        $('#messages').text('Done!');
+        $('#content').empty();
+        $('#content').html(response);
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
   }
 }
