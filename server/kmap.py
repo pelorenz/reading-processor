@@ -38,7 +38,7 @@ class KMap:
         return id
 
     def colIdFromBits(s, bits, symbols):
-        return bits[len(symbols):]
+        return bits[-len(symbols):]
 
     def rowIdFromBits(s, bits, symbols):
         return bits[:len(symbols)]
