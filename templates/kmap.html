@@ -1,0 +1,115 @@
+$def with (jdata)
+    $code:
+        kmap = KMap()
+        mss = [m[1:] if m[:1] == 'M' else m for m in jdata['manuscripts']]
+
+        tenA = [u'āb̄c̄d̄ē', u'ab̄c̄d̄ē', u'abc̄d̄ē', u'ābc̄d̄ē', u'ābcd̄ē', u'abcd̄ē', u'ab̄cd̄ē', u'āb̄cd̄ē', u'āb̄cdē', u'ab̄cdē', u'abcdē', u'ābcdē', u'ābc̄dē', u'abc̄dē', u'ab̄c̄dē', u'āb̄c̄dē', u'āb̄c̄de', u'ab̄c̄de', u'abc̄de', u'ābc̄de', u'ābcde', u'abcde', u'ab̄cde', u'āb̄cde', u'āb̄cd̄e', u'ab̄cd̄e', u'abcd̄e', u'ābcd̄e', u'ābc̄d̄e', u'abc̄d̄e', u'ab̄c̄d̄e', u'āb̄c̄d̄e']
+        tenB = [u'f̄ḡh̄j̄k̄', u'fḡh̄j̄k̄', u'fgh̄j̄k̄', u'f̄gh̄j̄k̄', u'f̄ghj̄k̄', u'fghj̄k̄', u'fḡhj̄k̄', u'f̄ḡhj̄k̄', u'f̄ḡhjk̄', u'fḡhjk̄', u'fghjk̄', u'f̄ghjk̄', u'f̄gh̄jk̄', u'fgh̄jk̄', u'fḡh̄jk̄', u'f̄ḡh̄jk̄', u'f̄ḡh̄jk', u'fḡh̄jk', u'fgh̄jk', u'f̄gh̄jk', u'f̄ghjk', u'fghjk', u'fḡhjk', u'f̄ḡhjk', u'f̄ḡhj̄k', u'fḡhj̄k', u'fghj̄k', u'f̄ghj̄k', u'f̄gh̄j̄k', u'fgh̄j̄k', u'fḡh̄j̄k', u'f̄ḡh̄j̄k']
+        nineB = [u'f̄ḡh̄j̄', u'fḡh̄j̄', u'fgh̄j̄', u'f̄gh̄j̄', u'f̄ghj̄', u'fghj̄', u'fḡhj̄', u'f̄ḡhj̄', u'f̄ḡhj', u'fḡhj', u'fghj', u'f̄ghj', u'f̄gh̄j', u'fgh̄j', u'fḡh̄j', u'f̄ḡh̄j']
+        eightA = [u'āb̄c̄d̄', u'ab̄c̄d̄', u'abc̄d̄', u'ābc̄d̄', u'ābcd̄', u'abcd̄', u'ab̄cd̄', u'āb̄cd̄', u'āb̄cd', u'ab̄cd', u'abcd', u'ābcd', u'ābc̄d', u'abc̄d', u'ab̄c̄d', u'āb̄c̄d']
+        eightB = [u'ēf̄ḡh̄', u'ef̄ḡh̄', u'efḡh̄', u'ēfḡh̄', u'ēfgh̄', u'efgh̄', u'ef̄gh̄', u'ēf̄gh̄', u'ēf̄gh', u'ef̄gh', u'efgh', u'ēfgh', u'ēfḡh', u'efḡh', u'ef̄ḡh', u'ēf̄ḡh']
+        sevenB = [u'ēf̄ḡ', u'ef̄ḡ', u'efḡ', u'ēfḡ', u'ēfg', u'efg', u'ef̄g', u'ēf̄g']
+        sixA = [u'āb̄c̄', u'āb̄c', u'ābc', u'ābc̄', u'abc̄', u'abc', u'ab̄c', u'ab̄c̄']
+        sixB = [u'd̄ēf̄', u'd̄ēf', u'd̄ef', u'd̄ef̄', u'def̄', u'def', u'dēf', u'dēf̄']
+
+        rowhdrs = []
+        colhdrs = []
+        codemap = []
+        dims = len(mss)
+        if dims == 6:
+            rowhdrs = sixA
+            colhdrs = sixB
+            rowsymbols = ['a', 'b', 'c']
+            colsymbols = ['d', 'e', 'f']
+            codemap = [('a', mss[0]), ('b', mss[1]), ('c', mss[2]), ('d', mss[3]), ('e', mss[4]), ('f', mss[5])]
+        if dims == 7:
+            rowhdrs = eightA
+            colhdrs = sevenB
+            rowsymbols = ['a', 'b', 'c', 'd']
+            colsymbols = ['e', 'f', 'g']
+            codemap = [('a', mss[0]), ('b', mss[1]), ('c', mss[2]), ('d', mss[3]), ('e', mss[4]), ('f', mss[5]), ('g', mss[6])]
+        if dims == 8:
+            rowhdrs = eightA
+            colhdrs = eightB
+            rowsymbols = ['a', 'b', 'c', 'd']
+            colsymbols = ['e', 'f', 'g', 'h']
+            codemap = [('a', mss[0]), ('b', mss[1]), ('c', mss[2]), ('d', mss[3]), ('e', mss[4]), ('f', mss[5]), ('g', mss[6]), ('h', mss[7])]
+        if dims == 9:
+            rowhdrs = tenA
+            colhdrs = nineB
+            rowsymbols = ['a', 'b', 'c', 'd', 'e']
+            colsymbols = ['f', 'g', 'h', 'j']
+            codemap = [('a', mss[0]), ('b', mss[1]), ('c', mss[2]), ('d', mss[3]), ('e', mss[4]), ('f', mss[5]), ('g', mss[6]), ('h', mss[7]), ('j', mss[8])]
+        if dims == 10:
+            rowhdrs = tenA
+            colhdrs = tenB
+            rowsymbols = ['a', 'b', 'c', 'd', 'e']
+            colsymbols = ['f', 'g', 'h', 'j', 'k']
+            codemap = [('a', mss[0]), ('b', mss[1]), ('c', mss[2]), ('d', mss[3]), ('e', mss[4]), ('f', mss[5]), ('g', mss[6]), ('h', mss[7]), ('j', mss[8]), ('k', mss[9])]
+<div class='cluster-heading'>KMap</div>
+<table cellspacing='0' cellpadding='0' id='kmap-table'>
+    <tr><th></th>
+    $for col in colhdrs:
+        <th>$col</th>
+    $for rsym in rowsymbols:
+        <th></th>
+    </tr>
+$for row in rowhdrs:
+    <tr><th class='kmap-hdr'>$row</th>
+    $for col in colhdrs:
+        <td><div id='$kmap.idFromCode(row, col)' class='kmap'></div></td>
+    $for rsym in rowsymbols:
+        $code:
+            ms = kmap.msFromCodemap(rsym, codemap)
+            val = ms if kmap.hasSymbol(rsym, row) else ''
+            cval = val if not re.search('^[0-9]', val) else 'X' + val
+        <td class='kmap-cover $cval'>$val</td>
+    </tr>
+$for csym in colsymbols:
+    $code:
+        ms = kmap.msFromCodemap(csym, codemap)
+    <tr><th></th>
+    $for col in colhdrs:
+        $code:
+            val = ms if kmap.hasSymbol(csym, col) else ''
+            cval = val if not re.search('^[0-9]', val) else 'X' + val
+        <td class='$cval'>$val</td>
+    $for rsym in rowsymbols:
+        <td></td>
+    </tr>
+</table>
+<div>.</div>
+<div>Key</div>
+<table>
+    <tr><td>Code</td><td>MS</td></tr>
+$for code, ms in codemap:
+    <tr><td>$code</td><td>$ms</td></tr>
+</table>
+<script>
+var val = '';
+$for exp in jdata['expressions']:
+    $code:
+        ids = kmap.exprToIds(exp)
+    $for id in ids:
+        $code:
+            elemid = 'c' + id
+        val = $$('#$elemid').text();
+        addval = '$exp['outcomeID']'
+        if (val && val.length > 0) {
+            val = val + '|';
+        }
+        val = val + addval;
+        if (val[0] == 'A' && addval[0] == 'B') {
+            $$('#$elemid').removeClass('kmap-pos')
+            $$('#$elemid').addClass('kmap-conflict')
+        }
+        else if (val[0] == 'A') {
+            $$('#$elemid').addClass('kmap-pos')
+        }
+        else if (val[0] == 'B') {
+            $$('#$elemid').removeClass('kmap-pos')
+            $$('#$elemid').addClass('kmap-neg')
+        }
+        $$('#$elemid').text(val);
+        $$('#$elemid').attr({'title': val})
+</script>

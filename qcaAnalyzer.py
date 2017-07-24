@@ -352,12 +352,12 @@ class QCAAnalyzer:
                         s.manualCases[dnf_key] = expinf
 
         # merge expressions that differ only in 0's and dc's
-        s.minimized_exprs_P = s.mergeDCExpressions(s.minimized_exprs_P)
-        s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
+        #s.minimized_exprs_P = s.mergeDCExpressions(s.minimized_exprs_P)
+        #s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
 
         # detect and merge expressions with mutual dc to 1, 1 to dc loops
-        s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P, 1)
-        s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N, 0)
+        #s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P, 1)
+        #s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N, 0)
 
     def buildExpressionsFromCases(s, expinf):
         build_parts = []
@@ -1222,6 +1222,46 @@ class QCAAnalyzer:
                 cfile.write(csv_line + '\n')
              
             cfile.close
+
+        jmap = {}
+        jexps = []
+        for res in s.all_exprs: # json
+            jexp = {}
+            dontCares = 0
+
+            var_str = ' '.join(str(x) for x in res['msVars']) + ' ' # to match last MS with suffixed space
+            jexp['outcomeID'] = res['outcomeID']
+            jvars = []
+            for ms in s.mscols:
+                if ms + ' ' in var_str:
+                    if '~' + ms + ' ' in var_str:
+                        jvars.append('0')
+                    else:
+                        jvars.append('1')
+                else:
+                    jvars.append('-')
+                    dontCares = dontCares + 1
+
+            jexp['vars'] = jvars
+            jexp['outcome'] = res['outcome']
+            jexp['cases'] = res['cases']
+            jexp['inclusion'] = res['inclusion']
+            jexp['coverage'] = res['coverage']
+            jexp['ones'] = res['ones']
+            jexp['dontCares'] = dontCares
+            jexp['source'] = res['source']
+            jexp['caseStr'] = s.buildCaseStr(res['outcomeID'], res['cases'], False)
+            jexp['dnfKey'] = res['dnfKey']
+            jexps.append(jexp)
+
+        jmap['expressions'] = jexps
+        jmap['manuscripts'] = s.mscols
+        jdata = json.dumps(jmap)
+
+        jsonfile = s.boolDir + basename + '-results.json'
+        with open(jsonfile, 'w+') as file:
+            file.write(jdata)
+            file.close()
 
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
