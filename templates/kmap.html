@@ -53,20 +53,24 @@ $def with (jdata)
         <th>$col</th>
     $for rsym in rowsymbols:
         <th></th>
-    <th>p</th><th>n</th><th>x</th></tr>
+    <th>+i</th><th>–i</th><th>±i</th><th>+c</th><th>±+c</th><th>–c</th><th>±–c</th></tr>
     $for row in rowhdrs:
         <tr><th class='kmap-hdr'>$row</th>
         $for col in colhdrs:
-            <td><div id='$kmap.cellIdFromCode(row, col)' class='kmap'></div></td>
+            <td class='kcell'><div id='$kmap.cellIdFromCode(row, col)' class='kmap'></div></td>
         $for rsym in rowsymbols:
             $code:
                 ms = kmap.msFromCodemap(rsym, codemap)
                 val = ms if kmap.hasSymbol(rsym, row) else ''
                 cval = val if not re.search('^[0-9]', val) else 'X' + val
-            <td class='kmap-cover $cval'>$val</td>
-        <td id='rp$kmap.headIdFromCode(row)'></td>
-        <td id='rn$kmap.headIdFromCode(row)'></td>
-        <td id='rx$kmap.headIdFromCode(row)'></td></tr>
+            <td class='kcell kmap-cover $cval'>$val</td>
+        <td id='rpi$kmap.headIdFromCode(row)' class='kcell'></td>
+        <td id='rni$kmap.headIdFromCode(row)' class='kcell'></td>
+        <td id='rxi$kmap.headIdFromCode(row)' class='kcell'></td>
+        <td id='rpc$kmap.headIdFromCode(row)' class='kcell'></td>
+        <td id='rpcx$kmap.headIdFromCode(row)' class='kcell'></td>
+        <td id='rnc$kmap.headIdFromCode(row)' class='kcell'></td>
+        <td id='rncx$kmap.headIdFromCode(row)' class='kcell'></td></tr>
     $for csym in colsymbols:
         $code:
             ms = kmap.msFromCodemap(csym, codemap)
@@ -75,31 +79,43 @@ $def with (jdata)
             $code:
                 val = ms if kmap.hasSymbol(csym, col) else ''
                 cval = val if not re.search('^[0-9]', val) else 'X' + val
-            <td class='$cval'>$val</td>
-        $for rsym in rowsymbols:
-            <td></td>
-        <td></td><td></td><td></td></tr>
+            <td class='kcell $cval'>$val</td>
+        </tr>
     <tr>
-        <th>p</th>
+        <th>+i</th>
         $for col in colhdrs:
-            <td id='cp$kmap.headIdFromCode(col)'>.</td>
-        $for rsym in rowsymbols:
-            <td></td>
-    <td></td><td></td><td></td></tr>
+            <td id='cpi$kmap.headIdFromCode(col)' class='kcell'>.</td>
+    </tr>
     <tr>
-        <th>n</th>
+        <th>–i</th>
         $for col in colhdrs:
-            <td id='cn$kmap.headIdFromCode(col)'>.</td>
-        $for rsym in rowsymbols:
-            <td></td>
-    <td></td><td></td><td></td></tr>
+            <td id='cni$kmap.headIdFromCode(col)' class='kcell'>.</td>
+    </tr>
     <tr>
-        <th>x</th>
+        <th>±i</th>
         $for col in colhdrs:
-            <td id='cx$kmap.headIdFromCode(col)'>.</td>
-        $for rsym in rowsymbols:
-            <td></td>
-    <td></td><td></td><td></td></tr>
+            <td id='cxi$kmap.headIdFromCode(col)' class='kcell'>.</td>
+    </tr>
+    <tr>
+        <th>+c</th>
+        $for col in colhdrs:
+            <td id='cpc$kmap.headIdFromCode(col)' class='kcell'>.</td>
+    </tr>
+    <tr>
+        <th>±+c</th>
+        $for col in colhdrs:
+            <td id='cpcx$kmap.headIdFromCode(col)' class='kcell'>.</td>
+    </tr>
+    <tr>
+        <th>–c</th>
+        $for col in colhdrs:
+            <td id='cnc$kmap.headIdFromCode(col)' class='kcell'>.</td>
+    </tr>
+    <tr>
+        <th>±-c</th>
+        $for col in colhdrs:
+            <td id='cncx$kmap.headIdFromCode(col)' class='kcell'>.</td>
+    </tr>
 </table>
 <div>.</div>
 <div>Key</div>
@@ -110,19 +126,26 @@ $for code, ms in codemap:
         cval = ms if not re.search('^[0-9]', ms) else 'X' + ms
     <tr><td>$code</td><td class='$cval'>$ms</td></tr>
 </table>
-<script>
+<script type='text/javascript'>
 var val = '';
-var pMap = {};
-var nMap = {};
-var xMap = {};
+var pImp = {};
+var nImp = {};
+var xImp = {};
+var pCas = {};
+var nCas = {};
+var xCas = {};
 $for row in rowhdrs:
-    pMap['rp$kmap.headIdFromCode(row)'] = 0;
-    nMap['rn$kmap.headIdFromCode(row)'] = 0;
-    xMap['rx$kmap.headIdFromCode(row)'] = 0;
+    pImp['rpi$kmap.headIdFromCode(row)'] = 0;
+    nImp['rni$kmap.headIdFromCode(row)'] = 0;
+    xImp['rxi$kmap.headIdFromCode(row)'] = 0;
+    pCas['rpc$kmap.headIdFromCode(row)'] = {};
+    nCas['rnc$kmap.headIdFromCode(row)'] = {};
 $for col in colhdrs:
-    pMap['cp$kmap.headIdFromCode(col)'] = 0;
-    nMap['cn$kmap.headIdFromCode(col)'] = 0;
-    xMap['cx$kmap.headIdFromCode(col)'] = 0;
+    pImp['cpi$kmap.headIdFromCode(col)'] = 0;
+    nImp['cni$kmap.headIdFromCode(col)'] = 0;
+    xImp['cxi$kmap.headIdFromCode(col)'] = 0;
+    pCas['cpc$kmap.headIdFromCode(col)'] = {};
+    nCas['cnc$kmap.headIdFromCode(col)'] = {};
 $for exp in jdata['expressions']:
     $code:
         ids = kmap.exprToIds(exp)
@@ -131,8 +154,9 @@ $for exp in jdata['expressions']:
             elemid = 'c' + id
             col_id = kmap.colIdFromBits(id, colsymbols)
             row_id = kmap.rowIdFromBits(id, rowsymbols)
+            case_count = kmap.casesForId(id, exp['cases'], jdata['referenceMap'])
         val = $$('#$elemid').text();
-        addval = '$exp['outcomeID']';
+        addval = '$exp['outcomeID']' + '.$str(case_count)';
         if (val && val.length > 0) {
             val = val + '|';
         }
@@ -140,45 +164,108 @@ $for exp in jdata['expressions']:
         if (val[0] == 'A' && addval[0] == 'B') {
             $$('#$elemid').removeClass('kmap-pos');
             $$('#$elemid').addClass('kmap-conflict');
-            xMap['cx$col_id']++;
-            xMap['rx$row_id']++;
-            nMap['cn$col_id']++;
-            nMap['rn$row_id']++;
+            xImp['cxi$col_id']++;
+            xImp['rxi$row_id']++;
+            nImp['cni$col_id']++;
+            nImp['rni$row_id']++;
+            xCas['$id'] = true;
         }
         else if (val[0] == 'A') {
             $$('#$elemid').addClass('kmap-pos');
-            pMap['cp$col_id']++;
-            pMap['rp$row_id']++;
+            pImp['cpi$col_id']++;
+            pImp['rpi$row_id']++;
         }
         else if (val[0] == 'B') {
             $$('#$elemid').removeClass('kmap-pos');
             $$('#$elemid').addClass('kmap-neg');
-            nMap['cn$col_id']++;
-            nMap['rn$row_id']++;
+            nImp['cni$col_id']++;
+            nImp['rni$row_id']++;
+        }
+        if (addval[0] == 'A') {
+            pCas['cpc$col_id']['$id'] = $case_count;
+            pCas['rpc$row_id']['$id'] = $case_count;
+        }
+        else if (addval[0] == 'B') {
+            nCas['cnc$col_id']['$id'] = $case_count;
+            nCas['rnc$row_id']['$id'] = $case_count;
         }
         $$('#$elemid').text(val);
         $$('#$elemid').attr({'title': val});
-for (var key in pMap) {
-  if (pMap.hasOwnProperty(key)) {
-    $$('#' + key).text(pMap[key].toString());
-    if (pMap[key] > 0) {
+for (var key in pImp) {
+  if (pImp.hasOwnProperty(key)) {
+    $$('#' + key).text(pImp[key].toString());
+    if (pImp[key] > 0) {
       $$('#' + key).addClass('kmap-pos');
     }
   }
 }
-for (var key in nMap) {
-  if (nMap.hasOwnProperty(key)) {
-    $$('#' + key).text(nMap[key].toString());
-    if (nMap[key] > 0) {
+for (var key in nImp) {
+  if (nImp.hasOwnProperty(key)) {
+    $$('#' + key).text(nImp[key].toString());
+    if (nImp[key] > 0) {
       $$('#' + key).addClass('kmap-neg');
     }
   }
 }
-for (var key in xMap) {
-  if (xMap.hasOwnProperty(key)) {
-    $$('#' + key).text(xMap[key].toString());
-    if (xMap[key] > 0) {
+for (var key in xImp) {
+  if (xImp.hasOwnProperty(key)) {
+    $$('#' + key).text(xImp[key].toString());
+    if (xImp[key] > 0) {
       $$('#' + key).addClass('kmap-conflict');
+    }
+  }
+}
+for (var key in pCas) {
+  if (pCas.hasOwnProperty(key)) {
+    var p_cases = 0;
+    var x_cases = 0;
+    var cnt_map = pCas[key];
+    for (var ckey in cnt_map) {
+      if (cnt_map.hasOwnProperty(ckey)) {
+        has_conflict = ckey in xCas ? true : false;
+        if (has_conflict) {
+          x_cases += cnt_map[ckey];
+        }
+        else {
+          p_cases += cnt_map[ckey];
+        }
+      }
+    }
+    $$('#' + key).text(p_cases.toString());
+    if (p_cases > 0) {
+      $$('#' + key).addClass('kmap-pos');
+    }
+    var xkey = key.replace(/^([rc])pc/, '$$1pcx')
+    $$('#' + xkey).text(x_cases.toString());
+    if (x_cases > 0) {
+      $$('#' + xkey).addClass('kmap-conflict');
+    }
+  }
+}
+for (var key in nCas) {
+  if (nCas.hasOwnProperty(key)) {
+    var n_cases = 0;
+    var x_cases = 0;
+    var cnt_map = nCas[key];
+    for (var ckey in cnt_map) {
+      if (cnt_map.hasOwnProperty(ckey)) {
+        has_conflict = ckey in xCas ? true : false;
+        if (has_conflict) {
+          x_cases += cnt_map[ckey];
+        }
+        else {
+          n_cases += cnt_map[ckey];
+        }
+      }
+    }
+    $$('#' + key).text(n_cases.toString());
+    if (n_cases > 0) {
+      $$('#' + key).addClass('kmap-neg');
+    }
+    var xkey = key.replace(/^([rc])nc/, '$$1ncx')
+    $$('#' + xkey).text(x_cases.toString());
+    if (x_cases > 0) {
+      $$('#' + xkey).addClass('kmap-conflict');
     }
   }
 }

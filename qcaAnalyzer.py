@@ -1257,6 +1257,10 @@ class QCAAnalyzer:
 
         jmap['expressions'] = jexps
         jmap['manuscripts'] = s.mscols
+        refMap = {}
+        for key, value in s.referenceMap.items():
+            refMap[key] = re.sub(r'^And\((.+)\)', r'\1', s.referenceMap[key]['dnfKey'])
+        jmap['referenceMap'] = refMap
         jdata = json.dumps(jmap)
 
         jsonfile = s.boolDir + basename + '-results.json'
