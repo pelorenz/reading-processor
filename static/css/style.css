@@ -69,11 +69,16 @@ td.ref:hover {
 td.ref:active {
   background-color: #cccccc;
 }
+td.kcell {
+  font-size: smaller;
+  font-family: 'Arial Narrow'
+}
 div.kmap {
   width: 40px;
   overflow:hidden;
   display: inline-block;
   vertical-align: middle;
+  white-space: nowrap;
 }
 td.kmap-hdr {
   width: 40px;

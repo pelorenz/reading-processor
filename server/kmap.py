@@ -4,6 +4,26 @@ import os, json, re
 from utility.config import *
 
 class KMap:
+    def casesForId(s, id, cases, refMap):
+        ccnt = 0
+        for case in cases:
+            vars = refMap[case].split(', ')
+            isMatch = True
+            for idx, var in enumerate(vars):
+                if var[:1] == '~': # neg var
+                    if id[idx] != '0':
+                        isMatch = False
+                        break
+                else: # pos var
+                    if id[idx] != '1':
+                        isMatch = False
+                        break
+
+            if isMatch:
+                ccnt = ccnt + 1
+
+        return ccnt
+
     def cellIdFromCode(s, row, col):
         id = ''
         l_id = row + col
