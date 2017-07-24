@@ -46,70 +46,140 @@ $def with (jdata)
             rowsymbols = ['a', 'b', 'c', 'd', 'e']
             colsymbols = ['f', 'g', 'h', 'j', 'k']
             codemap = [('a', mss[0]), ('b', mss[1]), ('c', mss[2]), ('d', mss[3]), ('e', mss[4]), ('f', mss[5]), ('g', mss[6]), ('h', mss[7]), ('j', mss[8]), ('k', mss[9])]
-<div class='cluster-heading'>KMap</div>
+<div class='cluster-heading'>KMap $jdata['set'] $jdata['configuration']</div>
 <table cellspacing='0' cellpadding='0' id='kmap-table'>
     <tr><th></th>
     $for col in colhdrs:
         <th>$col</th>
     $for rsym in rowsymbols:
         <th></th>
-    </tr>
-$for row in rowhdrs:
-    <tr><th class='kmap-hdr'>$row</th>
-    $for col in colhdrs:
-        <td><div id='$kmap.idFromCode(row, col)' class='kmap'></div></td>
-    $for rsym in rowsymbols:
+    <th>p</th><th>n</th><th>x</th></tr>
+    $for row in rowhdrs:
+        <tr><th class='kmap-hdr'>$row</th>
+        $for col in colhdrs:
+            <td><div id='$kmap.cellIdFromCode(row, col)' class='kmap'></div></td>
+        $for rsym in rowsymbols:
+            $code:
+                ms = kmap.msFromCodemap(rsym, codemap)
+                val = ms if kmap.hasSymbol(rsym, row) else ''
+                cval = val if not re.search('^[0-9]', val) else 'X' + val
+            <td class='kmap-cover $cval'>$val</td>
+        <td id='rp$kmap.headIdFromCode(row)'></td>
+        <td id='rn$kmap.headIdFromCode(row)'></td>
+        <td id='rx$kmap.headIdFromCode(row)'></td></tr>
+    $for csym in colsymbols:
         $code:
-            ms = kmap.msFromCodemap(rsym, codemap)
-            val = ms if kmap.hasSymbol(rsym, row) else ''
-            cval = val if not re.search('^[0-9]', val) else 'X' + val
-        <td class='kmap-cover $cval'>$val</td>
-    </tr>
-$for csym in colsymbols:
-    $code:
-        ms = kmap.msFromCodemap(csym, codemap)
-    <tr><th></th>
-    $for col in colhdrs:
-        $code:
-            val = ms if kmap.hasSymbol(csym, col) else ''
-            cval = val if not re.search('^[0-9]', val) else 'X' + val
-        <td class='$cval'>$val</td>
-    $for rsym in rowsymbols:
-        <td></td>
-    </tr>
+            ms = kmap.msFromCodemap(csym, codemap)
+        <tr><th></th>
+        $for col in colhdrs:
+            $code:
+                val = ms if kmap.hasSymbol(csym, col) else ''
+                cval = val if not re.search('^[0-9]', val) else 'X' + val
+            <td class='$cval'>$val</td>
+        $for rsym in rowsymbols:
+            <td></td>
+        <td></td><td></td><td></td></tr>
+    <tr>
+        <th>p</th>
+        $for col in colhdrs:
+            <td id='cp$kmap.headIdFromCode(col)'>.</td>
+        $for rsym in rowsymbols:
+            <td></td>
+    <td></td><td></td><td></td></tr>
+    <tr>
+        <th>n</th>
+        $for col in colhdrs:
+            <td id='cn$kmap.headIdFromCode(col)'>.</td>
+        $for rsym in rowsymbols:
+            <td></td>
+    <td></td><td></td><td></td></tr>
+    <tr>
+        <th>x</th>
+        $for col in colhdrs:
+            <td id='cx$kmap.headIdFromCode(col)'>.</td>
+        $for rsym in rowsymbols:
+            <td></td>
+    <td></td><td></td><td></td></tr>
 </table>
 <div>.</div>
 <div>Key</div>
 <table>
     <tr><td>Code</td><td>MS</td></tr>
 $for code, ms in codemap:
-    <tr><td>$code</td><td>$ms</td></tr>
+    $code:
+        cval = ms if not re.search('^[0-9]', ms) else 'X' + ms
+    <tr><td>$code</td><td class='$cval'>$ms</td></tr>
 </table>
 <script>
 var val = '';
+var pMap = {};
+var nMap = {};
+var xMap = {};
+$for row in rowhdrs:
+    pMap['rp$kmap.headIdFromCode(row)'] = 0;
+    nMap['rn$kmap.headIdFromCode(row)'] = 0;
+    xMap['rx$kmap.headIdFromCode(row)'] = 0;
+$for col in colhdrs:
+    pMap['cp$kmap.headIdFromCode(col)'] = 0;
+    nMap['cn$kmap.headIdFromCode(col)'] = 0;
+    xMap['cx$kmap.headIdFromCode(col)'] = 0;
 $for exp in jdata['expressions']:
     $code:
         ids = kmap.exprToIds(exp)
     $for id in ids:
         $code:
             elemid = 'c' + id
+            col_id = kmap.colIdFromBits(id, colsymbols)
+            row_id = kmap.rowIdFromBits(id, rowsymbols)
         val = $$('#$elemid').text();
-        addval = '$exp['outcomeID']'
+        addval = '$exp['outcomeID']';
         if (val && val.length > 0) {
             val = val + '|';
         }
         val = val + addval;
         if (val[0] == 'A' && addval[0] == 'B') {
-            $$('#$elemid').removeClass('kmap-pos')
-            $$('#$elemid').addClass('kmap-conflict')
+            $$('#$elemid').removeClass('kmap-pos');
+            $$('#$elemid').addClass('kmap-conflict');
+            xMap['cx$col_id']++;
+            xMap['rx$row_id']++;
+            nMap['cn$col_id']++;
+            nMap['rn$row_id']++;
         }
         else if (val[0] == 'A') {
-            $$('#$elemid').addClass('kmap-pos')
+            $$('#$elemid').addClass('kmap-pos');
+            pMap['cp$col_id']++;
+            pMap['rp$row_id']++;
         }
         else if (val[0] == 'B') {
-            $$('#$elemid').removeClass('kmap-pos')
-            $$('#$elemid').addClass('kmap-neg')
+            $$('#$elemid').removeClass('kmap-pos');
+            $$('#$elemid').addClass('kmap-neg');
+            nMap['cn$col_id']++;
+            nMap['rn$row_id']++;
         }
         $$('#$elemid').text(val);
-        $$('#$elemid').attr({'title': val})
+        $$('#$elemid').attr({'title': val});
+for (var key in pMap) {
+  if (pMap.hasOwnProperty(key)) {
+    $$('#' + key).text(pMap[key].toString());
+    if (pMap[key] > 0) {
+      $$('#' + key).addClass('kmap-pos');
+    }
+  }
+}
+for (var key in nMap) {
+  if (nMap.hasOwnProperty(key)) {
+    $$('#' + key).text(nMap[key].toString());
+    if (nMap[key] > 0) {
+      $$('#' + key).addClass('kmap-neg');
+    }
+  }
+}
+for (var key in xMap) {
+  if (xMap.hasOwnProperty(key)) {
+    $$('#' + key).text(xMap[key].toString());
+    if (xMap[key] > 0) {
+      $$('#' + key).addClass('kmap-conflict');
+    }
+  }
+}
 </script>

@@ -87,6 +87,8 @@ class Controller:
             file.close()
 
         jmap = json.loads(jdata)
+        jmap['set'] = subdir
+        jmap['configuration'] = udata.filebase
         dims = len(jmap['manuscripts'])
         if dims < 6 or dims > 10:
             raise ValueError('Number of MSS must be between 6 and 10')
