@@ -16,7 +16,7 @@
     "VL1","VL2","VL3","VL8","vg"
   ],
   "referenceMSS": [
-    "01","03","05","032","038","vg"
+    "01","03","05","032","038","565"
   ],
   "statsDir": "C:/Data/Workspace/reading-processor/static/stats/",
   "boolDir": "C:/Data/Workspace/reading-processor/csv-bool/",

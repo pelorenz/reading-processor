@@ -196,12 +196,15 @@ class BoolAnalyzer:
                 return val_vct[idx]
         return '-'
 
-    def computeAggregateValue(s, aggregates, mss_vct, val_vct, col):
+    def computeAggregateValue(s, aggregates, mss_vct, val_vct, col, refms):
         aggr = s.getAggregateForName(aggregates, col)
         if aggr:
             ms_vals = ''
             occurs = 0
             for ms in aggr['members']:
+                if ms == refms:
+                    continue
+
                 val = s.getValueForColumn(mss_vct, val_vct, ms)
                 if val == '1':
                     if len(ms_vals) == 0:
@@ -221,13 +224,13 @@ class BoolAnalyzer:
 
         return ('0', '')
 
-    def genAggregateVect(s, l_cols, l_aggregates, mss_vct, val_vct):
+    def genAggregateVect(s, l_cols, l_aggregates, mss_vct, val_vct, refms):
         msval_str = ''
         out_vct = []
         parts = l_cols.split('\t')
         for col in parts:
             if s.isAggregateName(l_aggregates, col):
-                result = s.computeAggregateValue(l_aggregates, mss_vct, val_vct, col)
+                result = s.computeAggregateValue(l_aggregates, mss_vct, val_vct, col, refms)
                 val = result[0]
 
                 if val == '1':
@@ -374,22 +377,22 @@ class BoolAnalyzer:
 
             # construct vectors
             if layer == 1:
-                agdat_M = s.genAggregateVect(l_cols['layer_1'], l1_aggregates, getattr(refMS, mss), getattr(var, vect))
+                agdat_M = s.genAggregateVect(l_cols['layer_1'], l1_aggregates, getattr(refMS, mss), getattr(var, vect), refMS.gaNum)
 
             if layer == 2:
-                agdat_D = s.genAggregateVect(l_cols['layer_2'], l2_aggregates, getattr(refMS, mss), getattr(var, vect))
+                agdat_D = s.genAggregateVect(l_cols['layer_2'], l2_aggregates, getattr(refMS, mss), getattr(var, vect), refMS.gaNum)
 
             # D layer CSV with Latin witnesses
             if langCode == 'GL' and layer == 2:
                 # Generate readings vector with aggregates
-                agdat_Dgl = s.genAggregateVect(l2gl_cols, l2_aggregates, getattr(refMS, mss), getattr(var, vect))
+                agdat_Dgl = s.genAggregateVect(l2gl_cols, l2_aggregates, getattr(refMS, mss), getattr(var, vect), refMS.gaNum)
 
                 s.writeVector(file_Dgl, layer, agdat_Dgl, var.shortLabel(), witness_str, excerpt)
 
             # Latin layer CSV
             if langCode == 'GL' and layer == 3:
                 # Generate readings vector with aggregates
-                agdat_L = s.genAggregateVect(l3_cols, l3_aggregates, getattr(refMS, mss), getattr(var, vect))
+                agdat_L = s.genAggregateVect(l3_cols, l3_aggregates, getattr(refMS, mss), getattr(var, vect), refMS.gaNum)
 
                 s.writeVector(file_L, layer, agdat_L, var.shortLabel(), witness_str, excerpt)
 
