@@ -4,7 +4,7 @@ import os, json, re
 from utility.config import *
 
 class KMap:
-    def idFromCode(s, row, col):
+    def cellIdFromCode(s, row, col):
         id = ''
         l_id = row + col
         last_c = ''
@@ -20,6 +20,28 @@ class KMap:
             id = id + '1'
             
         return 'c' + id
+
+    def headIdFromCode(s, hdr):
+        id = ''
+        last_c = ''
+        for i, c in enumerate(hdr):
+            if last_c and last_c != u'̄':
+                if c == u'̄':
+                    id = id + '0'
+                else:
+                    id = id + '1'
+            last_c = c
+
+        if last_c != u'̄':
+            id = id + '1'
+            
+        return id
+
+    def colIdFromBits(s, bits, symbols):
+        return bits[len(symbols):]
+
+    def rowIdFromBits(s, bits, symbols):
+        return bits[:len(symbols)]
 
     def hasSymbol(s, symbol, codestr):
         return True if re.search(symbol, codestr) and not re.search(symbol + u'\u0304', codestr) else False

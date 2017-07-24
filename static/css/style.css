@@ -337,12 +337,12 @@ td.VL {
 td.vg {
   background-color: #b3ffe6;
 }
-div.kmap-pos {
-  background-color: #eaeaea;
+div.kmap-pos, td.kmap-pos {
+  background-color: #e0e0e0;
 }
-div.kmap-neg {
-  background-color: #fff2f2;
+div.kmap-neg, td.kmap-neg {
+  background-color: #ffe0e0;
 }
-div.kmap-conflict {
-  background-color: #ffffe0;
+div.kmap-conflict, td.kmap-conflict {
+  background-color: #ffffd0;
 }
