@@ -814,10 +814,11 @@ class QCAAnalyzer:
             s.caseOutcomes[ref] = outcomes
 
     def computeTotalCases(s, exprs):
-        cases = 0
+        caseMap = {}
         for expinfo in exprs:
-            cases = cases + len(expinfo['cases'])
-        return cases
+            for case in expinfo['cases']:
+                caseMap[case] = None
+        return len(caseMap)
 
     def computeScores(s):
         # Total positive and negative cases for coverage
