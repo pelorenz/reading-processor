@@ -491,7 +491,7 @@ class Analyzer:
 
                         # Readings with Greek and unambiguous Latin support
                         if vu.hasRetroversion:
-                            s.generateVector(refMS, refVar, vu, reading, 'allMSS', 'all_nils', 'all_GL', 'allVect')
+                            s.generateVector(refMS, refVar, vu, reading, 'selGrMSS', 'selGr_nils', 'sel_G', 'selGrVect')
 
                             s.generateVector(refMS, refVar, vu, reading, 'selMSS', 'sel_nils', 'sel_GL', 'selVect')
                         else:
