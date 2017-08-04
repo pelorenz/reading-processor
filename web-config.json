@@ -3,6 +3,8 @@
     "c01": "mark-01a-all",
     "c02": "mark-02a-all",
     "c03": "mark-03a-all",
+    "c07": "mark-07a-all",
+    "c08": "mark-08a-all",
     "c14pt1": "mark-14pt1a-all",
     "c14pt2": "mark-14pt2a-all",
     "c15": "mark-15a-all",
@@ -10,13 +12,13 @@
     "c17": "mark-17a-all"
   },
   "comparisonMSS": [
-    "P45","01","03","05","032","038", "28", "35", "79", "565", "700", "788"
+    "01", "03", "05", "032", "038", "28", "565", "700", "788", "1582"
   ],
   "comparisonMSSLatin": [
-    "VL1","VL2","VL3","VL8","vg"
+    "VL1", "VL2", "VL3", "VL8", "vg"
   ],
   "referenceMSS": [
-    "01","03","05","032","038","565"
+    "01", "03", "05", "032", "038", "565"
   ],
   "statsDir": "C:/Data/Workspace/reading-processor/static/stats/",
   "boolDir": "C:/Data/Workspace/reading-processor/csv-bool/",
