@@ -19,11 +19,11 @@
   vertical-align:top;
 }
 #dirslist {
-  height:700px;
+  height:650px;
   overflow-y: scroll;
 }
 #qca-div {
-  height:800px;
+  height:780px;
   overflow-y: scroll;
   border-top: 1px solid black;
 }
@@ -70,7 +70,7 @@ td.ref:active {
   background-color: #cccccc;
 }
 td.kcell {
-  font-size: smaller;
+  font-size: small;
   font-family: 'Arial Narrow'
 }
 div.kmap {

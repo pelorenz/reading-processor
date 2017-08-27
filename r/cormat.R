@@ -52,7 +52,7 @@ computeCorrelations <- function(meth) {
   close(fileConn)
 
   # Output dissimilarity matrix between readings
-  fileConn<-file(paste(outdir, sprintf("%s - reading similarity matrix (%s).txt", label, meth), sep="\\"))
+  fileConn<-file(paste(outdir, sprintf("%s - reading dissimilarity matrix (%s).txt", label, meth), sep="\\"))
   sink(fileConn, append=FALSE, split=TRUE)
   cat(colnames(dssmat))
   cat('\n')
@@ -160,3 +160,5 @@ for (i in 2:15) wss[i] <- sum(kmeans(dssJacard, centers=i)$withinss)
 CairoPNG(file=paste(outdir, sprintf("%s - Binary within groups sum of squares X Number of Clusters.png", label), sep="\\"),width=1000,height=1000)
 plot(1:15, wss, type="b", xlab="Number of Clusters", ylab="Within groups sum of squares") 
 dev.off()
+
+dssKulczynski2 <- computeCorrelations('Kulczynski2')

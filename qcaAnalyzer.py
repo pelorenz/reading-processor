@@ -325,7 +325,7 @@ class QCAAnalyzer:
                 s.caseMapZeros[d_key] = cases
                 s.referenceMap[ref] =  { 'expression': expression, 'dnfKey': d_key, 'attestingMSS': attestingMSS, 'outcome': '0', 'aggregateData': m_data['aggregateData'], 'witnessStr': m_data['witnessStr'], 'excerpt': m_data['excerpt'] }
 
-    def minimizeExpressions(s):
+    def minimizeExpressions(s, isMerge):
         s.minimize('pos')
         s.minimize('neg')
 
@@ -351,13 +351,14 @@ class QCAAnalyzer:
 
                         s.manualCases[dnf_key] = expinf
 
-        # merge expressions that differ only in 0's and dc's
-        #s.minimized_exprs_P = s.mergeDCExpressions(s.minimized_exprs_P)
-        #s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
+        if isMerge:
+            # merge expressions that differ only in 0's and dc's
+            s.minimized_exprs_P = s.mergeDCExpressions(s.minimized_exprs_P)
+            s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
 
-        # detect and merge expressions with mutual dc to 1, 1 to dc loops
-        #s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P, 1)
-        #s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N, 0)
+            # detect and merge expressions with mutual dc to 1, 1 to dc loops
+            s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P, 1)
+            s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N, 0)
 
     def buildExpressionsFromCases(s, expinf):
         build_parts = []
@@ -960,7 +961,7 @@ class QCAAnalyzer:
 
         return details[:-2] # subtract final returns
 
-    def writeExpressions(s, basename):
+    def writeExpressions(s, basename, isMerge):
         c = s.config
 
         subdir = re.sub(r'^c', '', basename)
@@ -973,7 +974,8 @@ class QCAAnalyzer:
             if exception.errno != errno.EEXIST:
                 raise
 
-        htmlfile = htmldir + basename + '-header.html'
+        htmlfile = htmldir + basename
+        htmlfile = htmlfile + '-header.html' if not isMerge else htmlfile + '-merge-header.html'
         cols = [m[1:] if m[:1] == 'M' else m for m in s.mscols]
         with open(htmlfile, 'w+', encoding='utf-8') as hfile:
             col_str = '</td><td class="ms">'.join(cols)
@@ -981,7 +983,8 @@ class QCAAnalyzer:
 
             hfile.close()
 
-        htmlfile = htmldir + basename + '.html'
+        htmlfile = htmldir + basename
+        htmlfile = htmlfile + '.html' if not isMerge else htmlfile + '-merge.html'
         with open(htmlfile, 'w+', encoding='utf-8') as hfile:
             hfile.write('<div id="qca-div"><table cellspacing="0" cellpadding="0" id="qca-table">\n')
 
@@ -1268,6 +1271,18 @@ class QCAAnalyzer:
             file.write(jdata)
             file.close()
 
+    def processExpressions(s, path, isMerge):
+        basename = path[len(s.boolDir):-4]
+
+        s.clear()
+        s.loadCSV(path)
+        s.prepareCSV()
+        s.writeCSV(basename)
+        s.generateExpressions(basename)
+        s.minimizeExpressions(isMerge)
+        s.computeScores()
+        s.writeExpressions(basename, isMerge)
+
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
@@ -1295,16 +1310,8 @@ class QCAAnalyzer:
         qcaPaths.append(s.boolDir + basename + 'M.csv')
 
         for path in qcaPaths:
-            basename = path[len(s.boolDir):-4]
-
-            s.clear()
-            s.loadCSV(path)
-            s.prepareCSV()
-            s.writeCSV(basename)
-            s.generateExpressions(basename)
-            s.minimizeExpressions()
-            s.computeScores()
-            s.writeExpressions(basename)
+            s.processExpressions(path, False)
+            s.processExpressions(path, True)
 
         s.info('Done')
 

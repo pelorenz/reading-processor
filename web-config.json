@@ -5,6 +5,8 @@
     "c03": "mark-03a-all",
     "c07": "mark-07a-all",
     "c08": "mark-08a-all",
+    "c09": "mark-09a-all",
+    "c14": "mark-14a-all",
     "c14pt1": "mark-14pt1a-all",
     "c14pt2": "mark-14pt2a-all",
     "c15": "mark-15a-all",
@@ -22,5 +24,5 @@
   ],
   "statsDir": "C:/Data/Workspace/reading-processor/static/stats/",
   "boolDir": "C:/Data/Workspace/reading-processor/csv-bool/",
-  "qcaSets": ["default","AfIt","VL3split","Lake"]
+  "qcaSets": ["default","basic","AfIt","VL3split","Lake"]
 }

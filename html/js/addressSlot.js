@@ -345,7 +345,7 @@ DSS.Address.handleClick = function () {
     var startingVerse = this.verseNum;
     var addresses = [];
     var addr = this;
-    while (addr && startingVerse <= addr.verseNum + 1 && t_idx < DSS.chapter.addresses.length) {
+    while (addr && startingVerse <= addr.verseNum + 2 && t_idx < DSS.chapter.addresses.length) {
       if (!addr.checkbox) { // verse headers
         t_idx++;
         addr = DSS.chapter.addresses[t_idx];
