@@ -41,7 +41,7 @@
         {
           "name": "f03",
           "members": [ "01", "03", "019", "892"],
-          "minOccurs": 1,
+          "minOccurs": 2,
           "langCodes": ["GL","G"],
           "layers": [1, 2, 3]
         },
@@ -52,6 +52,34 @@
           "langCodes": ["GL","G"],
           "layers": [1, 2, 3]
         },
+        {
+          "name": "f13",
+          "members": [ "13", "346", "543", "788", "826", "828", "983"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "f1",
+          "members": [ "1", "1582"],
+          "minOccurs": 1,
+          "langCodes": ["GL","G"],
+          "layers": [1, 2, 3]
+        },
+        {
+          "name": "VL",
+          "members": [ "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17"],
+          "minOccurs": 3,
+          "langCodes": ["GL"],
+          "layers": [2, 3]
+        }
+      ]
+    },
+    "basic": {
+      "qcaMSS": [
+        "03", "05", "032", "038", "1", "13", "28", "346", "543", "565", "700", "788", "826", "828", "983", "1582", "VL1", "VL2", "VL3", "VL4", "VL6", "VL8", "VL10", "VL13", "VL14", "VL15", "VL16", "VL17", "vg"
+      ],
+      "aggregates": [
         {
           "name": "f13",
           "members": [ "13", "346", "543", "788", "826", "828", "983"],
