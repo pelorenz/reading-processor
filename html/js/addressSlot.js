@@ -7,6 +7,7 @@ DSS.Chapter = function () {
   this.addresses = [];
   this.addressLookup = {};
   this.filename = DSS.models[0]._filename;
+  this.chapterNum = DSS.models[0].chapter;
   for (var i = 0; i < DSS.models.length; i++) {
     var model = DSS.models[i];
     this.manuscripts = this.manuscripts.concat(model.manuscripts);
@@ -20,7 +21,7 @@ DSS.Chapter = function () {
       }
       else if (slot._type == 'address') {
         if (j >= this.addresses.length) { // add new slots only!
-          var addr = new DSS.Address(j, slot.verse, slot.addressIndex, slot.textForms); // reset token index to actual order (i.e. j)
+          var addr = new DSS.Address(j, this.chapterNum, slot.verse, slot.addressIndex, slot.textForms); // reset token index to actual order (i.e. j)
           this.addresses.push(addr);
           this.addressLookup[slot.verse + ':' + slot.addressIndex] = addr;
         }
@@ -109,9 +110,21 @@ DSS.Chapter.processUploadDiffs = function (event) {
       }
       for (var j = 0; j < j_addr['variationUnits'].length; j++) {
         var j_varunit = j_addr['variationUnits'][j];
-        if (!addr.hasVariationUnit(j_varunit['label'])) {
+        var short_label = '';
+        var long_label = '';
+        var j_label = j_varunit['label'];
+        var is_long = j_label.match(/^\d{1,2}\.(\d{1,2}\..+)$/);
+        if (is_long) {
+          short_label = is_long.length > 1 ? is_long[1] : j_label;
+          long_label = j_label;
+        }
+        else {
+          short_label = j_label;
+          long_label = this.chapterNum + '.' + j_label;
+        }
+        if (!addr.hasVariationUnit(short_label) && !addr.hasVariationUnit(long_label)) {
           var vu = new DSS.VariationUnit();
-          vu.label = j_varunit['label'];
+          vu.label = long_label;
           vu.hasRetroversion = j_varunit['hasRetroversion'];
           for (var k = 0; k < j_varunit['readings'].length; k++) {
             var j_reading = j_varunit['readings'][k];
@@ -123,7 +136,7 @@ DSS.Chapter.processUploadDiffs = function (event) {
                 var subreading = new DSS.Reading();
                 for (var n = 0; n < j_subreading['readingUnits'].length; n++) {
                   var j_ru = j_subreading['readingUnits'][n];
-                  var ru = new DSS.ReadingUnit(j_ru['tokenIndex'], j_ru['verse'], j_ru['addressIndex'], j_ru['text']);
+                  var ru = new DSS.ReadingUnit(j_ru['tokenIndex'], this.chapterNum, j_ru['verse'], j_ru['addressIndex'], j_ru['text']);
                   subreading.readingUnits.push(ru);
                   vu.addresses.push(DSS.chapter.getAddress(j_ru['verse'], j_ru['addressIndex']));
                 }
@@ -138,7 +151,7 @@ DSS.Chapter.processUploadDiffs = function (event) {
               var reading = new DSS.Reading();
               for (var m = 0; m < j_reading['readingUnits'].length; m++) {
                 var j_ru = j_reading['readingUnits'][m];
-                var ru = new DSS.ReadingUnit(j_ru['tokenIndex'], j_ru['verse'], j_ru['addressIndex'], j_ru['text']);
+                var ru = new DSS.ReadingUnit(j_ru['tokenIndex'], this.chapterNum, j_ru['verse'], j_ru['addressIndex'], j_ru['text']);
                 reading.readingUnits.push(ru);
                 vu.addresses.push(DSS.chapter.getAddress(j_ru['verse'], j_ru['addressIndex']));
               }
@@ -186,6 +199,7 @@ DSS.Chapter.handleSaveDiffs = function (event) {
 DSS.Chapter.handleSave = function (event, isDiff) {
   var saveModel = {
     '_filename': this.filename,
+    'chapter': this.chapterNum,
     'addresses': []
   };
   if (!isDiff) {
@@ -199,6 +213,7 @@ DSS.Chapter.handleSave = function (event, isDiff) {
       var j_addr = {
         '_type': address.type,
         'tokenIndex': address.tokenIdx,
+        'chapter': address.chapterNum,
         'verse': address.verseNum,
         'addressIndex': address.addressIdx,
         'textForms': [],
@@ -266,6 +281,7 @@ DSS.Chapter.handleSave = function (event, isDiff) {
                 var j_ru = {
                   '_type': ru.type,
                   'tokenIndex': ru.tokenIdx,
+                  'chapter': ru.chapterNum,
                   'verse': ru.verseNum,
                   'addressIndex': ru.addressIdx,
                   'text': ru.text
@@ -288,6 +304,7 @@ DSS.Chapter.handleSave = function (event, isDiff) {
               var j_ru = {
                 '_type': ru.type,
                 'tokenIndex': ru.tokenIdx,
+                'chapter': ru.chapterNum,
                 'verse': ru.verseNum,
                 'addressIndex': ru.addressIdx,
                 'text': ru.text
@@ -313,13 +330,14 @@ DSS.Chapter.handleSave = function (event, isDiff) {
   DSS.Chapter.saveJSON(jsonString, isDiff);
 };
 
-DSS.AddressSlot = function (t_idx, v_num) {
+DSS.AddressSlot = function (t_idx, c_num, v_num) {
   this.tokenIdx = t_idx;
+  this.chapterNum = c_num;
   this.verseNum = v_num;
 };
 
-DSS.Address = function (t_idx, v_num, a_idx, t_forms) {
-  DSS.AddressSlot.call(this, t_idx, v_num);
+DSS.Address = function (t_idx, c_num, v_num, a_idx, t_forms) {
+  DSS.AddressSlot.call(this, t_idx, c_num, v_num);
   this.addressIdx = a_idx;
   this.type = 'address';
   this.manuscriptForms = {};
@@ -613,8 +631,8 @@ DSS.Address.prototype.clearGroups = function() {
   this.textForms = textForms;
 };
 
-DSS.VerseDelimiter = function (t_idx, v_num) {
-  DSS.AddressSlot.call(this, t_idx, v_num);
+DSS.VerseDelimiter = function (t_idx, c_num, v_num) {
+  DSS.AddressSlot.call(this, t_idx, c_num, v_num);
   this.type = 'verse';
 };
 DSS.VerseDelimiter.constructor = DSS.VerseDelimiter;
@@ -853,8 +871,8 @@ DSS.TextFormGroup.handleClick = function (subFrm, slot) {
   slot.refresh();
 };
 
-DSS.ReadingUnit = function(t_idx, v_num, a_idx, txt) {
-  DSS.AddressSlot.call(this, t_idx, v_num);
+DSS.ReadingUnit = function(t_idx, c_num, v_num, a_idx, txt) {
+  DSS.AddressSlot.call(this, t_idx, c_num, v_num);
   this.type = 'readingUnit';
   this.addressIdx = a_idx;
   this.text = txt;
@@ -1138,7 +1156,7 @@ DSS.VariationUnit.prototype.getReference = function() {
       lastAddr = addr;
     }
   }
-  return label;
+  return lastAddr.chapterNum + '.' + label;
 };
 DSS.VariationUnit.prototype.getUnlinkedMSS = function() {
   var unlinked = [];
@@ -1162,7 +1180,7 @@ DSS.VariationUnit.prototype.initialize = function(addrs) {
         continue;
       }
 
-      var readingUnit = new DSS.ReadingUnit(addr.tokenIdx, addr.verseNum, addr.addressIdx, frm.getForm());
+      var readingUnit = new DSS.ReadingUnit(addr.tokenIdx, DSS.chapter.chapterNum, addr.verseNum, addr.addressIdx, frm.getForm());
       readingUnits.push(readingUnit);
     }
     var tempReading = new DSS.Reading();

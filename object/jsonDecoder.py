@@ -28,10 +28,10 @@ class ComplexDecoder(json.JSONDecoder):
         if type == 'base':
             return { 'addresses': obj['addresses'], 'max_forms': obj['maxFormsAtAddress'], 'max_non_sing': obj['maxNonSingularFormsAtAddress']}
         if type == 'address':
-            address = Address(obj['tokenIndex'], obj['verse'], obj['addressIndex'])
+            address = Address(obj['tokenIndex'], obj['chapter'], obj['verse'], obj['addressIndex'])
             address.sorted_text_forms = obj['textForms']
             if obj.has_key('variationUnits'):
-                address.variationUnits = obj['variationUnits']
+                address.variation_units = obj['variationUnits']
             address.buildSortedItems()
             return address
         if type == 'reading':
@@ -45,7 +45,7 @@ class ComplexDecoder(json.JSONDecoder):
             reading_group.manuscripts = obj['manuscripts']
             return reading_group
         if type == 'readingUnit':
-            reading_unit = ReadingUnit(obj['tokenIndex'], obj['verse'], obj['addressIndex'], obj['text'])
+            reading_unit = ReadingUnit(obj['tokenIndex'], obj['chapter'], obj['verse'], obj['addressIndex'], obj['text'])
             return reading_unit
         if type == 'textForm':
             morph = ''
@@ -67,5 +67,5 @@ class ComplexDecoder(json.JSONDecoder):
             variation_unit.readings = obj['readings']
             return variation_unit
         if type == 'verse':
-            return VerseDelimiter(obj['tokenIndex'], str(obj['verse']))
+            return VerseDelimiter(obj['tokenIndex'], '0', str(obj['verse']))
         return obj

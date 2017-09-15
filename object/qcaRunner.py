@@ -9,7 +9,7 @@ class QCARunner:
 
     def __init__(s):
         s.chapter = ''
-        s.inputfile = ''
+        s.inputrange = ''
         s.qcaset = ''
         s.refMSS = []
 
@@ -20,28 +20,26 @@ class QCARunner:
             info += str(arg).strip()
         print info
 
-    def analyze(s, chapter, inputfile, refMSS, qcaset):
+    def analyze(s, chapter, inputrange, refMSS, qcaset):
         c = s.config = Config('processor-config.json')
 
-        s.info('Calling analysis with chapter', chapter, 'and input file', inputfile)
+        s.info('Calling analysis with chapter', chapter, 'and input range', inputrange)
         s.info('Reference MSS', refMSS)
 
         s.chapter = chapter
-        s.inputfile = inputfile
+        s.inputrange = inputrange
         s.qcaset = qcaset
         s.refMSS = refMSS
 
         for ms in refMSS:
-            # boolAnalyzer.py -v -C c01 -R 032,05 -f mark-01a-all
-            s.info('Calling boolAnalyzer.py with', refMSS)
-            p = ['boolAnalyzer.py']
+            # TTMaker.py -v -C c01 -R 032,05 -f mark-01a-all
+            s.info('Calling TTMaker.py with', refMSS)
+            p = ['TTMaker.py']
             p.append('-v')
-            p.append('-C')
-            p.append(s.chapter)
+            p.append('-a')
+            p.append(s.inputrange)
             p.append('-R')
             p.append(s.refMSS)
-            p.append('-f')
-            p.append(s.inputfile)
             p.append('-q')
             p.append(s.qcaset)
             proc = subprocess.Popen(p, stdout=subprocess.PIPE, shell=True)
@@ -53,9 +51,9 @@ class QCARunner:
             py3_env['PY_PYTHON'] = '3'
             py3_env['PATH'] = 'C:\Dev\python36;C:\Dev\python36\Scripts;'
             
-            # qcaAnalyzer.py -v -f c01-05
-            s.info('Calling qcaAnalyzer.py with', refMSS)
-            p = ['qcaAnalyzer.py']
+            # TTMinimizer.py -v -f c01-05
+            s.info('Calling TTMinimizer.py with', refMSS)
+            p = ['TTMinimizer.py']
             p.append('-v')
             p.append('-f')
             p.append(s.chapter + '-' + ms)
