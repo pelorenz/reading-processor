@@ -5,6 +5,7 @@ import sys, os, argparse, urllib, subprocess, string, re, shutil, datetime, oper
 
 from multiprocessing import Process, Lock
 
+from object.rangeManager import *
 from object.referenceManuscript import *
 from object.referenceVariant import *
 from object.util import *
@@ -102,7 +103,7 @@ def callDistrib(lock, rms, chapter, langCode):
 class Analyzer:
 
     def __init__(s):
-        s.chapter = ''
+        s.range_id = ''
         s.variantModel = []
 
         s.referenceMSS = []
@@ -147,7 +148,7 @@ class Analyzer:
 
     def writeSingular(s, refMS):
         c = s.config
-        csvfile = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + 'SG' + '.csv'
+        csvfile = c.get('csvFolder') + s.range_id + '-' + refMS.gaNum + 'SG' + '.csv'
         with open(csvfile, 'w+') as file:
             # write CSV header
             file.write((u'C1\tC2\tC3\tSEQ\tLayer\tExcerpt\n').encode('utf-8'))
@@ -164,8 +165,8 @@ class Analyzer:
         c = s.config
 
         # Two CSV files: one for all variants, another for D-layer variants
-        csvfile_all = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + langCode + '.csv'
-        csvfile_D = c.get('csvFolder') + s.chapter + '-' + refMS.gaNum + 'D.csv'
+        csvfile_all = c.get('csvFolder') + s.range_id + '-' + refMS.gaNum + langCode + '.csv'
+        csvfile_D = c.get('csvFolder') + s.range_id + '-' + refMS.gaNum + 'D.csv'
         with open(csvfile_all, 'w+') as file_all:
             fmode = 'w+' if langCode == 'GL' else 'a+'
             with open(csvfile_D, fmode) as file_D:
@@ -412,7 +413,7 @@ class Analyzer:
         j_layer['size'] = str(len(rms.singular) + len(sorted_variations)).decode('utf-8')
         j_layers['clusters'].append(j_layer)
 
-        jsonfile = c.get('layersFolder') + 'Mark ' + s.chapter[1:] + '-' + rms.gaNum + '.json'
+        jsonfile = c.get('layersFolder') + 'Mark ' + s.range_id[1:] + '-' + rms.gaNum + '.json'
         with open(jsonfile, 'w+') as file:
             jsonstr = json.dumps(j_layers, ensure_ascii=False)
             file.write(jsonstr.encode('utf-8'))
@@ -476,7 +477,7 @@ class Analyzer:
                 refMS.selGr_nils[ms] = 0
 
             for addr in s.variantModel['addresses']:
-                for vu in addr.variationUnits:
+                for vu in addr.variation_units:
                     if not vu.startingAddress:
                         vu.startingAddress = addr
 
@@ -519,11 +520,11 @@ class Analyzer:
             procs = []
             for rms in s.env.refMS_IDs:
                 # Correlation, similarity, and dissimilarity matrices
-                procs.append(Process(target=callCormat, args=(lock, rms, s.chapter, 'GL')))
-                procs.append(Process(target=callCormat, args=(lock, rms, s.chapter, 'G')))
+                procs.append(Process(target=callCormat, args=(lock, rms, s.range_id, 'GL')))
+                procs.append(Process(target=callCormat, args=(lock, rms, s.range_id, 'G')))
 
                 # Distributions for Greek with Latin retroversion
-                procs.append(Process(target=callDistrib, args=(lock, rms, s.chapter, 'GL')))
+                procs.append(Process(target=callDistrib, args=(lock, rms, s.range_id, 'GL')))
 
                 for p in procs:
                     p.start()
@@ -536,13 +537,13 @@ class Analyzer:
 
                     # D layer
                     if rms == '05' or rms == '032':
-                        procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'D', n)))
+                        procs.append(Process(target=callClust, args=(lock, rms, s.range_id, 'D', n)))
 
                     # Greek with Latin retroversion clustering
-                    procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'GL', n)))
+                    procs.append(Process(target=callClust, args=(lock, rms, s.range_id, 'GL', n)))
 
                     # Greek-only clustering
-                    procs.append(Process(target=callClust, args=(lock, rms, s.chapter, 'G', n)))
+                    procs.append(Process(target=callClust, args=(lock, rms, s.range_id, 'G', n)))
 
                     for p in procs:
                         p.start()
@@ -553,16 +554,21 @@ class Analyzer:
         else:
             s.info('exiting __name__ not equal to __main__')
 
-    def analyze(s, chapter, inputfile, refMSS):
+    def analyze(s, chapter, inputrange, refMSS):
         c = s.config = Config('processor-config.json')
 
-        s.info('Calling analysis with chapter', chapter, 'and input file', inputfile)
+        s.info('Calling analysis with chapter', chapter, 'and input range', inputrange)
         s.info('Reference MSS', refMSS)
 
-        s.env = Env(c, {'chapter': chapter, 'inputfile': inputfile, 'refMSS_IDs': refMSS})
+        s.env = Env(c, {'chapter': chapter, 'inputfile': inputrange, 'refMSS_IDs': refMSS})
 
-        s.chapter = s.env.chapter()
-        s.variantModel = s.env.loadVariants(s.env.varFile())
+        s.range_id = inputrange
+
+        # load variant data
+        s.rangeMgr = RangeManager()
+        s.rangeMgr.load()
+
+        s.variantModel = s.rangeMgr.getModel(s.range_id)
 
         # Numbers of clusters
         s.minClusters = c.get('minClusters')

@@ -29,8 +29,8 @@ class  Address(AddressSlot):
         else:
             return 0
 
-    def __init__(s, t_idx, v_num, a_idx):
-        super(Address, s).__init__(t_idx, v_num)
+    def __init__(s, t_idx, c_num, v_num, a_idx):
+        super(Address, s).__init__(t_idx, c_num, v_num)
 
         # address position in verse
         s.addr_idx = a_idx
@@ -58,7 +58,7 @@ class  Address(AddressSlot):
         s.variation_units = []
 
     def jsonSerialize(s):
-        return { 'addressIndex': s.addr_idx, 'verse': int(s.verse_num), 'tokenIndex': s.token_idx, '_type': 'address', 'textForms': s.sorted_text_forms }
+        return { 'addressIndex': s.addr_idx, 'chapter': s.chapter_num, 'verse': int(s.verse_num), 'tokenIndex': s.token_idx, '_type': 'address', 'textForms': s.sorted_text_forms, 'variationUnits': s.variation_units }
 
     def nonSingularTextForms(s):
         non_sing = []

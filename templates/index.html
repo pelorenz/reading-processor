@@ -19,9 +19,9 @@ $def with (args)
         <li>
           <ul class='list2'>
             <li>Chapter 
-              <select id='inputfile'>
-              $for key in args['config'].get('files'):
-                  <option value='$args['config'].get("files")[key]'>$key</option>
+              <select id='inputrange'>
+              $for key in args['config'].get('ranges'):
+                  <option value='$key'>$key</option>
               </select>
             </li>
             <li>QCASet

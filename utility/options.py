@@ -8,6 +8,7 @@ class  CommandLine:
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument('-c', '--config', help='Configuration filename with optional path. The config file must be placed in the script directory if a path is not provided. [processor-config.json]', default='processor-config.json')
         self.parser.add_argument('-f', '--file', help='Base file name for CSV and JSON input.')
+        self.parser.add_argument('-a', '--range', help='Range identifier to specify range of variants for processing.')
         self.parser.add_argument('-C', '--chapter', help='Chapter name for variant diffs and other chapter-specific input.')
         self.parser.add_argument('-R', '--refMSS', help='Comma-delimited list of reference manuscripts.')
         self.parser.add_argument('-q', '--qcaSet', help='Set of QCA aggregates to apply.', default='default')

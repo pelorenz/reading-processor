@@ -50,7 +50,7 @@ class Processor:
             file.write(morphcache.encode('UTF-8'))
             file.close()
 
-    def processCSV(s, filename, language):
+    def processCSV(s, filename, language, chapter):
         c = s.config
         o = s.options
         s.info('processing', filename)
@@ -115,9 +115,9 @@ class Processor:
                 # first pass, initialize data structures
                 if line_idx == 0:
                     if verse_num:
-                        cur_slot = VerseDelimiter(tok_idx, cur_verse)
+                        cur_slot = VerseDelimiter(tok_idx, chapter, cur_verse)
                     else:
-                        cur_slot = Address(tok_idx, cur_verse, addr_idx)
+                        cur_slot = Address(tok_idx, chapter, cur_verse, addr_idx)
 
                     s.addresses.append(cur_slot)
                 else:
@@ -151,7 +151,10 @@ class Processor:
         if parts[0].find('lat') > -1:
             language = 'latin'
 
-        data = json.dumps({ '_type': 'base', '_language': language, '_filename': parts[0], 'manuscripts': s.mss, 'addresses': s.addresses, 'maxFormsAtAddress': Address.max_forms, 'maxNonSingularFormsAtAddress': Address.max_non_sing }, cls=ComplexEncoder, ensure_ascii=False) #, indent=2, sort_keys=True)
+        # parse chapter number from file name
+        chapter = re.search(r'^mark\-0{0,1}(\d{1,2})', parts[0]).group(1)
+
+        data = json.dumps({ '_type': 'base', '_language': language, '_filename': parts[0], 'chapter': chapter, 'manuscripts': s.mss, 'addresses': s.addresses, 'maxFormsAtAddress': Address.max_forms, 'maxNonSingularFormsAtAddress': Address.max_non_sing }, cls=ComplexEncoder, ensure_ascii=False) #, indent=2, sort_keys=True)
 
         outputfile = c.get('outputFolder') + parts[0] + '.json'
         with open(outputfile, 'w+') as file:
@@ -181,11 +184,14 @@ class Processor:
                     if parts[0].find('lat') > -1:
                         language = 'latin'
 
+                    # parse chapter number from file name
+                    chapter = re.search(r'^mark\-0{0,1}(\d{1,2})', parts[0]).group(1)
+
                     s.addresses = []
                     s.mss = []
                     Address.max_forms = 0
                     Address.max_non_sing = 0
-                    s.processCSV(filename, language)
+                    s.processCSV(filename, language, chapter)
                     s.processAddresses(language)
                     s.saveJSON(filename)
         finally:
@@ -209,5 +215,5 @@ class Processor:
 
 # Invoke via entry point
 # csvProcessor.py -v -f [filename minus suffix]
-# csvProcessor.py -v -f mark-07a
+# csvProcessor.py -v -f mark-10a
 Processor().main(sys.argv[1:])

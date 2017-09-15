@@ -19,6 +19,396 @@
   "variantFolder": "variant-data/",
   "variantChapter": "c15/",
   "variantFile": "mark-15a-all",
+  "variantData": [
+    { "subdir": "c01", "file": "mark-01a-all" },
+    { "subdir": "c02", "file": "mark-02a-all" },
+    { "subdir": "c03", "file": "mark-03a-all" },
+    { "subdir": "c04", "file": "mark-04a-all" },
+    { "subdir": "c05", "file": "mark-05a-all" },
+    { "subdir": "c06pt1", "file": "mark-06pt1a-all" },
+    { "subdir": "c06pt2", "file": "mark-06pt2a-all" },
+    { "subdir": "c07", "file": "mark-07a-all" },
+    { "subdir": "c08", "file": "mark-08a-all" },
+    { "subdir": "c09", "file": "mark-09a-all" },
+    { "subdir": "c10", "file": "mark-10a-all" },
+    { "subdir": "c11", "file": "mark-11a-all" },
+    { "subdir": "c12", "file": "mark-12a-all" },
+    { "subdir": "c13", "file": "mark-13a-all" },
+    { "subdir": "c14pt1", "file": "mark-14pt1a-all" },
+    { "subdir": "c14pt2", "file": "mark-14pt2a-all" },
+    { "subdir": "c15", "file": "mark-15a-all" },
+    { "subdir": "c16", "file": "mark-16a-all" }
+  ],
+  "variantDataCache": "variant-data/_cache/variant-data-cache.json",
+  "defaultRange": "c01",
+  "rangeData": {
+    "c01": [
+      {
+        "chapter": "1",
+        "startVerse": 1,
+        "endVerse": 45
+      }
+    ],
+    "c02": [
+      {
+        "chapter": "2",
+        "startVerse": 1,
+        "endVerse": 28
+      }
+    ],
+    "c03": [
+      {
+        "chapter": "3",
+        "startVerse": 1,
+        "endVerse": 35
+      }
+    ],
+    "c04": [
+      {
+        "chapter": "4",
+        "startVerse": 1,
+        "endVerse": 41
+      }
+    ],
+    "c05": [
+      {
+        "chapter": "5",
+        "startVerse": 1,
+        "endVerse": 43
+      }
+    ],
+    "c06": [
+      {
+        "chapter": "6",
+        "startVerse": 1,
+        "endVerse": 56
+      }
+    ],
+    "c07": [
+      {
+        "chapter": "7",
+        "startVerse": 1,
+        "endVerse": 37
+      }
+    ],
+    "c08": [
+      {
+        "chapter": "8",
+        "startVerse": 1,
+        "endVerse": 38
+      }
+    ],
+    "c09": [
+      {
+        "chapter": "9",
+        "startVerse": 1,
+        "endVerse": 50
+      }
+    ],
+    "c10": [
+      {
+        "chapter": "10",
+        "startVerse": 1,
+        "endVerse": 52
+      }
+    ],
+    "c11": [
+      {
+        "chapter": "11",
+        "startVerse": 1,
+        "endVerse": 33
+      }
+    ],
+    "c12": [
+      {
+        "chapter": "12",
+        "startVerse": 1,
+        "endVerse": 44
+      }
+    ],
+    "c13": [
+      {
+        "chapter": "13",
+        "startVerse": 1,
+        "endVerse": 37
+      }
+    ],
+    "c14": [
+      {
+        "chapter": "14",
+        "startVerse": 1,
+        "endVerse": 72
+      }
+    ],
+    "c15-16": [
+      {
+        "chapter": "15",
+        "startVerse": 1,
+        "endVerse": 47
+      },
+      {
+        "chapter": "16",
+        "startVerse": 1,
+        "endVerse": 8
+      }
+    ],
+    "c01-05": [
+      {
+        "chapter": "1",
+        "startVerse": 1,
+        "endVerse": 45
+      },
+      {
+        "chapter": "2",
+        "startVerse": 1,
+        "endVerse": 28
+      },
+      {
+        "chapter": "3",
+        "startVerse": 1,
+        "endVerse": 35
+      },
+      {
+        "chapter": "4",
+        "startVerse": 1,
+        "endVerse": 41
+      },
+      {
+        "chapter": "5",
+        "startVerse": 1,
+        "endVerse": 43
+      }
+    ],
+    "c06-10": [
+      {
+        "chapter": "6",
+        "startVerse": 1,
+        "endVerse": 56
+      },
+      {
+        "chapter": "7",
+        "startVerse": 1,
+        "endVerse": 37
+      },
+      {
+        "chapter": "8",
+        "startVerse": 1,
+        "endVerse": 38
+      },
+      {
+        "chapter": "9",
+        "startVerse": 1,
+        "endVerse": 50
+      },
+      {
+        "chapter": "10",
+        "startVerse": 1,
+        "endVerse": 52
+      }
+    ],
+    "c11-16": [
+      {
+        "chapter": "11",
+        "startVerse": 1,
+        "endVerse": 33
+      },
+      {
+        "chapter": "12",
+        "startVerse": 1,
+        "endVerse": 44
+      },
+      {
+        "chapter": "13",
+        "startVerse": 1,
+        "endVerse": 37
+      },
+      {
+        "chapter": "14",
+        "startVerse": 1,
+        "endVerse": 72
+      },
+      {
+        "chapter": "15",
+        "startVerse": 1,
+        "endVerse": 47
+      },
+      {
+        "chapter": "16",
+        "startVerse": 1,
+        "endVerse": 8
+      }
+    ],
+    "c01-04": [
+      {
+        "chapter": "1",
+        "startVerse": 1,
+        "endVerse": 45
+      },
+      {
+        "chapter": "2",
+        "startVerse": 1,
+        "endVerse": 28
+      },
+      {
+        "chapter": "3",
+        "startVerse": 1,
+        "endVerse": 35
+      },
+      {
+        "chapter": "4",
+        "startVerse": 1,
+        "endVerse": 41
+      }
+    ],
+    "c05-08": [
+      {
+        "chapter": "5",
+        "startVerse": 1,
+        "endVerse": 43
+      },
+      {
+        "chapter": "6",
+        "startVerse": 1,
+        "endVerse": 56
+      },
+      {
+        "chapter": "7",
+        "startVerse": 1,
+        "endVerse": 37
+      },
+      {
+        "chapter": "8",
+        "startVerse": 1,
+        "endVerse": 38
+      }
+    ],
+    "c09-12": [
+      {
+        "chapter": "9",
+        "startVerse": 1,
+        "endVerse": 50
+      },
+      {
+        "chapter": "10",
+        "startVerse": 1,
+        "endVerse": 52
+      },
+      {
+        "chapter": "11",
+        "startVerse": 1,
+        "endVerse": 33
+      },
+      {
+        "chapter": "12",
+        "startVerse": 1,
+        "endVerse": 44
+      }
+    ],
+    "c13-16": [
+      {
+        "chapter": "13",
+        "startVerse": 1,
+        "endVerse": 37
+      },
+      {
+        "chapter": "14",
+        "startVerse": 1,
+        "endVerse": 72
+      },
+      {
+        "chapter": "15",
+        "startVerse": 1,
+        "endVerse": 47
+      },
+      {
+        "chapter": "16",
+        "startVerse": 1,
+        "endVerse": 8
+      }
+    ],
+    "c01-16": [
+      {
+        "chapter": "1",
+        "startVerse": 1,
+        "endVerse": 45
+      },
+      {
+        "chapter": "2",
+        "startVerse": 1,
+        "endVerse": 28
+      },
+      {
+        "chapter": "3",
+        "startVerse": 1,
+        "endVerse": 35
+      },
+      {
+        "chapter": "4",
+        "startVerse": 1,
+        "endVerse": 41
+      },
+      {
+        "chapter": "5",
+        "startVerse": 1,
+        "endVerse": 43
+      },
+      {
+        "chapter": "6",
+        "startVerse": 1,
+        "endVerse": 56
+      },
+      {
+        "chapter": "7",
+        "startVerse": 1,
+        "endVerse": 37
+      },
+      {
+        "chapter": "8",
+        "startVerse": 1,
+        "endVerse": 38
+      },
+      {
+        "chapter": "9",
+        "startVerse": 1,
+        "endVerse": 50
+      },
+      {
+        "chapter": "10",
+        "startVerse": 1,
+        "endVerse": 52
+      },
+      {
+        "chapter": "11",
+        "startVerse": 1,
+        "endVerse": 33
+      },
+      {
+        "chapter": "12",
+        "startVerse": 1,
+        "endVerse": 44
+      },
+      {
+        "chapter": "13",
+        "startVerse": 1,
+        "endVerse": 37
+      },
+      {
+        "chapter": "14",
+        "startVerse": 1,
+        "endVerse": 72
+      },
+      {
+        "chapter": "15",
+        "startVerse": 1,
+        "endVerse": 47
+      },
+      {
+        "chapter": "16",
+        "startVerse": 1,
+        "endVerse": 8
+      }
+    ]
+  },
   "referenceMSS": [
     "05","032"
   ],

@@ -6,11 +6,11 @@
     DSS.analyze('boolanalyze')
   },
   analyze: function(action) {
-    var inputfile = $('#inputfile').val();
-    var chapter = $('#inputfile option:selected').text().trim();
+    var inputrange = $('#inputrange').val();
+    var chapter = $('#inputrange option:selected').text().trim();
     var qcaset = $('#qcaset option:selected').text().trim();
     var data = {
-        'inputfile': inputfile,
+        'inputrange': inputrange,
         'qcaset': qcaset,
         'chapter': chapter
     };
