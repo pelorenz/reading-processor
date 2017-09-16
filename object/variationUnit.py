@@ -47,6 +47,20 @@ class  VariationUnit(object):
 
         return False
 
+    # any vu with at least 3 non-singular readings
+    def isMultiple(s):
+        nonSing = 0
+        for reading in s.readings:
+            if len(reading.manuscripts) <= 1:
+                continue
+
+            if len(reading.manuscripts) == 2 and reading.hasManuscript('05') and reading.hasManuscript('VL5'):
+                continue
+
+            nonSing = nonSing + 1
+
+        return nonSing > 2
+
     def getReadingSnippet(s, rdg):
         snippet = rdg.getDisplayValue()
         if len(snippet) > 50:

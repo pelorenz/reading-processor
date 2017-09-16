@@ -623,5 +623,35 @@
   "ignoreChars": ["·","[","]",".",",",":",";","\"","̅","(",")","<",">"],
   "ignoreUnicode": ["\u030f", "\u0323"],
   "minClusters": 2,
-  "maxClusters": 7
+  "maxClusters": 7,
+  "finderFolder": "finder-results/",
+  "coreGroups": [
+    {
+      "name": "03",
+      "members": [ "03" ]
+    },
+    {
+      "name": "05",
+      "members": [ "05" ]
+    },
+    {
+      "name": "35",
+      "members": [ "35" ]
+    },
+    {
+      "name": "f13",
+      "members": [ "13", "346", "543", "788", "826", "828", "983"],
+      "minOccurs": 4
+    },
+    {
+      "name": "f1",
+      "members": [ "1", "1582"],
+      "minOccurs": 2
+    },
+    {
+      "name": "c565",
+      "members": [ "038", "565"],
+      "minOccurs": 2
+    }
+  ]
 }

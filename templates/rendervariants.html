@@ -1,0 +1,9 @@
+$def with (jdata)
+    $code:
+        variant_count = str(jdata['variant_count'])
+<div class='cluster-heading'>$variant_count Multiple Variants</div>
+$for variant in jdata['variant_list']:
+    <div class='variant-label'>$variant['label']</div>
+    $for reading in variant['multiple_readings']:
+        <div>$reading['displayValue']: $reading['witness_summary']</div>
+    <div>.</div>

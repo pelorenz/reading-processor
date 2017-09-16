@@ -366,3 +366,6 @@ div.kmap-neg, td.kmap-neg {
 div.kmap-conflict, td.kmap-conflict {
   background-color: #ffffd0;
 }
+div.variant-label {
+  font-weight: bold;
+}
