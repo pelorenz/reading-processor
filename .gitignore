@@ -6,6 +6,7 @@
 /cache
 /csv
 /csv-bool
+/dicer-results
 /finder-results
 /html/mark*
 /html/js/jquery*
@@ -22,6 +23,7 @@
 /server/*.pyc
 /static/js/jquery*
 /static/layers
+/static/segments
 /static/stats
 /utility/*.pyc
 /variant-data

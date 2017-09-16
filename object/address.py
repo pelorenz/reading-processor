@@ -2,6 +2,7 @@ import sys, os
 
 from object.addressSlot import *
 from object.textForm import *
+from object.textFormGroup import *
 from object.textInstance import *
 
 class  Address(AddressSlot):
@@ -45,6 +46,9 @@ class  Address(AddressSlot):
         # text forms mapped to MS by id
         s.ms_text_forms = {}
 
+        # reference text form
+        s.reference_form = ''
+
         # text form objects sorted by occurrence
         s.sorted_text_forms = []
 
@@ -84,6 +88,18 @@ class  Address(AddressSlot):
             return []
         else:
             return s.sorted_text_forms[idx].linked_mss
+
+    def getTextFormForMS(s, ms):
+        for tform in s.sorted_text_forms:
+            if isinstance(tform, TextForm):
+                if ms in tform.linked_mss:
+                    return tform.form
+            elif isinstance(tform, TextFormGroup):
+                for m_list in tform.linked_mss:
+                    if ms in m_list:
+                        return tform.mainForm
+
+        return ''
 
     def buildSortedItems(s):
         s.sorted_form_content = []

@@ -407,6 +407,13 @@
         "startVerse": 1,
         "endVerse": 8
       }
+    ],
+    "c16": [
+      {
+        "chapter": "1",
+        "startVerse": 9,
+        "endVerse": 20
+      }
     ]
   },
   "referenceMSS": [
@@ -653,5 +660,11 @@
       "members": [ "038", "565"],
       "minOccurs": 2
     }
-  ]
+  ],
+  "dicerFolder": "dicer-results/",
+  "segmentOffset": 185,
+  "segmentSize": 375,
+  "segmentMin": 300,
+  "dicerQCASet": "basic",
+  "dicerStatsFolder": "static/segments/"
 }

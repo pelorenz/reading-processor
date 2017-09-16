@@ -15,23 +15,19 @@ $def with (args)
       <div id='title'>Textual Layers Analysis Dashboard</div><div id='messages'></div>
     </div>
     <div id='sidecol'>
-      <ul>
-        <li>
-          <ul class='list2'>
-            <li>Chapter 
-              <select id='inputrange'>
-              $for key in args['config'].get('ranges'):
-                  <option value='$key'>$key</option>
-              </select>
-            </li>
-            <li>QCASet
-              <select id='qcaset'>
-              $for qcaset in args['config'].get('qcaSets'):
-                  <option value='$qcaset'>$qcaset</option>
-              </select>
-            </li>
-          </ul>
-        </select>
+      <ul class='list2'>
+        <li>Chapter 
+          <select id='inputrange'>
+          $for key in args['config'].get('ranges'):
+              <option value='$key'>$key</option>
+          </select>
+        </li>
+        <li>QCASet
+          <select id='qcaset'>
+          $for qcaset in args['config'].get('qcaSets'):
+              <option value='$qcaset'>$qcaset</option>
+          </select>
+        </li>
       </ul>
       <ul class='list3'>
         $for ms in args['config'].get('referenceMSS'):
@@ -45,7 +41,18 @@ $def with (args)
             </li>
             <li><a id='banalyze' href='javascript:DSS.findVariants()'>MultiVars</a>
             </li>
-      </ul>
+          </ul>
+          <ul class='list2'>
+            <li>
+              <select id='statsdir'>
+              $for dir in args['config'].get('statsDirs'):
+                  $code:
+                      dirname = re.search(r'\/([a-z]+)\/$', dir).group(1)
+                  <option value='$dir'>$dirname</option>
+              </select>
+            </li>
+            <li><a id='banalyze' href='javascript:DSS.switchDir()'>Switch</a></li>
+          </ul>
       <div id='dirslist'>
         <ul>
         $for dir in args['keys']:
@@ -106,23 +113,24 @@ $def with (args)
                   $code:
                       filebase = re.sub(r'^Mark ', '', dir)
                       filebase = re.sub(r'QCA\-[a-zA-Z0-9]+$', '', filebase)
+                      prefix = args['prefix']
                   <ul class='list4'>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L")'>L</a></li>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl")'>Dgl</a></li>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "D")'>D</a></li>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "M")'>M</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "L")'>L</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "Dgl")'>Dgl</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "D")'>D</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "M")'>M</a></li>
                   </ul>
                   <ul class='list4'>
-                      <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "L")'>Lmap</a></li>
-                      <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "Dgl")'>DGLmap</a></li>
-                      <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "D")'>Dmap</a></li>
-                      <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "M")'>Mmap</a></li>
+                      <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "L")'>Lmap</a></li>
+                      <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "Dgl")'>DGLmap</a></li>
+                      <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "D")'>Dmap</a></li>
+                      <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "M")'>Mmap</a></li>
                   </ul>
                   <ul class='list4'>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L-merge")'>L-mg</a></li>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl-merge")'>Dgl-mg</a></li>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "D-merge")'>D-mg</a></li>
-                      <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "M-merge")'>M-mg</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "L-merge")'>L-mg</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "Dgl-merge")'>Dgl-mg</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "D-merge")'>D-mg</a></li>
+                      <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "M-merge")'>M-mg</a></li>
                   </ul>
               </div>
             </li>
@@ -134,4 +142,7 @@ $def with (args)
       <div>Content</div>
     </div>
     <div class='clear'></div>
-  </div> 
+  </div>
+<script type='text/javascript'>
+  DSS.statsdir = '$args["config"].get("statsDirs")[0]';
+</script>

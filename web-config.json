@@ -1,6 +1,6 @@
 {
   "ranges": [
-    "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "c11", "c12", "c13", "c14", "c15-16", "c01-05", "c06-10", "c11-16", "c01-04", "c05-08", "c09-12", "c13-16", "c01-16"
+    "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "c11", "c12", "c13", "c14", "c15-16", "c01-05", "c06-10", "c11-16", "c01-04", "c05-08", "c09-12", "c13-16", "c01-16, c16"
   ],
   "comparisonMSS": [
     "01", "03", "05", "032", "038", "28", "565", "700", "788", "1582"
@@ -11,8 +11,12 @@
   "referenceMSS": [
     "01", "03", "05", "032", "038", "565"
   ],
-  "statsDir": "C:/Data/Workspace/reading-processor/static/stats/",
+  "statsDirs": [
+    "static/stats/",
+    "static/segments/"
+  ],
   "boolDir": "C:/Data/Workspace/reading-processor/csv-bool/",
+  "dicerFolder": "dicer-results/",
   "finderFolder": "finder-results/",
   "qcaSets": ["default","basic","AfIt","VL3split","Lake"]
 }

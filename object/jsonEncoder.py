@@ -23,3 +23,10 @@ class ComplexEncoder(json.JSONEncoder):
             isinstance(obj, VerseDelimiter)):
             return obj.jsonSerialize()
         return json.JSONEncoder.default(self, obj)
+
+class SegmentEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Address):
+            return { 'reference_form': obj.reference_form }
+        else:
+            return json.JSONEncoder.default(self, obj)

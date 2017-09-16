@@ -1,4 +1,21 @@
 ;DSS = {
+  switchDir: function() {
+    DSS.statsdir = $('#statsdir').val();
+    var statsdir = DSS.statsdir;
+    var data = {
+        'statsdir': statsdir
+    };
+    $.ajax({url: '/app/switchDir',
+      data: data,
+      success: function(response) {
+        $('#messages').text('Switched menu!');
+        $('#dirslist').empty();
+        $('#dirslist').html(response);
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
+  },
   clustAnalyze: function() {
     DSS.analyze('clustanalyze')
   },
@@ -139,7 +156,7 @@
   },
   viewQCA: function(dir, filebase) {
     $('#content').empty();
-    $.ajax({url: '/static/stats/' + dir + '/' + filebase + '-header.html',
+    $.ajax({url: DSS.statsdir + dir + '/' + filebase + '-header.html',
       async: false,
       success: function(response) {
         $('#content').append(response);
@@ -148,7 +165,7 @@
       error: function(xhr, status, error) {
         $('#messages').html('Error');
       }});
-    $.ajax({url: '/static/stats/' + dir + '/' + filebase + '.html',
+    $.ajax({url: DSS.statsdir + dir + '/' + filebase + '.html',
       success: function(response) {
         $('#content').append(response);
         $('#messages').text('Done!');

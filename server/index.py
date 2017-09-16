@@ -12,7 +12,8 @@ class Index:
     def GET(s):
         args = {}
         args['config'] = s.config
-        args['dirs'] = Util().listDirs()
+        args['dirs'] = Util().listDirs(s.config.get('statsDirs')[0])
         args['keys'] = sorted(args['dirs']['directoryMap'], cmp=sortLabels)
+        args['prefix'] = 'c'
 
         return s.templates.index(args)

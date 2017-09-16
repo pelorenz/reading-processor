@@ -42,8 +42,9 @@ class Controller:
 
         args = {}
         args['config'] = s.config
-        args['dirs'] = Util().listDirs()
+        args['dirs'] = Util().listDirs(s.config.get('statsDirs')[0])
         args['keys'] = sorted(args['dirs']['directoryMap'], cmp=sortLabels)
+        args['prefix'] = 'c'
         fragment = s.templates.dirlist(args)
 
         return fragment
@@ -58,8 +59,9 @@ class Controller:
 
         args = {}
         args['config'] = s.config
-        args['dirs'] = Util().listDirs()
+        args['dirs'] = Util().listDirs(s.config.get('statsDirs')[0])
         args['keys'] = sorted(args['dirs']['directoryMap'], cmp=sortLabels)
+        args['prefix'] = 'c'
         fragment = s.templates.dirlist(args)
 
         return fragment
@@ -84,6 +86,22 @@ class Controller:
             file.close()
         jmap = json.loads(jdata, cls=ComplexDecoder)
         return s.templates.rendervariants(jmap)
+
+    def switchDir(s):
+        udata = web.input()
+
+        args = {}
+        args['config'] = s.config
+        args['dirs'] = Util().listDirs(udata.statsdir)
+        try:
+            args['keys'] = sorted(args['dirs']['directoryMap'], cmp=sortLabels)
+        except AttributeError, e:
+            args['keys'] = sorted(args['dirs']['directoryMap'], cmp=sortSegments)
+        args['prefix'] = 'c' if 'stats' in udata.statsdir else ''
+        
+        fragment = s.templates.dirlist(args)
+
+        return fragment
 
     def witnessdistrib(s):
         result = s.getJSONResult()

@@ -50,7 +50,7 @@ class QCARunner:
             py3_env['PYTHONPATH'] = 'C:\Dev\Python36\Lib;'
             py3_env['PY_PYTHON'] = '3'
             py3_env['PATH'] = 'C:\Dev\python36;C:\Dev\python36\Scripts;'
-            
+
             # TTMinimizer.py -v -f c01-05
             s.info('Calling TTMinimizer.py with', refMSS)
             p = ['TTMinimizer.py']

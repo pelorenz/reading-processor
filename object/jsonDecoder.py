@@ -69,3 +69,12 @@ class ComplexDecoder(json.JSONDecoder):
         if type == 'verse':
             return VerseDelimiter(obj['tokenIndex'], '0', str(obj['verse']))
         return obj
+
+class SegmentDecoder(json.JSONDecoder):
+    def __init__(s, *args, **kwargs):
+        json.JSONDecoder.__init__(s, object_hook=s.object_hook, *args, **kwargs)
+
+    def object_hook(s, obj):
+        if '_type' not in obj:
+            return obj
+        type = obj['_type']
