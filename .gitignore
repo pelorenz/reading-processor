@@ -5,6 +5,7 @@
 /cache
 /csv
 /csv-bool
+/finder-results
 /html/mark*
 /html/js/jquery*
 /html/js/model*

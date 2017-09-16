@@ -19,7 +19,7 @@ class RangeManager:
         for i, arg in enumerate(args):
             if i > 0: info += ' '
             info += str(arg).strip()
-        print info
+        print(info)
 
     def appendModel(s, base, nmod):
         base['addresses'].extend(nmod['addresses'])

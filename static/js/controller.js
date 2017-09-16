@@ -5,6 +5,17 @@
   boolAnalyze: function() {
     DSS.analyze('boolanalyze')
   },
+  findVariants: function() {
+    $.ajax({url: '/app/findVariants',
+      success: function(response) {
+        $('#messages').text('Done!');
+        $('#content').empty();
+        $('#content').html(response);
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
+  },
   analyze: function(action) {
     var inputrange = $('#inputrange').val();
     var chapter = $('#inputrange option:selected').text().trim();

@@ -1,7 +1,10 @@
 import web, os, json, re
 
 from object.analyzer import *
+from object.jsonDecoder import *
 from object.qcaRunner import *
+from object.util import *
+
 from utility.config import *
 
 from server.util import *
@@ -72,6 +75,15 @@ class Controller:
     def clustresults(s):
         result = s.getJSONResult()
         return s.templates.clustresults(result)
+
+    def findVariants(s):
+        finderDir = s.config.get('finderFolder')
+        jsonfile = finderDir + '/c01-16-variants.json'
+        with open(jsonfile, 'r') as file:
+            jdata = file.read()
+            file.close()
+        jmap = json.loads(jdata, cls=ComplexDecoder)
+        return s.templates.rendervariants(jmap)
 
     def witnessdistrib(s):
         result = s.getJSONResult()

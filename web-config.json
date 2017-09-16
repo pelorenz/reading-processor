@@ -13,5 +13,6 @@
   ],
   "statsDir": "C:/Data/Workspace/reading-processor/static/stats/",
   "boolDir": "C:/Data/Workspace/reading-processor/csv-bool/",
+  "finderFolder": "finder-results/",
   "qcaSets": ["default","basic","AfIt","VL3split","Lake"]
 }
