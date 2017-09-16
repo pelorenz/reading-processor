@@ -58,23 +58,24 @@ $for dir in args['keys']:
           $code:
               filebase = re.sub(r'^Mark ', '', dir)
               filebase = re.sub(r'QCA\-[a-zA-Z0-9]+$', '', filebase)
+              prefix = args['prefix']
           <ul class='list4'>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L")'>L</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl")'>Dgl</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "D")'>D</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "M")'>M</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "L")'>L</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "Dgl")'>Dgl</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "D")'>D</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "M")'>M</a></li>
           </ul>
           <ul class='list4'>
-              <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "L")'>Lmap</a></li>
-              <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "Dgl")'>DGLmap</a></li>
-              <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "D")'>Dmap</a></li>
-              <li><a href='javascript:DSS.viewKMap("$dir", "c" + "$filebase" + "M")'>Mmap</a></li>
+              <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "L")'>Lmap</a></li>
+              <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "Dgl")'>DGLmap</a></li>
+              <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "D")'>Dmap</a></li>
+              <li><a href='javascript:DSS.viewKMap("$dir", "$prefix" + "$filebase" + "M")'>Mmap</a></li>
           </ul>
           <ul class='list4'>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "L-merge")'>L-mg</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "Dgl-merge")'>Dgl-mg</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "D-merge")'>D-mg</a></li>
-              <li><a href='javascript:DSS.viewQCA("$dir", "c" + "$filebase" + "M-merge")'>M-mg</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "L-merge")'>L-mg</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "Dgl-merge")'>Dgl-mg</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "D-merge")'>D-mg</a></li>
+              <li><a href='javascript:DSS.viewQCA("$dir", "$prefix" + "$filebase" + "M-merge")'>M-mg</a></li>
           </ul>
       </div>
     </li>

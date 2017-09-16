@@ -12,6 +12,7 @@ from utility.config import *
 class RangeManager:
 
     def __init__(s):
+        s.config = None
         s.chapterLookup = {}
 
     def info(s, *args):
@@ -47,7 +48,7 @@ class RangeManager:
 
     def load(s):
         c = s.config = Config('processor-config.json')
-        s.info('loading variant data')
+        s.info('Loading variant data')
 
         vcachefile = c.get('variantDataCache')
         if os.path.isfile(vcachefile):

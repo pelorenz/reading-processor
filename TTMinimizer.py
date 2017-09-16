@@ -17,14 +17,14 @@ def sortExpressions(e1, e2):
     elif e1['outcome'] != '1' and e2['outcome'] == '1':
         return 1
 
-    if e1['ones'] < e2['ones']:
-        return -1
-    elif e1['ones'] > e2['ones']:
-        return 1
-
     if len(e1['cases']) > len(e2['cases']):
         return -1
     elif len(e1['cases']) < len(e2['cases']):
+        return 1
+
+    if e1['ones'] < e2['ones']:
+        return -1
+    elif e1['ones'] > e2['ones']:
         return 1
 
     return 0
@@ -146,6 +146,7 @@ class TTMinimizer:
     def __init__(s):
         s.qcaSet = 'default'
         s.boolDir = ''
+        s.statsFolder = ''
 
         s.clear()
 
@@ -352,13 +353,16 @@ class TTMinimizer:
                         s.manualCases[dnf_key] = expinf
 
         if isMerge:
-            # merge expressions that differ only in 0's and dc's
-            s.minimized_exprs_P = s.mergeDCExpressions(s.minimized_exprs_P)
-            s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
+            try:
+                # merge expressions that differ only in 0's and dc's
+                s.minimized_exprs_P = s.mergeDCExpressions(s.minimized_exprs_P)
+                s.minimized_exprs_N = s.mergeDCExpressions(s.minimized_exprs_N)
 
-            # detect and merge expressions with mutual dc to 1, 1 to dc loops
-            s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P, 1)
-            s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N, 0)
+                # detect and merge expressions with mutual dc to 1, 1 to dc loops
+                s.minimized_exprs_P = s.detectMatches(s.minimized_exprs_P, 1)
+                s.minimized_exprs_N = s.detectMatches(s.minimized_exprs_N, 0)
+            except AttributeError:
+                pass
 
     def buildExpressionsFromCases(s, expinf):
         build_parts = []
@@ -967,7 +971,7 @@ class TTMinimizer:
         subdir = re.sub(r'^c', '', basename)
         subdir = re.sub(r'[DLMgl]{1,3}$', '', subdir)
         subdir = 'Mark ' + subdir + 'QCA'
-        htmldir = c.get('statsFolder') + subdir + '-' + s.qcaSet + '/'
+        htmldir = s.statsFolder + subdir + '-' + s.qcaSet + '/'
         try:
             os.makedirs(htmldir)
         except OSError as exception:
@@ -1300,6 +1304,14 @@ class TTMinimizer:
             s.qcaSet = o.qcaSet
         else:
             s.qcaSet = c.get('qcaSet')
+
+        if o.statsdir:
+            s.statsFolder = o.statsdir
+        else:
+            s.statsFolder = c.get('statsFolder')
+
+        if not os.path.exists(s.statsFolder):
+            os.makedirs(s.statsFolder)
 
         s.boolDir = c.get('csvBoolFolder') + s.qcaSet + '/'
 
