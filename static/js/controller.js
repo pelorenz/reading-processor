@@ -156,6 +156,7 @@
   },
   viewQCA: function(dir, filebase) {
     $('#content').empty();
+    if (!DSS.statsdir) DSS.statsdir = 'static/stats/'; // guess
     $.ajax({url: DSS.statsdir + dir + '/' + filebase + '-header.html',
       async: false,
       success: function(response) {

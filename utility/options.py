@@ -14,7 +14,9 @@ class  CommandLine:
         self.parser.add_argument('-q', '--qcaSet', help='Set of QCA aggregates to apply.', default='default')
         self.parser.add_argument('-v', '--verbose', help='Display verbose output', action='store_true')
         self.parser.add_argument('-s', '--silent', help='Prevent output', action='store_true')
-        self.parser.add_argument('-S', '--statsdir', help='Folder for stats output.')
+        self.parser.add_argument('-S', '--statsdir', help='Folder for stats output (TTMinimizer).')
+        self.parser.add_argument('-H', '--hauptliste', help='Generate Hauptliste results for segments (dicer).', action='store_true')
+        self.parser.add_argument('-Q', '--qca', help='Generate QCA results for segments (dicer).', action='store_true')
 
     def getOptions(self):
         dict = vars(self.parser.parse_args())

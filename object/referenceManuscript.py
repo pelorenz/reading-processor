@@ -48,6 +48,9 @@ class  ReferenceManuscript(object):
         latin_counter = 0
         has35 = False
         for ms in rdg.manuscripts:
+            if ms == s.gaNum:
+                continue
+
             if ms[0] == 'V' or ms[0] == 'v':
                 latin_counter = latin_counter + 1
             else:
