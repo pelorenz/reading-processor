@@ -66,7 +66,6 @@ class RangeManager:
                 s.loadVariants(varfile)
             s.save()
 
-
     def save(s):
         c = s.config = Config('processor-config.json')
         s.info('Saving variant data')

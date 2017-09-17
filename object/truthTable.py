@@ -321,21 +321,6 @@ class TruthTable:
             refms_vect = []
             witness_str = ''
             v_witnesses = []
-            latin_counter = 0
-            greek_counter = 0
-            has35 = False
-            for i, m in enumerate(getattr(refMS, mss)):
-                refms_vect.append(getattr(var, vect)[i])
-                if (getattr(var, vect))[i] == '1':
-                    if m[0] == 'V' or m[0] == 'v':
-                        v_witnesses.append(m)
-                        latin_counter = latin_counter + 1
-                    else:
-                        if len(witness_str) > 0:
-                            witness_str = witness_str + ' '
-                        witness_str = witness_str + m
-                        greek_counter = greek_counter + 1
-                        if m == '35': has35 = True
 
             # compute layer of ref MS reading
             layer = refMS.getLayer(var)
