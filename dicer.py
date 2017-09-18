@@ -568,17 +568,56 @@ class Dicer:
             segment['ref_data'][refMS] = ref_data
 
     def computeHauptlisten(s, refMS):
+        ref_percents = {} # for bar charts
+        ref_mss = [ '03', '032', '038', '1582', '788', '28', '565', '700', 'VL8' ]
+
         hauptliste = {}
         hauptliste['segments'] = []
         hauptliste['ref_ms'] = refMS
+        mr_prev = 0.0
+        nmr_prev = 0.0
+        dr_prev = 0.0
+        lr_prev = 0.0
         for segment in s.dicer_segments:
             ref_data = segment['ref_data'][refMS]
 
+            majority_rate = ref_data['majority_count'] * 1.0 / segment['word_count']
+            majority_rate = round(majority_rate, 3)
+            mr_delta = majority_rate - mr_prev
+            mr_delta = round(mr_delta, 3)
+            mr_prev = majority_rate
+
+            nonmajority_rate = len(ref_data['nonM_readings']) * 1.0 / segment['word_count']
+            nonmajority_rate = round(nonmajority_rate, 3)
+            nmr_delta = nonmajority_rate - nmr_prev
+            nmr_delta = round(nmr_delta, 3)
+            nmr_prev = nonmajority_rate
+
+            D_rate = len(ref_data['D_readings']) * 1.0 / segment['word_count']
+            D_rate = round(D_rate, 3)
+            dr_delta = D_rate - dr_prev
+            dr_delta = round(dr_delta, 3)
+            dr_prev = D_rate
+
+            L_rate = len(ref_data['L_readings']) * 1.0 / segment['word_count']
+            L_rate = round(L_rate, 3)
+            lr_delta = L_rate - lr_prev
+            lr_delta = round(lr_delta, 3)
+            lr_prev = L_rate
+
             j_segment = {}
             j_segment['majority_count'] = ref_data['majority_count']
+            j_segment['majority_rate'] = majority_rate
+            j_segment['majority_rate_delta'] = mr_delta
             j_segment['nonM_count'] = len(ref_data['nonM_readings'])
+            j_segment['nonM_rate'] = nonmajority_rate
+            j_segment['nonM_rate_delta'] = nmr_delta
             j_segment['D_count'] = len(ref_data['D_readings'])
+            j_segment['D_rate'] = D_rate
+            j_segment['D_rate_delta'] = dr_delta
             j_segment['L_count'] = len(ref_data['L_readings'])
+            j_segment['L_rate'] = L_rate
+            j_segment['L_rate_delta'] = lr_delta
             j_segment['index'] = segment['index']
             j_segment['address_count'] = segment['address_count']
             j_segment['word_count'] = segment['word_count']
@@ -654,13 +693,29 @@ class Dicer:
                 a_ratio = 0.0
                 if msdat['D_count']:
                     a_ratio = msdat['D_instance_count'] * 1.0 / msdat['D_count']
+                    a_percent = int(round(a_ratio * 100, 0))
                     a_ratio = '%.3f' % round(a_ratio, 3)
                 msdat['D_ratio'] = a_ratio
+
+                if ms in ref_mss: # for bar charts
+                    ref_percents[ms] = a_percent
 
                 if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
                     j_segment['latin_mss'].append(msdat)
                 else:
                     j_segment['greek_mss'].append(msdat)
+
+            bardata = []
+            bardata.append(ref_percents['03'])
+            bardata.append(ref_percents['032'])
+            bardata.append(ref_percents['038'])
+            bardata.append(ref_percents['1582'])
+            bardata.append(ref_percents['788'])
+            bardata.append(ref_percents['28'])
+            bardata.append(ref_percents['565'])
+            bardata.append(ref_percents['700'])
+            bardata.append(ref_percents['VL8'])
+            j_segment['bar_data'] = bardata
 
             j_segment['greek_mss'] = sorted(j_segment['greek_mss'], cmp=sortHauptliste)
             j_segment['latin_mss'] = sorted(j_segment['latin_mss'], cmp=sortHauptliste)

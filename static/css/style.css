@@ -234,9 +234,6 @@ tr.VL3 {
 tr.VL4 {
   background-color: #47d147;
 }
-tr.VL5 {
-  background-color: #47d147;
-}
 tr.VL6 {
   background-color: #47d147;
 }
@@ -261,10 +258,7 @@ tr.vg {
 tr.alx, td.alx {
   background-color: #d9b3ff;
 }
-tr.X01, td.X01 {
-  background-color: #d9b3ff;
-}
-tr.X03, td.X03 {
+tr.X01, td.X01, tr.X03, td.X03, tr.X04, td.X04, tr.X019, td.X019, tr.X037, td.X037, tr.X044, td.X044, tr.X33, td.X33, tr.X579, td.X579, tr.X892, td.X892, tr.X1342, td.X1342 {
   background-color: #d9b3ff;
 }
 tr.X05, td.X05 {
@@ -281,6 +275,9 @@ tr.X038, td.X038 {
 }
 tr.X043, td.X043 {
   background-color: #fff;
+}
+tr.X1, td.X1, tr.X1582, td.X1582, tr.X118, td.X118, tr.X131, td.X131, tr.X191, td.X191, tr.X205, td.X205, tr.X209, td.X209, tr.X872, td.X872, tr.X1273, td.X1273, tr.X2193, td.X2193 {
+  background-color: #f99;
 }
 tr.X28, td.X28 {
   background-color: #d9b38c;
@@ -303,11 +300,8 @@ tr.X565, td.X565 {
 tr.X700, td.X700 {
   background-color: #e6e600;
 }
-tr.X788, td.X788 {
+tr.X788, td.X788, tr.X13, td.X13, tr.X69, td.X69, tr.X124, td.X124, tr.X346, td.X346, tr.X543, td.X543, tr.X826, td.X826, tr.X828, td.X828, tr.X983, tr.X983 {
   background-color: #fc6;
-}
-tr.X892, td.X892 {
-  background-color: #d9b3ff;
 }
 tr.X1241 {
   background-color: #fff;
@@ -315,14 +309,8 @@ tr.X1241 {
 tr.X1337 {
   background-color: #fff;
 }
-tr.X1342 {
-  background-color: #fff;
-}
 tr.X1424 {
   background-color: #fff;
-}
-tr.X1582, td.X1582 {
-  background-color: #f99;
 }
 tr.X2542 {
   background-color: #fff;
@@ -351,11 +339,20 @@ td.EU {
 td.IT {
   background-color: #84e184;
 }
-td.VL {
+tr.VL, td.VL {
   background-color: #84e184;
 }
-td.vg {
-  background-color: #b3ffe6;
+tr.vg, td.vg {
+  background-color: #66ff1a;
+}
+tr.VL5, td.VL5 {
+  background-color: #ffff4d;
+}
+tr.eu, td.eu {
+  background-color: #00ffbf;
+}
+tr.af, td.af {
+  background-color: #4ddbff;
 }
 div.kmap-pos, td.kmap-pos {
   background-color: #e0e0e0;
@@ -368,4 +365,51 @@ div.kmap-conflict, td.kmap-conflict {
 }
 div.variant-label {
   font-weight: bold;
+}
+canvas.seg-canvas {
+  height: 200px !important;
+  width: 300px !important;
+  display: inline-block;
+}
+div.segment-heading {
+  font-size: large;
+  font-family: sans-serif;
+  font-weight: bold;
+  padding-top: 10px;
+}
+div.segment-area {
+  vertical-align:top;
+  display: inline-block;
+}
+table.segment-table {
+  width: 100%;
+}
+td.segment-chart {
+  border: none;
+  width: 305px;
+}
+td.segment-cell {
+  border: none;
+}
+th.segment-figure, td.segment-figure {
+  text-align: right;
+  border: none;
+  padding-right: 10px;
+}
+th.highlight, td.highlight {
+  color: darkred;
+}
+td.segment-property {
+  border: none;
+  font-weight: normal;
+}
+table.hauptliste-table {
+  display: inline-block;
+  vertical-align: top;
+}
+td.hauptliste-figure {
+  text-align: right;
+}
+td.hauptliste-ms {
+  text-align: left;
 }

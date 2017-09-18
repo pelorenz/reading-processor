@@ -125,6 +125,15 @@ class Controller:
 
         return s.templates.kmap(jmap)
 
+    def viewsegments(s):
+        udata = web.input()
+        jsonfile = s.config.get('dicerFolder') + udata.referencems + '-hauptliste.json'
+        with open(jsonfile, 'r') as file:
+            jdata = file.read()
+            file.close()
+        sdat = json.loads(jdata)
+        return s.templates.viewsegments(sdat)
+
     # non-actions
     def getJSONResult(s):
         result = None

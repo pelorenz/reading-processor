@@ -1,0 +1,87 @@
+$def with (jdata)
+<div class='cluster-heading'>$jdata['ref_ms'] Segments</div>
+    $for segment in jdata['segments']:
+    <div class="segment-heading">Segment $segment['index']: Mark $segment['label']</div>
+    <table class='segment-table'><tr>
+      <td class='segment-chart'>
+        <table class='segment-table'>
+          <tr><td class='segment-property'></td><th class='segment-figure'>Count</th><th class='segment-figure'>Rate</th><th class='segment-figure'>Δ</th></tr>
+          <tr><td class='segment-property'>Word count:</td><td class='segment-figure'>$segment['word_count']</td><td class='segment-figure'></td></tr>
+          <tr><td class='segment-property'>Majority readings:</td><td class='segment-figure'>$segment['majority_count']</td><td class='segment-figure'>$segment['majority_rate']</td><td class='segment-figure'>$segment['majority_rate_delta']</td></tr>
+          <tr><td class='segment-property'>Non-majority readings:</td><td class='segment-figure'>$segment['nonM_count']</td><td class='segment-figure'>$segment['nonM_rate']</td><td class='segment-figure'>$segment['nonM_rate_delta']</td></tr>
+          <tr><td class='segment-property'>D-layer readings:</td><td class='segment-figure'>$segment['D_count']</td><td class='segment-figure'>$segment['D_rate']</td><td class='segment-figure'>$segment['D_rate_delta']</td></tr>
+          <tr><td class='segment-property'>L-layer readings:</td><td class='segment-figure'>$segment['L_count']</td><td class='segment-figure'>$segment['L_rate']</td><td class='segment-figure highlight'><b>$segment['L_rate_delta']</b></td></tr>
+        </table>
+        <canvas id='canvas$segment['index']' class='seg-canvas'></canvas>
+        <script type='text/javascript'>
+          var ctx$segment['index'] = document.getElementById('canvas$segment['index']').getContext('2d');
+          chart$segment['index'] = new Chart(ctx$segment['index'], {
+            type: 'bar',
+            data: {
+              labels: ["03", "032", "038", "1582", "788", "28", "565", "700", "VL8"],
+              datasets: [{
+                data:$segment['bar_data'],
+                backgroundColor: ['#d9b3ff', '#66b3ff', '#ff6', '#f99', '#fc6', '#d9b38c', '#fdf', '#e6e600', '#84e184'
+                ]
+              }]
+            },
+            options: {
+              legend: {
+                display: false
+              },
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero:true
+                  }
+                }]
+              }
+            }
+          });
+        </script>
+      </td>
+      <td class='segment-cell'>
+        <table class='hauptliste-table'>
+          <tr>
+            <th>MS</th>
+            <th>Percent</th>
+            <th>Ratio</th>
+          </tr>
+        $for ms in segment['greek_mss'][:24]:
+          $code:
+            row_class = 'X' + ms['manuscript']
+          <tr class='$row_class'>
+            <td class='hauptliste-ms'>$ms['manuscript']</td>
+            <td class='hauptliste-figure'>$ms['D_ratio']</td>
+            <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
+          </tr>
+        </table>
+        <table class='hauptliste-table'>
+          <tr>
+            <th>MS</th>
+            <th>Percent</th>
+            <th>Ratio</th>
+          </tr>
+        $for ms in segment['latin_mss'][:10]:
+          $code:
+            row_class = ''
+            if ms['manuscript'] == 'VL8':
+              row_class = 'VL'
+            elif ms['manuscript'] == 'vg':
+              row_class = 'vg'
+            else:
+              if ms['manuscript'] == 'VL1' or ms['manuscript'] == 'VL2':
+                row_class = 'af'
+              elif ms['manuscript'] == 'VL3' or ms['manuscript'] == 'VL16':
+                row_class = 'eu'
+              else:
+                if ms['manuscript'] == 'VL5':
+                  row_class = 'VL5'
+          <tr class='$row_class'>
+            <td class='hauptliste-ms'>$ms['manuscript']</td>
+            <td class='hauptliste-figure'>$ms['D_ratio']</td>
+            <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
+          </tr>
+        </table>
+      </td>
+    </tr></table>

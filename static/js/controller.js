@@ -190,5 +190,30 @@
       error: function(xhr, status, error) {
         $('#messages').html('Error');
     }});
+  },
+  viewSegments: function() {
+    var data = {
+      'referencems': undefined
+    };
+    var checkboxes = $("input[type='checkbox']").filter(function() { return this.id.match(/refms/); })
+    for (var i = 0; i < checkboxes.length; i++) {
+      if (checkboxes[i].checked == true) {
+        data['referencems'] = checkboxes[i].value;
+        break;
+      }
+    }
+    if (!data['referencems']) {
+      return;
+    }
+    $.ajax({url: '/app/viewsegments',
+      data: data,
+      success: function(response) {
+        $('#messages').text('Done!');
+        $('#content').empty();
+        $('#content').html(response);
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
   }
 }
