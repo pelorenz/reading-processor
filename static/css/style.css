@@ -300,7 +300,7 @@ tr.X565, td.X565 {
 tr.X700, td.X700 {
   background-color: #e6e600;
 }
-tr.X788, td.X788, tr.X13, td.X13, tr.X69, td.X69, tr.X124, td.X124, tr.X346, td.X346, tr.X543, td.X543, tr.X826, td.X826, tr.X828, td.X828, tr.X983, tr.X983 {
+tr.X788, td.X788, tr.X13, td.X13, tr.X69, td.X69, tr.X124, td.X124, tr.X346, td.X346, tr.X543, td.X543, tr.X826, td.X826, tr.X828, td.X828, tr.X983, td.X983 {
   background-color: #fc6;
 }
 tr.X1241 {
@@ -397,7 +397,15 @@ th.segment-figure, td.segment-figure {
   padding-right: 10px;
 }
 th.highlight, td.highlight {
-  color: darkred;
+  font-weight: bold;
+}
+th.hi-positive, td.hi-positive {
+  color: #0000e6;
+  font-weight: bold;
+}
+th.hi-negative, td.hi-negative {
+  color: #c00;
+  font-weight: bold;
 }
 td.segment-property {
   border: none;
