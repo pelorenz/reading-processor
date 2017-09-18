@@ -8,6 +8,7 @@ $def with (args)
   <link rel="stylesheet" href="static/css/style.css">
   <script src="static/js/jquery-3.2.1.js"></script>
   <script src="static/js/controller.js"></script>
+  <script src="static/js/Chart.js"></script>
 <body>
 
   <div id='container'>
@@ -39,10 +40,10 @@ $def with (args)
             <li><a id='canalyze' href='javascript:DSS.clustAnalyze()'>ClustRun</a></li>
             <li><a id='banalyze' href='javascript:DSS.boolAnalyze()'>BoolRun</a>
             </li>
-            <li><a id='banalyze' href='javascript:DSS.findVariants()'>MultiVars</a>
+            <li><a id='multivars' href='javascript:DSS.findVariants()'>MultiVars</a>
             </li>
           </ul>
-          <ul class='list2'>
+          <ul class='list3'>
             <li>
               <select id='statsdir'>
               $for dir in args['config'].get('statsDirs'):
@@ -51,7 +52,8 @@ $def with (args)
                   <option value='$dir'>$dirname</option>
               </select>
             </li>
-            <li><a id='banalyze' href='javascript:DSS.switchDir()'>SwitchDir</a></li>
+            <li><a id='switchdir' href='javascript:DSS.switchDir()'>SwitchDir</a></li>
+            <li><a id='sview' href='javascript:DSS.viewSegments()'>SegView</a></li>
           </ul>
       <div id='dirslist'>
         <ul>
