@@ -11,9 +11,20 @@ from object.util import *
 from utility.config import *
 from utility.options import *
 
-def sortHauptliste(mi1, mi2):
+def sortHauptlisteD(mi1, mi2):
     pc1 = mi1['D_ratio']
     pc2 = mi2['D_ratio']
+
+    if pc1 < pc2:
+        return 1
+    elif pc1 > pc2:
+        return -1
+
+    return 0
+
+def sortHauptlisteL(mi1, mi2):
+    pc1 = mi1['L_ratio']
+    pc2 = mi2['L_ratio']
 
     if pc1 < pc2:
         return 1
@@ -453,13 +464,21 @@ class Dicer:
             ref_data['nonM_readings'] = []
             ref_data['D_readings'] = []
             ref_data['L_readings'] = []
+            ref_data['S_readings'] = []
 
             for addr in segment['addresses']:
                 for vu in addr.variation_units:
                     if not vu.startingAddress:
                         vu.startingAddress = addr
 
-                    if vu.isSingular() or vu.isReferenceSingular(refMS):
+                    reading_info = {}
+                    reading_info['variant_label'] = vu.label
+
+                    if vu.isReferenceSingular(refMS):
+                        ref_data['S_readings'].append(reading_info)
+                        continue
+
+                    if vu.isSingular():
                         continue
 
                     m_reading = vu.getReadingForManuscript('35')
@@ -473,11 +492,8 @@ class Dicer:
                         continue
 
 
-                    reading_info = {}
                     reading_info['mss'] = []
-                    reading_info['variant_label'] = vu.label
                     reading_info['reading_value'] = r_reading.getDisplayValue()
-
                     latin_mss = []
                     greek_mss = []
 
@@ -567,6 +583,19 @@ class Dicer:
 
             segment['ref_data'][refMS] = ref_data
 
+    def getMS(s, j_seg, ms):
+        m_list = []
+        if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
+            m_list = j_seg['latin_mss']
+        else:
+            m_list = j_seg['greek_mss']
+
+        for msdat in m_list:
+            if msdat['manuscript'] == ms:
+                return msdat
+
+        return None
+
     def computeHauptlisten(s, refMS):
         ref_percents = {} # for bar charts
         ref_mss = [ '03', '032', '038', '1582', '788', '28', '565', '700', 'VL8' ]
@@ -574,50 +603,61 @@ class Dicer:
         hauptliste = {}
         hauptliste['segments'] = []
         hauptliste['ref_ms'] = refMS
-        mr_prev = 0.0
-        nmr_prev = 0.0
-        dr_prev = 0.0
-        lr_prev = 0.0
+        mfreq_prev = 0.0
+        nmfreq_prev = 0.0
+        dfreq_prev = 0.0
+        lfreq_prev = 0.0
+        sfreq_prev = 0.0
+        seg_prev = {}
         for segment in s.dicer_segments:
             ref_data = segment['ref_data'][refMS]
 
-            majority_rate = ref_data['majority_count'] * 1.0 / segment['word_count']
-            majority_rate = round(majority_rate, 3)
-            mr_delta = majority_rate - mr_prev
-            mr_delta = round(mr_delta, 3)
-            mr_prev = majority_rate
+            majority_freq = segment['word_count'] * 1.0 / ref_data['majority_count']
+            majority_freq = round(majority_freq, 1)
+            mfreq_delta = majority_freq - mfreq_prev
+            mfreq_delta = round(mfreq_delta, 1)
+            mfreq_prev = majority_freq
 
-            nonmajority_rate = len(ref_data['nonM_readings']) * 1.0 / segment['word_count']
-            nonmajority_rate = round(nonmajority_rate, 3)
-            nmr_delta = nonmajority_rate - nmr_prev
-            nmr_delta = round(nmr_delta, 3)
-            nmr_prev = nonmajority_rate
+            nonmajority_freq = segment['word_count'] * 1.0 / len(ref_data['nonM_readings'])
+            nonmajority_freq = round(nonmajority_freq, 1)
+            nmfreq_delta = nonmajority_freq - nmfreq_prev
+            nmfreq_delta = round(nmfreq_delta, 1)
+            nmfreq_prev = nonmajority_freq
 
-            D_rate = len(ref_data['D_readings']) * 1.0 / segment['word_count']
-            D_rate = round(D_rate, 3)
-            dr_delta = D_rate - dr_prev
-            dr_delta = round(dr_delta, 3)
-            dr_prev = D_rate
+            D_freq = segment['word_count'] * 1.0 / len(ref_data['D_readings'])
+            D_freq = round(D_freq, 1)
+            dfreq_delta = D_freq - dfreq_prev
+            dfreq_delta = round(dfreq_delta, 1)
+            dfreq_prev = D_freq
 
-            L_rate = len(ref_data['L_readings']) * 1.0 / segment['word_count']
-            L_rate = round(L_rate, 3)
-            lr_delta = L_rate - lr_prev
-            lr_delta = round(lr_delta, 3)
-            lr_prev = L_rate
+            L_freq = segment['word_count'] * 1.0 / len(ref_data['L_readings'])
+            L_freq = round(L_freq, 1)
+            lfreq_delta = L_freq - lfreq_prev
+            lfreq_delta = round(lfreq_delta, 1)
+            lfreq_prev = L_freq
+
+            S_freq = segment['word_count'] * 1.0 / len(ref_data['S_readings'])
+            S_freq = round(S_freq, 1)
+            sfreq_delta = S_freq - sfreq_prev
+            sfreq_delta = round(sfreq_delta, 1)
+            sfreq_prev = S_freq
 
             j_segment = {}
             j_segment['majority_count'] = ref_data['majority_count']
-            j_segment['majority_rate'] = majority_rate
-            j_segment['majority_rate_delta'] = mr_delta
+            j_segment['majority_freq'] = majority_freq
+            j_segment['majority_freq_delta'] = mfreq_delta
             j_segment['nonM_count'] = len(ref_data['nonM_readings'])
-            j_segment['nonM_rate'] = nonmajority_rate
-            j_segment['nonM_rate_delta'] = nmr_delta
+            j_segment['nonM_freq'] = nonmajority_freq
+            j_segment['nonM_freq_delta'] = nmfreq_delta
             j_segment['D_count'] = len(ref_data['D_readings'])
-            j_segment['D_rate'] = D_rate
-            j_segment['D_rate_delta'] = dr_delta
+            j_segment['D_freq'] = D_freq
+            j_segment['D_freq_delta'] = dfreq_delta
             j_segment['L_count'] = len(ref_data['L_readings'])
-            j_segment['L_rate'] = L_rate
-            j_segment['L_rate_delta'] = lr_delta
+            j_segment['L_freq'] = L_freq
+            j_segment['L_freq_delta'] = lfreq_delta
+            j_segment['S_count'] = len(ref_data['S_readings'])
+            j_segment['S_freq'] = S_freq
+            j_segment['S_freq_delta'] = sfreq_delta
             j_segment['index'] = segment['index']
             j_segment['address_count'] = segment['address_count']
             j_segment['word_count'] = segment['word_count']
@@ -677,12 +717,32 @@ class Dicer:
                 msdat = {}
                 msdat['manuscript'] = ms
 
+                msdat['L_instance_count'] = 0
+                if ref_data['L_instances'].has_key(ms):
+                    msdat['L_instance_count'] = len(ref_data['L_instances'][ms])
+
+                msdat['L_lac_count'] = 0
+                if ref_data['L_lac'].has_key(ms):
+                    msdat['L_lac_count'] = len(ref_data['L_lac'][ms])
+
+                msdat['L_count'] = j_segment['L_count'] - msdat['L_lac_count']
+
+                ratio_prev = 0.0
+                if len(seg_prev):
+                    msdat_prev = s.getMS(seg_prev, ms)
+                    ratio_prev = msdat_prev['L_ratio'] if msdat_prev else 0.0
+
+                ratio = 0.0
+                if msdat['L_count']:
+                    ratio = msdat['L_instance_count'] * 1.0 / msdat['L_count']
+                    ratio = round(ratio, 3)
+                msdat['L_ratio'] = ratio
+                msdat['L_ratio_prev'] = ratio_prev
+                msdat['L_ratio_delta'] = round(ratio - ratio_prev, 3)
+
                 msdat['D_instance_count'] = 0
                 if ref_data['D_instances'].has_key(ms):
                     msdat['D_instance_count'] = len(ref_data['D_instances'][ms])
-
-                if msdat['D_instance_count'] <= 1:
-                    continue
 
                 msdat['D_lac_count'] = 0
                 if ref_data['D_lac'].has_key(ms):
@@ -690,15 +750,23 @@ class Dicer:
 
                 msdat['D_count'] = j_segment['D_count'] - msdat['D_lac_count']
 
-                a_ratio = 0.0
+                ratio_prev = 0.0
+                if len(seg_prev):
+                    msdat_prev = s.getMS(seg_prev, ms)
+                    ratio_prev = msdat_prev['D_ratio'] if msdat_prev else 0.0
+
+                ratio = 0.0
+                ch_percent = 0.0
                 if msdat['D_count']:
-                    a_ratio = msdat['D_instance_count'] * 1.0 / msdat['D_count']
-                    a_percent = int(round(a_ratio * 100, 0))
-                    a_ratio = '%.3f' % round(a_ratio, 3)
-                msdat['D_ratio'] = a_ratio
+                    ratio = msdat['D_instance_count'] * 1.0 / msdat['D_count']
+                    ch_percent = int(round(ratio * 100, 0))
+                    ratio = round(ratio, 3)
+                msdat['D_ratio'] = ratio
+                msdat['D_ratio_prev'] = ratio_prev
+                msdat['D_ratio_delta'] = round(ratio - ratio_prev, 3)
 
                 if ms in ref_mss: # for bar charts
-                    ref_percents[ms] = a_percent
+                    ref_percents[ms] = ch_percent
 
                 if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
                     j_segment['latin_mss'].append(msdat)
@@ -717,9 +785,14 @@ class Dicer:
             bardata.append(ref_percents['VL8'])
             j_segment['bar_data'] = bardata
 
-            j_segment['greek_mss'] = sorted(j_segment['greek_mss'], cmp=sortHauptliste)
-            j_segment['latin_mss'] = sorted(j_segment['latin_mss'], cmp=sortHauptliste)
+            j_segment['greek_mss'] = sorted(j_segment['greek_mss'], cmp=sortHauptlisteD)[:30]
+            j_segment['latin_mss'] = sorted(j_segment['latin_mss'], cmp=sortHauptlisteD)[:10]
+            j_segment['greek_mss_Lsort'] = sorted(j_segment['greek_mss'], cmp=sortHauptlisteL)[:10]
+            j_segment['latin_mss_Lsort'] = sorted(j_segment['latin_mss'], cmp=sortHauptlisteL)[:10]
             hauptliste['segments'].append(j_segment)
+
+            segment['word_count']
+            seg_prev = j_segment
 
         s.info('Saving Hauptlisten for', refMS)
 
