@@ -412,7 +412,14 @@
       {
         "chapter": "1",
         "startVerse": 9,
-        "endVerse": 20
+        "endVerse": 15
+      }
+    ],
+    "16,9-16,15": [
+      {
+        "chapter": "16",
+        "startVerse": 9,
+        "endVerse": 15
       }
     ]
   },
@@ -665,6 +672,7 @@
   "segmentOffset": 185,
   "segmentSize": 375,
   "segmentMin": 300,
+  "extraSegments": [ "16,9-16,15" ],
   "dicerQCASet": "basic",
   "dicerStatsFolder": "static/segments/"
 }
