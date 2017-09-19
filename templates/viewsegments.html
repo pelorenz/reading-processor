@@ -1,165 +1,369 @@
 $def with (jdata)
 <div class='cluster-heading'>$jdata['ref_ms'] Segments</div>
     $for segment in jdata['segments']:
-    <div class="segment-heading">Segment $segment['index']: Mark $segment['label']</div>
-    <table class='segment-table'><tr>
-      <td class='segment-chart'>
-        <table class='segment-table'>
-          <tr><td class='segment-property'></td><th class='segment-figure'>Count</th><th class='segment-figure'>Freq</th><th class='segment-figure'>Δ</th></tr>
-          <tr><td class='segment-property'>Word count:</td><td class='segment-figure'>$segment['word_count']</td><td class='segment-figure'></td></tr>
-          <tr><td class='segment-property'>Majority readings:</td><td class='segment-figure'>$segment['majority_count']</td><td class='segment-figure'>$segment['majority_freq']</td><td class='segment-figure'>$segment['majority_freq_delta']</td></tr>
-          <tr><td class='segment-property'>Non-majority readings:</td><td class='segment-figure'>$segment['nonM_count']</td><td class='segment-figure'>$segment['nonM_freq']</td><td class='segment-figure'>$segment['nonM_freq_delta']</td></tr>
-          <tr><td class='segment-property'>D-layer readings:</td><td class='segment-figure'>$segment['D_count']</td><td class='segment-figure'>$segment['D_freq']</td><td class='segment-figure'>$segment['D_freq_delta']</td></tr>
-          $code:
-            emphasis_class = ''
-            if segment['L_freq_delta'] >= 10.0:
-                emphasis_class = 'hi-positive'
-            elif segment['L_freq_delta'] <= -10.0:
-                emphasis_class = 'hi-negative'
-          <tr><td class='segment-property'>L-layer readings:</td><td class='segment-figure'>$segment['L_count']</td><td class='segment-figure'>$segment['L_freq']</td><td class='segment-figure $emphasis_class'>$segment['L_freq_delta']</td></tr>
-          $code:
-            emphasis_class = ''
-            if segment['S_freq_delta'] >= 10.0:
-                emphasis_class = 'hi-positive'
-            elif segment['S_freq_delta'] <= -10.0:
-                emphasis_class = 'hi-negative'
-          <tr><td class='segment-property'>Singular readings:</td><td class='segment-figure'>$segment['S_count']</td><td class='segment-figure'>$segment['S_freq']</td><td class='segment-figure $emphasis_class'>$segment['S_freq_delta']</td></tr>
-        </table>
-        <canvas id='canvas$segment['index']' class='seg-canvas'></canvas>
-        <script type='text/javascript'>
-          var ctx$segment['index'] = document.getElementById('canvas$segment['index']').getContext('2d');
-          chart$segment['index'] = new Chart(ctx$segment['index'], {
-            type: 'bar',
-            data: {
-              labels: ["03", "032", "038", "1582", "788", "28", "565", "700", "VL8"],
-              datasets: [{
-                data:$segment['bar_data'],
-                backgroundColor: ['#d9b3ff', '#66b3ff', '#ff6', '#f99', '#fc6', '#d9b38c', '#fdf', '#e6e600', '#84e184'
-                ]
-              }]
-            },
-            options: {
-              legend: {
-                display: false
-              },
-              scales: {
-                yAxes: [{
-                  ticks: {
-                    beginAtZero:true
-                  }
+      <div class="segment-heading">Segment $segment['index']: Mark $segment['label']</div>
+      <table class='segment-table'><tr>
+        <td class='segment-chart'>
+          <table class='segment-table'>
+            <tr><td class='segment-property'></td><th class='segment-figure'>Count</th><th class='segment-figure'>Freq</th><th class='segment-figure'>Δ</th></tr>
+            <tr><td class='segment-property'>Word count:</td><td class='segment-figure'>$segment['word_count']</td><td class='segment-figure'></td></tr>
+            <tr><td class='segment-property'>Majority readings:</td><td class='segment-figure'>$segment['majority_count']</td><td class='segment-figure'>$segment['majority_freq']</td><td class='segment-figure'>$segment['majority_freq_delta']</td></tr>
+            <tr><td class='segment-property'>Non-majority readings:</td><td class='segment-figure'>$segment['nonM_count']</td><td class='segment-figure'>$segment['nonM_freq']</td><td class='segment-figure'>$segment['nonM_freq_delta']</td></tr>
+            <tr><td class='segment-property'>D-layer readings:</td><td class='segment-figure'>$segment['D_count']</td><td class='segment-figure'>$segment['D_freq']</td><td class='segment-figure'>$segment['D_freq_delta']</td></tr>
+            $code:
+              emphasis_class = ''
+              if segment['L_freq_delta'] >= 10.0:
+                  emphasis_class = 'hi-positive'
+              elif segment['L_freq_delta'] <= -10.0:
+                  emphasis_class = 'hi-negative'
+            <tr><td class='segment-property'>L-layer readings:</td><td class='segment-figure'>$segment['L_count']</td><td class='segment-figure'>$segment['L_freq']</td><td class='segment-figure $emphasis_class'>$segment['L_freq_delta']</td></tr>
+            $code:
+              emphasis_class = ''
+              if segment['S_freq_delta'] >= 10.0:
+                  emphasis_class = 'hi-positive'
+              elif segment['S_freq_delta'] <= -10.0:
+                  emphasis_class = 'hi-negative'
+            <tr><td class='segment-property'>Singular readings:</td><td class='segment-figure'>$segment['S_count']</td><td class='segment-figure'>$segment['S_freq']</td><td class='segment-figure $emphasis_class'>$segment['S_freq_delta']</td></tr>
+          </table>
+          <canvas id='canvas$segment['index']' class='seg-canvas'></canvas>
+          <script type='text/javascript'>
+            var ctx$segment['index'] = document.getElementById('canvas$segment['index']').getContext('2d');
+            chart$segment['index'] = new Chart(ctx$segment['index'], {
+              type: 'bar',
+              data: {
+                labels: ["03", "032", "038", "1582", "788", "28", "565", "700", "VL8"],
+                datasets: [{
+                  data:$segment['bar_data'],
+                  backgroundColor: ['#d9b3ff', '#66b3ff', '#ff6', '#f99', '#fc6', '#d9b38c', '#fdf', '#e6e600', '#84e184'
+                  ]
                 }]
+              },
+              options: {
+                legend: {
+                  display: false
+                },
+                scales: {
+                  yAxes: [{
+                    ticks: {
+                      beginAtZero:true
+                    }
+                  }]
+                }
               }
-            }
-          });
-        </script>
-      </td>
-      <td class='segment-cell'>
-        <table class='hauptliste-table'>
-          <tr>
-            <th>MS</th>
-            <th>Ratio</th>
-            <th>Percent</th>
-            <th>Prev %</th>
-            <th>Δ %</th>
-            <th>MS</th>
-          </tr>
-        $for ms in segment['greek_mss']:
-          $code:
-            row_class = 'X' + ms['manuscript']
-          <tr>
-            <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
-            <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
-            <td class='hauptliste-figure'>$ms['D_ratio']</td>
-            <td class='hauptliste-figure'>$ms['D_ratio_prev']</td>
+            });
+          </script>
+        </td>
+        <td class='segment-cell'>
+          <table class='hauptliste-table'>
+            <tr>
+              <th>MS</th>
+              <th>Ratio</th>
+              <th>Percent</th>
+              <th>Prev %</th>
+              <th>Δ %</th>
+              <th>MS</th>
+            </tr>
+          $for ms in segment['greek_mss']:
             $code:
-              emphasis_class = ''
-              if ms['D_ratio_delta'] > 0.1:
-                  emphasis_class = 'hi-positive'
-              elif ms['D_ratio_delta'] < -0.1:
-                  emphasis_class = 'hi-negative'
-            <td class='hauptliste-figure $emphasis_class'>$ms['D_ratio_delta']</td>
-            <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
-          </tr>
-        </table>
-      </td>
-      <td class='segment-cell'>
-        <table class='hauptliste-table'>
-          <tr>
-            <th>MS</th>
-            <th>Ratio</th>
-            <th>Percent</th>
-            <th>Prev %</th>
-            <th>Δ %</th>
-            <th>MS</th>
-          </tr>
-        $for ms in segment['latin_mss']:
-          $code:
-            row_class = ''
-            if ms['manuscript'] == 'VL8':
-              row_class = 'VL'
-            elif ms['manuscript'] == 'vg':
-              row_class = 'vg'
-            else:
-              if ms['manuscript'] == 'VL1' or ms['manuscript'] == 'VL2':
-                row_class = 'af'
-              elif ms['manuscript'] == 'VL3' or ms['manuscript'] == 'VL16':
-                row_class = 'eu'
+              row_class = 'X' + ms['manuscript']
+            <tr>
+              <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+              <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
+              <td class='hauptliste-figure'>$ms['D_ratio']</td>
+              <td class='hauptliste-figure'>$ms['D_ratio_prev']</td>
+              $code:
+                emphasis_class = ''
+                if ms['D_ratio_delta'] > 0.1:
+                    emphasis_class = 'hi-positive'
+                elif ms['D_ratio_delta'] < -0.1:
+                    emphasis_class = 'hi-negative'
+              <td class='hauptliste-figure $emphasis_class'>$ms['D_ratio_delta']</td>
+              <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+            </tr>
+          </table>
+        </td>
+        <td class='segment-cell'>
+          <table class='hauptliste-table'>
+            <tr>
+              <th>MS</th>
+              <th>Ratio</th>
+              <th>Percent</th>
+              <th>Prev %</th>
+              <th>Δ %</th>
+              <th>MS</th>
+            </tr>
+          $for ms in segment['latin_mss']:
+            $code:
+              row_class = ''
+              if ms['manuscript'] == 'VL8':
+                row_class = 'VL'
+              elif ms['manuscript'] == 'vg':
+                row_class = 'vg'
               else:
-                if ms['manuscript'] == 'VL5':
-                  row_class = 'VL5'
-          <tr>
-            <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
-            <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
-            <td class='hauptliste-figure'>$ms['D_ratio']</td>
-            <td class='hauptliste-figure'>$ms['D_ratio_prev']</td>
+                if ms['manuscript'] == 'VL1' or ms['manuscript'] == 'VL2':
+                  row_class = 'af'
+                elif ms['manuscript'] == 'VL3' or ms['manuscript'] == 'VL16':
+                  row_class = 'eu'
+                else:
+                  if ms['manuscript'] == 'VL5':
+                    row_class = 'VL5'
+            <tr>
+              <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+              <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
+              <td class='hauptliste-figure'>$ms['D_ratio']</td>
+              <td class='hauptliste-figure'>$ms['D_ratio_prev']</td>
+              $code:
+                emphasis_class = ''
+                if ms['D_ratio_delta'] > 0.1:
+                    emphasis_class = 'hi-positive'
+                elif ms['D_ratio_delta'] < -0.1:
+                    emphasis_class = 'hi-negative'
+              <td class='hauptliste-figure $emphasis_class'>$ms['D_ratio_delta']</td>
+              <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+            </tr>
+          </table>
+          <table>
+            <tr>
+              <th>MS</th>
+              <th>Ratio</th>
+              <th>Percent</th>
+              <th>Prev %</th>
+              <th>Δ %</th>
+              <th>MS</th>
+            </tr>
+          $for ms in segment['latin_mss_Lsort']:
             $code:
-              emphasis_class = ''
-              if ms['D_ratio_delta'] > 0.1:
-                  emphasis_class = 'hi-positive'
-              elif ms['D_ratio_delta'] < -0.1:
-                  emphasis_class = 'hi-negative'
-            <td class='hauptliste-figure $emphasis_class'>$ms['D_ratio_delta']</td>
-            <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
-          </tr>
-        </table>
-        <table>
-          <tr>
-            <th>MS</th>
-            <th>Ratio</th>
-            <th>Percent</th>
-            <th>Prev %</th>
-            <th>Δ %</th>
-            <th>MS</th>
-          </tr>
-        $for ms in segment['latin_mss_Lsort']:
-          $code:
-            row_class = ''
-            if ms['manuscript'] == 'VL8':
-              row_class = 'VL'
-            elif ms['manuscript'] == 'vg':
-              row_class = 'vg'
-            else:
-              if ms['manuscript'] == 'VL1' or ms['manuscript'] == 'VL2':
-                row_class = 'af'
-              elif ms['manuscript'] == 'VL3' or ms['manuscript'] == 'VL16':
-                row_class = 'eu'
+              row_class = ''
+              if ms['manuscript'] == 'VL8':
+                row_class = 'VL'
+              elif ms['manuscript'] == 'vg':
+                row_class = 'vg'
               else:
-                if ms['manuscript'] == 'VL5':
-                  row_class = 'VL5'
-          <tr>
-            <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
-            <td class='hauptliste-figure'>$ms['L_instance_count'] / $ms['L_count']</td>
-            <td class='hauptliste-figure'>$ms['L_ratio']</td>
-            <td class='hauptliste-figure'>$ms['L_ratio_prev']</td>
+                if ms['manuscript'] == 'VL1' or ms['manuscript'] == 'VL2':
+                  row_class = 'af'
+                elif ms['manuscript'] == 'VL3' or ms['manuscript'] == 'VL16':
+                  row_class = 'eu'
+                else:
+                  if ms['manuscript'] == 'VL5':
+                    row_class = 'VL5'
+            <tr>
+              <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+              <td class='hauptliste-figure'>$ms['L_instance_count'] / $ms['L_count']</td>
+              <td class='hauptliste-figure'>$ms['L_ratio']</td>
+              <td class='hauptliste-figure'>$ms['L_ratio_prev']</td>
+              $code:
+                emphasis_class = ''
+                if ms['L_ratio_delta'] > 0.1:
+                    emphasis_class = 'hi-positive'
+                elif ms['L_ratio_delta'] < -0.1:
+                    emphasis_class = 'hi-negative'
+              <td class='hauptliste-figure $emphasis_class'>$ms['L_ratio_delta']</td>
+              <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+            </tr>
+          </table>
+        </td>
+      </tr></table>
+    <div class="segment-heading">Manuscript Percent Agreements with $jdata['ref_ms'] in the D layer per Segment</div>
+    <canvas id='MSPercentCanvas' class='line-canvas'></canvas>
+    <script type='text/javascript'>
+      var ctxMSPercentCanvas = document.getElementById('MSPercentCanvas').getContext('2d');
+      chartMSPercentCanvas = new Chart(ctxMSPercentCanvas, {
+        type: 'line',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+          $for idx, refms in enumerate(jdata['lchart_ref_mss']):
             $code:
-              emphasis_class = ''
-              if ms['L_ratio_delta'] > 0.1:
-                  emphasis_class = 'hi-positive'
-              elif ms['L_ratio_delta'] < -0.1:
-                  emphasis_class = 'hi-negative'
-            <td class='hauptliste-figure $emphasis_class'>$ms['L_ratio_delta']</td>
-            <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
-          </tr>
-        </table>
-      </td>
-    </tr></table>
+              comma = ''
+              if idx != len(jdata['lchart_ref_mss']) - 1:
+                comma = ','
+            {
+              label: "$refms",
+              backgroundColor: "$jdata['lchart_ref_mss_colors'][refms]",
+              borderColor: "$jdata['lchart_ref_mss_colors'][refms]",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_ms_percent_vals'][refms]):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_ms_percent_vals'][refms]) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true
+              }
+            }]
+          }
+        }
+      });
+    </script>
+    <div class="segment-heading">Rate of Change of Manuscript Percent Agreement with $jdata['ref_ms'] in the D layer per Segment</div>
+    <canvas id='MSDeltaCanvas' class='line-canvas'></canvas>
+    <script type='text/javascript'>
+      var ctxMSMSDeltaCanvas = document.getElementById('MSDeltaCanvas').getContext('2d');
+      chartMSMSDeltaCanvas = new Chart(ctxMSMSDeltaCanvas, {
+        type: 'line',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+          $for idx, refms in enumerate(jdata['lchart_ref_mss']):
+            $code:
+              comma = ''
+              if idx != len(jdata['lchart_ref_mss']) - 1:
+                comma = ','
+            {
+              label: "$refms",
+              backgroundColor: "$jdata['lchart_ref_mss_colors'][refms]",
+              borderColor: "$jdata['lchart_ref_mss_colors'][refms]",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_ms_delta_vals'][refms]):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_ms_delta_vals'][refms]) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true
+              }
+            }]
+          }
+        }
+      });
+    </script>
+    <div class="segment-heading">Layer Frequency in $jdata['ref_ms'] per Segment</div>
+    <canvas id='LayerFreqCanvas' class='line-canvas'></canvas>
+    <script type='text/javascript'>
+      var ctxLayerFreqCanvas = document.getElementById('LayerFreqCanvas').getContext('2d');
+      chartLayerFreqCanvas = new Chart(ctxLayerFreqCanvas, {
+        type: 'line',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+          $for idx, layer in enumerate(jdata['lchart_ref_layers']):
+            $code:
+              comma = ''
+              if idx != len(jdata['lchart_ref_layers']) - 1:
+                comma = ','
+            {
+              label: "$layer",
+              backgroundColor: "$jdata['lchart_ref_layer_colors'][layer]",
+              borderColor: "$jdata['lchart_ref_layer_colors'][layer]",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_layer_freq_vals'][layer]):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_layer_freq_vals'][layer]) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true
+              }
+            }]
+          }
+        }
+      });
+    </script>
+    <div class="segment-heading">Rate of Change of Layer Frequency in $jdata['ref_ms'] per Segment</div>
+    <canvas id='LayerDeltaCanvas' class='line-canvas'></canvas>
+    <script type='text/javascript'>
+      var ctxLayerDeltaCanvas = document.getElementById('LayerDeltaCanvas').getContext('2d');
+      chartLayerDeltaCanvas = new Chart(ctxLayerDeltaCanvas, {
+        type: 'line',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+          $for idx, layer in enumerate(jdata['lchart_ref_layers']):
+            $code:
+              comma = ''
+              if idx != len(jdata['lchart_ref_layers']) - 1:
+                comma = ','
+            {
+              label: "$layer",
+              backgroundColor: "$jdata['lchart_ref_layer_colors'][layer]",
+              borderColor: "$jdata['lchart_ref_layer_colors'][layer]",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_layer_delta_vals'][layer]):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_layer_delta_vals'][layer]) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true
+              }
+            }]
+          }
+        }
+      });
+    </script>

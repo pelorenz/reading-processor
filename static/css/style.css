@@ -421,3 +421,8 @@ td.hauptliste-figure {
 td.hauptliste-ms {
   text-align: left;
 }
+canvas.line-canvas {
+  height: 400px !important;
+  width: 100% !important;
+  display: inline-block;
+}
