@@ -15,6 +15,7 @@ class VariantFinder:
         s.range_id = ''
         s.rangeMgr = None
         s.variantModel = None
+        s.binaryVariants = { "variant_count": 0, "variant_list": [] }
         s.multipleVariants = { "variant_count": 0, "variant_list": [] }
 
     def info(s, *args):
@@ -32,8 +33,8 @@ class VariantFinder:
                 if not vu.startingAddress:
                     vu.startingAddress = addr
 
-                # reading count must have > 2 non-singular readings
-                if not vu.isMultiple():
+                # exclude singulars
+                if vu.isSingular():
                     continue
 
                 v_wrapper = {}
@@ -44,7 +45,7 @@ class VariantFinder:
                 for reading in vu.readings:
                     r_wrapper = {}
                     r_wrapper['displayValue'] = reading.getDisplayValue()
-                    r_wrapper['reading'] = reading
+                    r_wrapper['manuscripts'] = sorted(reading.manuscripts, cmp=sortMSS)
                     r_wrapper['witnesses'] = []
 
                     w_sum = ''
@@ -73,14 +74,17 @@ class VariantFinder:
 
                     if len(r_wrapper['witnesses']) > 0:
                         r_wrapper['witness_summary'] = w_sum
-
                         v_wrapper['multiple_readings'].append(r_wrapper)
 
+                v_wrapper['multiple_count'] = len(v_wrapper['multiple_readings'])
                 if len(v_wrapper['multiple_readings']) > 2:
-                    v_wrapper['multiple_count'] = len(v_wrapper['multiple_readings'])
                     s.multipleVariants['variant_list'].append(v_wrapper)
 
+                if len(v_wrapper['multiple_readings']) > 1:
+                    s.binaryVariants['variant_list'].append(v_wrapper)
+
         s.multipleVariants['variant_count'] = len(s.multipleVariants['variant_list'])
+        s.binaryVariants['variant_count'] = len(s.binaryVariants['variant_list'])
 
     def saveResults(s):
         c = s.config
@@ -90,8 +94,14 @@ class VariantFinder:
         if not os.path.exists(finderDir):
             os.makedirs(finderDir)
 
-        resultFile = finderDir + '/' + s.range_id + '-variants.json'
+        resultFile = finderDir + '/' + s.range_id + '-multiple-variants.json'
         jdata = json.dumps(s.multipleVariants, cls=ComplexEncoder, ensure_ascii=False)
+        with open(resultFile, 'w+') as file:
+            file.write(jdata.encode('UTF-8'))
+            file.close()
+
+        resultFile = finderDir + '/' + s.range_id + '-binary-variants.json'
+        jdata = json.dumps(s.binaryVariants, cls=ComplexEncoder, ensure_ascii=False)
         with open(resultFile, 'w+') as file:
             file.write(jdata.encode('UTF-8'))
             file.close()

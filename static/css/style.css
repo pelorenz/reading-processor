@@ -426,3 +426,58 @@ canvas.line-canvas {
   width: 100% !important;
   display: inline-block;
 }
+div.variant-heading {
+  font-size: large;
+  font-family: sans-serif;
+  font-weight: bold;
+  padding-top: 10px;
+}
+td.variant-cell {
+  border: none;
+  padding-bottom: 10px;
+}
+td.msslist-cell {
+  border: none;
+  color: #666;
+  padding-bottom: 10px;
+}
+td.multi-35 {
+  color: red;
+  font-weight: bold;
+}
+td.multi-05 {
+  color: #0a0;
+  font-weight: bold;
+}
+td.multi-03 {
+  color: #fc0;
+  font-weight: bold;
+}
+span.f03 {
+  color: #fc0;
+  font-weight: bold;
+}
+span.f13 {
+  color: #f60;
+  font-weight: bold;
+}
+span.f1 {
+  color: #06f;
+  font-weight: bold;
+}
+span.c565 {
+  color: #e7f;
+  font-weight: bold;
+}
+span.ms35 {
+  color: red;
+  font-weight: bold;
+}
+span.f05 {
+  color: #3a0;
+  font-weight: bold;
+}
+span.ms032 {
+  color: #3bf;
+  font-weight: bold;
+}

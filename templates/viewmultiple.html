@@ -1,0 +1,60 @@
+$def with (jdata)
+<div class='cluster-heading'>Multiple Variants</div>
+    $for idx, variant in enumerate(jdata['variant_list']):
+      $code:
+        label = re.sub(r'^(\d{1,2})\.', r'\1:', variant['label'])
+        index = idx + 1
+      <div class="variant-heading">$index. Mark $label</div>
+      <table>
+      $for reading in variant['multiple_readings']:
+        $code:
+          w_sum = reading['witness_summary']
+          mss_count = len(reading['manuscripts'])
+          mss_list = ' '.join(reading['manuscripts'])
+
+          pattern = r'\b(35)\b'
+          mss_list = re.sub(pattern, r'<span class="ms35">\1</span>', mss_list)
+
+          pattern = r'\b(032)\b'
+          mss_list = re.sub(pattern, r'<span class="ms032">\1</span>', mss_list)
+
+          f05 = [ '05', 'vg', '19A' ]
+          for ms in f05:
+            pattern = r'\b(' + re.escape(ms) + r')\b'
+            mss_list = re.sub(pattern, r'<span class="f05">\1</span>', mss_list)
+
+          pattern = r'\b(VL\d{1,3})\b'
+          mss_list = re.sub(pattern, r'<span class="f05">\1</span>', mss_list)
+
+          f03 = [ '01', '03', '019', '037', '33', '579', '892', '1342' ]
+          for ms in f03:
+            pattern = r'\b(' + re.escape(ms) + r')\b'
+            mss_list = re.sub(pattern, r'<span class="f03">\1</span>', mss_list)
+
+          f13 = [ '13', '69', '124', '346', '543', '788', '826', '828', '983' ]
+          for ms in f13:
+            pattern = r'\b(' + re.escape(ms) + r')\b'
+            mss_list = re.sub(pattern, r'<span class="f13">\1</span>', mss_list)
+
+          f1 = [ '1', '1582', '118', '131', '191', '205', '209', '872', '1273', '2193' ]
+          for ms in f1:
+            pattern = r'\b(' + re.escape(ms) + r')\b'
+            mss_list = re.sub(pattern, r'<span class="f1">\1</span>', mss_list)
+
+          c565 = [ '038', '565', '700']
+          for ms in c565:
+            pattern = r'\b(' + re.escape(ms) + r')\b'
+            mss_list = re.sub(pattern, r'<span class="c565">\1</span>', mss_list)
+
+          multi_class = ''
+          if '05' in w_sum:
+            multi_class = 'multi-05'
+          if '35' in w_sum:
+            multi_class = 'multi-35'
+          if '03' in w_sum:
+            multi_class = 'multi-03'
+        <tr>
+          <td class='variant-cell $multi_class' width='200'>$reading['displayValue']</td>
+          <td class='msslist-cell'>$:mss_list [$mss_count]</td>
+        </tr>
+      </table>

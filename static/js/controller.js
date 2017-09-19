@@ -215,5 +215,27 @@
       error: function(xhr, status, error) {
         $('#messages').html('Error');
     }});
+  },
+  viewBinary: function() {
+    $.ajax({url: '/app/viewbinary',
+      success: function(response) {
+        $('#messages').text('Done!');
+        $('#content').empty();
+        $('#content').html(response);
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
+  },
+  viewMultiple: function() {
+    $.ajax({url: '/app/viewmultiple',
+      success: function(response) {
+        $('#messages').text('Done!');
+        $('#content').empty();
+        $('#content').html(response);
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
   }
 }
