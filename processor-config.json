@@ -562,7 +562,7 @@
     ]
   },
   "referenceMSS": [
-    "05","032"
+    "05"
   ],
   "comparisonMSS": [
     "VL1","VL2","VL3","VL4","VL5","VL6","VL8","VL10","VL14","VL16","VL17","vg","P45","01","03","05","032","038","043","28","35","348","427","565","700","788","892","1241","1337","1342","1424","1582","2542"
@@ -806,10 +806,50 @@
       "minOccurs": 2
     }
   ],
+  "hauptlisteDisplay": {
+    "032": {
+      "bchart_ref_mss": [ "03", "05", "038", "1582", "788", "28", "565", "700", "VL6" ],
+      "bchart_ref_mss_colors": [ "#d9b3ff", "#84e184", "#ff6", "#f99", "#fc6", "#d9b38c", "#fdf", "#e6e600", "#66b3ff" ],
+      "lchart_ref_mss": [ "03", "05", "788", "28", "VL6" ],
+      "lchart_ref_mss_colors": {
+            "03": "#a64dff",
+            "05": "#28a428",
+            "788": "#fc0",
+            "28": "#f3f",
+            "VL6": "#0080ff"
+      }
+    },
+    "05": {
+      "bchart_ref_mss": [ "03", "032", "038", "1582", "788", "28", "565", "700", "VL8" ],
+      "bchart_ref_mss_colors": [ "#d9b3ff", "#66b3ff", "#ff6", "#f99", "#fc6", "#d9b38c", "#fdf", "#e6e600", "#84e184" ],
+      "lchart_ref_mss": [ "03", "032", "038", "565", "VL8" ],
+      "lchart_ref_mss_colors": {
+            "03": "#a64dff",
+            "032": "#0080ff",
+            "038": "#fc0",
+            "565": "#f3f",
+            "VL8": "#28a428"
+      }
+    }
+  },
   "dicerFolder": "dicer-results/",
-  "segmentOffset": 552,
-  "segmentSize": 1105,
-  "segmentMin": 200,
+  "segmentConfiguration": {
+    "default": {
+      "segmentOffset": 185,
+      "segmentSize": 375,
+      "segmentMin": 300
+    },
+    "micro": {
+      "segmentOffset": 22,
+      "segmentSize": 45,
+      "segmentMin": 20
+    },
+    "macro": {
+      "segmentOffset": 552,
+      "segmentSize": 1105,
+      "segmentMin": 200
+    }
+  },
   "extraSegments": [ "16,9-16,15" ],
   "dicerQCASet": "basic",
   "dicerStatsFolder": "static/segments/"

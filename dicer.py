@@ -71,12 +71,11 @@ class Dicer:
 
         s.dicer_segments = []
         s.segment_min = 300
-        s.segment_size = 375
-        s.segment_offset = 187
 
         s.doHauptliste = False
         s.doQCA = False
         s.doOffsets = False # include offsets in results
+        s.segmentConfig = None
 
     def info(s, *args):
         info = ''
@@ -102,7 +101,7 @@ class Dicer:
         segment_counter = 0
 
         offset = {}
-        offset_counter = s.segment_offset
+        offset_counter = s.segmentConfig['segmentOffset']
 
         segment_index = 1
 
@@ -114,7 +113,7 @@ class Dicer:
                     c_count = c_count + 1
 
                 if addr.verse_num != cur_v:
-                    if segment_counter > s.segment_size:
+                    if segment_counter > s.segmentConfig['segmentSize']:
                         segment['end_chapter'] = str(cur_c)
                         segment['end_verse'] = str(cur_v)
                         segment['index'] = segment_index
@@ -127,7 +126,7 @@ class Dicer:
                         segment_counter = 0
                         segment = {}
 
-                    if offset_counter > s.segment_size:
+                    if offset_counter > s.segmentConfig['segmentSize']:
                         offset['end_chapter'] = str(cur_c)
                         offset['end_verse'] = str(cur_v)
                         offset['index'] = segment_index
@@ -167,7 +166,7 @@ class Dicer:
                     offset_counter = offset_counter + 1
                     segment_counter = segment_counter + 1
 
-            if (segment_counter > s.segment_min):
+            if (segment_counter > s.segmentConfig['segmentMin']):
                 segment['end_chapter'] = str(cur_c)
                 segment['end_verse'] = str(cur_v)
                 segment['index'] = segment_index
@@ -664,10 +663,14 @@ class Dicer:
 
         return None
 
-    ref_mss = [ '03', '032', '038', '1582', '788', '28', '565', '700', 'VL8' ]
-    lchart_ref_mss = [ '03', '032', '038', '565', 'VL8' ]
-    lchart_ref_layers = [ 'M', 'D', 'L' ]
     def computeHauptlisten(s, refMS):
+        c = s.config
+
+        ref_settings = c.get('hauptlisteDisplay')[refMS]
+        bchart_ref_mss = ref_settings['bchart_ref_mss']
+        lchart_ref_mss = ref_settings['lchart_ref_mss']
+        lchart_ref_layers = [ 'M', 'D', 'L' ]
+
         bar_values = {} # for bar charts
         line_ms_pc_values = {} # for MS line charts
         line_ms_delta_values = {} # for MS line charts (deltas)
@@ -710,32 +713,32 @@ class Dicer:
 
             majority_freq = segment['word_count'] * 1.0 / ref_data['majority_count']
             majority_freq = round(majority_freq, 1)
-            mfreq_delta = majority_freq - mfreq_prev
-            mfreq_delta = round(mfreq_delta, 1)
+            mfreq_delta = mfreq_prev / majority_freq if majority_freq > 0 else 0.0
+            mfreq_delta = round(mfreq_delta, 3)
             mfreq_prev = majority_freq
 
-            nonmajority_freq = segment['word_count'] * 1.0 / len(ref_data['nonM_readings'])
+            nonmajority_freq = segment['word_count'] * 1.0 / len(ref_data['nonM_readings']) if len(ref_data['nonM_readings']) > 0 else 0.0
             nonmajority_freq = round(nonmajority_freq, 1)
-            nmfreq_delta = nonmajority_freq - nmfreq_prev
-            nmfreq_delta = round(nmfreq_delta, 1)
+            nmfreq_delta = nmfreq_prev / nonmajority_freq if nonmajority_freq > 0 else 0.0
+            nmfreq_delta = round(nmfreq_delta, 3)
             nmfreq_prev = nonmajority_freq
 
-            D_freq = segment['word_count'] * 1.0 / len(ref_data['D_readings'])
+            D_freq = segment['word_count'] * 1.0 / len(ref_data['D_readings']) if len(ref_data['D_readings']) > 0 else segment['word_count']
             D_freq = round(D_freq, 1)
-            dfreq_delta = D_freq - dfreq_prev
-            dfreq_delta = round(dfreq_delta, 1)
+            dfreq_delta = dfreq_prev / D_freq if D_freq > 0 else 0.0
+            dfreq_delta = round(dfreq_delta, 3)
             dfreq_prev = D_freq
 
-            L_freq = segment['word_count'] * 1.0 / len(ref_data['L_readings'])
+            L_freq = segment['word_count'] * 1.0 / len(ref_data['L_readings']) if len(ref_data['L_readings']) > 0 else segment['word_count']
             L_freq = round(L_freq, 1)
-            lfreq_delta = L_freq - lfreq_prev
-            lfreq_delta = round(lfreq_delta, 1)
+            lfreq_delta = lfreq_prev / L_freq if L_freq > 0 else 0.0
+            lfreq_delta = round(lfreq_delta, 3)
             lfreq_prev = L_freq
 
-            S_freq = segment['word_count'] * 1.0 / len(ref_data['S_readings'])
+            S_freq = segment['word_count'] * 1.0 / len(ref_data['S_readings']) if len(ref_data['S_readings']) > 0 else segment['word_count']
             S_freq = round(S_freq, 1)
-            sfreq_delta = S_freq - sfreq_prev
-            sfreq_delta = round(sfreq_delta, 1)
+            sfreq_delta = sfreq_prev / S_freq if S_freq > 0 else 0.0
+            sfreq_delta = round(sfreq_delta, 3)
             sfreq_prev = S_freq
 
             j_segment = {}
@@ -887,10 +890,10 @@ class Dicer:
                 hauptliste_matrix_row.append('%.3f' % ratio)
                 hauptliste_delta_matrix_row.append('%.3f' % msdat['D_ratio_delta'])
 
-                if ms in Dicer.ref_mss: # for charts
+                if ms in bchart_ref_mss: # for charts
                     bar_values[ms] = inst_percent
 
-                if ms in Dicer.lchart_ref_mss:
+                if ms in lchart_ref_mss:
                     # MS percent line charts
                     if not line_ms_pc_values.has_key(ms):
                         line_ms_pc_values[ms] = []
@@ -907,15 +910,8 @@ class Dicer:
                     j_segment['greek_mss'].append(msdat)
 
             bardata = []
-            bardata.append(bar_values['03'])
-            bardata.append(bar_values['032'])
-            bardata.append(bar_values['038'])
-            bardata.append(bar_values['1582'])
-            bardata.append(bar_values['788'])
-            bardata.append(bar_values['28'])
-            bardata.append(bar_values['565'])
-            bardata.append(bar_values['700'])
-            bardata.append(bar_values['VL8'])
+            for ms_key in bchart_ref_mss:
+                bardata.append(bar_values[ms_key])
             j_segment['bar_data'] = bardata
 
             j_segment['greek_mss'] = sorted(j_segment['greek_mss'], cmp=sortHauptlisteD)[:30]
@@ -938,17 +934,13 @@ class Dicer:
         hauptliste['lchart_layer_freq_vals'] = line_la_freq_values
         hauptliste['lchart_layer_delta_vals'] = line_la_delta_values
         hauptliste['lchart_segment_labels'] = segment_labels
-        hauptliste['lchart_ref_mss'] = Dicer.lchart_ref_mss
-        hauptliste['lchart_ref_layers'] = Dicer.lchart_ref_layers
+        hauptliste['lchart_ref_mss'] = lchart_ref_mss
+        hauptliste['lchart_ref_layers'] = lchart_ref_layers
 
         # ref MS/layer chart colors
-        hauptliste['lchart_ref_mss_colors'] = {
-            '03': '#a64dff',
-            '032': '#0080ff',
-            '038': '#fc0',
-            '565': '#f3f',
-            'VL8': '#28a428'
-        }
+        hauptliste['bchart_ref_mss'] = bchart_ref_mss
+        hauptliste['bchart_ref_mss_colors'] = ref_settings['bchart_ref_mss_colors']
+        hauptliste['lchart_ref_mss_colors'] = ref_settings['lchart_ref_mss_colors']
         hauptliste['lchart_ref_layer_colors'] = {
             'M': '#f33',
             'D': '#fc0',
@@ -957,20 +949,20 @@ class Dicer:
 
         s.info('Saving Hauptlisten for', refMS)
 
-        hlfile = s.dicerFolder + refMS + '-hauptliste.json'
+        hlfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-hauptliste.json'
         jdata = json.dumps(hauptliste, ensure_ascii=False)
         with open(hlfile, 'w+') as file:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
         # Save hauptlist CSVs
-        csvfile = s.dicerFolder + refMS + '-hauptliste.csv'
+        csvfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-hauptliste.csv'
         with open(csvfile, 'w+') as file:
             for row in hauptliste_matrix:
                 file.write(('\t'.join(row) + '\n').encode('UTF-8'))
             file.close()
 
-        csvfile = s.dicerFolder + refMS + '-hauptliste-delta.csv'
+        csvfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-hauptliste-delta.csv'
         with open(csvfile, 'w+') as file:
             for row in hauptliste_delta_matrix:
                 file.write(('\t'.join(row) + '\n').encode('UTF-8'))
@@ -994,6 +986,10 @@ class Dicer:
         else:
             s.refMS_IDs = c.get('referenceMSS')
 
+        if o.segmentConfig:
+            s.segmentConfig = c.get('segmentConfiguration')[o.segmentConfig]
+            s.segmentConfig['label'] = o.segmentConfig
+
         if o.hauptliste:
             s.doHauptliste = True
 
@@ -1006,10 +1002,6 @@ class Dicer:
         s.dicerFolder = c.get('dicerFolder')
         if not os.path.exists(s.dicerFolder):
             os.makedirs(s.dicerFolder)
-
-        s.segment_size = c.get('segmentSize')
-        s.segment_min = c.get('segmentMin')
-        s.segment_offset = c.get('segmentOffset')
 
         s.qcaSet = c.get('dicerQCASet')
 

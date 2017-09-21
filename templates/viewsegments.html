@@ -7,21 +7,39 @@ $def with (jdata)
           <table class='segment-table'>
             <tr><td class='segment-property'></td><th class='segment-figure'>Count</th><th class='segment-figure'>Freq</th><th class='segment-figure'>Δ</th></tr>
             <tr><td class='segment-property'>Word count:</td><td class='segment-figure'>$segment['word_count']</td><td class='segment-figure'></td></tr>
-            <tr><td class='segment-property'>Majority readings:</td><td class='segment-figure'>$segment['majority_count']</td><td class='segment-figure'>$segment['majority_freq']</td><td class='segment-figure'>$segment['majority_freq_delta']</td></tr>
-            <tr><td class='segment-property'>Non-majority readings:</td><td class='segment-figure'>$segment['nonM_count']</td><td class='segment-figure'>$segment['nonM_freq']</td><td class='segment-figure'>$segment['nonM_freq_delta']</td></tr>
-            <tr><td class='segment-property'>D-layer readings:</td><td class='segment-figure'>$segment['D_count']</td><td class='segment-figure'>$segment['D_freq']</td><td class='segment-figure'>$segment['D_freq_delta']</td></tr>
             $code:
               emphasis_class = ''
-              if segment['L_freq_delta'] >= 10.0:
+              if segment['majority_freq_delta'] >= 2.0:
                   emphasis_class = 'hi-positive'
-              elif segment['L_freq_delta'] <= -10.0:
+              elif segment['majority_freq_delta'] < 0.5:
+                  emphasis_class = 'hi-negative'
+            <tr><td class='segment-property'>Majority readings:</td><td class='segment-figure'>$segment['majority_count']</td><td class='segment-figure'>$segment['majority_freq']</td><td class='segment-figure $emphasis_class'>$segment['majority_freq_delta']</td></tr>
+            $code:
+              emphasis_class = ''
+              if segment['nonM_freq_delta'] >= 2.0:
+                  emphasis_class = 'hi-positive'
+              elif segment['nonM_freq_delta'] < 0.5:
+                  emphasis_class = 'hi-negative'
+            <tr><td class='segment-property'>Non-majority readings:</td><td class='segment-figure'>$segment['nonM_count']</td><td class='segment-figure'>$segment['nonM_freq']</td><td class='segment-figure $emphasis_class'>$segment['nonM_freq_delta']</td></tr>
+            $code:
+              emphasis_class = ''
+              if segment['D_freq_delta'] >= 2.0:
+                  emphasis_class = 'hi-positive'
+              elif segment['D_freq_delta'] < 0.5:
+                  emphasis_class = 'hi-negative'
+            <tr><td class='segment-property'>D-layer readings:</td><td class='segment-figure'>$segment['D_count']</td><td class='segment-figure'>$segment['D_freq']</td><td class='segment-figure $emphasis_class'>$segment['D_freq_delta']</td></tr>
+            $code:
+              emphasis_class = ''
+              if segment['L_freq_delta'] >= 2.0:
+                  emphasis_class = 'hi-positive'
+              elif segment['L_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
             <tr><td class='segment-property'>L-layer readings:</td><td class='segment-figure'>$segment['L_count']</td><td class='segment-figure'>$segment['L_freq']</td><td class='segment-figure $emphasis_class'>$segment['L_freq_delta']</td></tr>
             $code:
               emphasis_class = ''
-              if segment['S_freq_delta'] >= 10.0:
+              if segment['S_freq_delta'] >= 2.0:
                   emphasis_class = 'hi-positive'
-              elif segment['S_freq_delta'] <= -10.0:
+              elif segment['S_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
             <tr><td class='segment-property'>Singular readings:</td><td class='segment-figure'>$segment['S_count']</td><td class='segment-figure'>$segment['S_freq']</td><td class='segment-figure $emphasis_class'>$segment['S_freq_delta']</td></tr>
           </table>
@@ -31,11 +49,24 @@ $def with (jdata)
             chart$segment['index'] = new Chart(ctx$segment['index'], {
               type: 'bar',
               data: {
-                labels: ["03", "032", "038", "1582", "788", "28", "565", "700", "VL8"],
+                labels: [
+                $for idx, ref in enumerate(jdata['bchart_ref_mss']):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['bchart_ref_mss']) - 1:
+                      comma = ','
+                  "$ref"$comma
+                ],
                 datasets: [{
                   data:$segment['bar_data'],
-                  backgroundColor: ['#d9b3ff', '#66b3ff', '#ff6', '#f99', '#fc6', '#d9b38c', '#fdf', '#e6e600', '#84e184'
-                  ]
+                  backgroundColor: [
+                $for idx, color in enumerate(jdata['bchart_ref_mss_colors']):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['bchart_ref_mss_colors']) - 1:
+                      comma = ','
+                  "$color"$comma
+                ]
                 }]
               },
               options: {

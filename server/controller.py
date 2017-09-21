@@ -154,7 +154,7 @@ class Controller:
 
     def viewsegments(s):
         udata = web.input()
-        jsonfile = s.config.get('dicerFolder') + udata.referencems + '-hauptliste.json'
+        jsonfile = s.config.get('dicerFolder') + udata.referencems + '-' + udata.segcfg + '-hauptliste.json'
         with open(jsonfile, 'r') as file:
             jdata = file.read()
             file.close()

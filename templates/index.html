@@ -43,7 +43,7 @@ $def with (args)
             <li><a id='multivars' href='javascript:DSS.findVariants()'>MultiVars</a>
             </li>
           </ul>
-          <ul class='list3'>
+          <ul class='list4'>
             <li>
               <select id='statsdir'>
               $for dir in args['config'].get('statsDirs'):
@@ -52,8 +52,9 @@ $def with (args)
                   <option value='$dir'>$dirname</option>
               </select>
             </li>
-            <li><a id='switchdir' href='javascript:DSS.switchDir()'>SwitchDir</a></li>
-            <li><a id='sview' href='javascript:DSS.viewSegments()'>SegView</a></li>
+            <li><a id='switchdir' href='javascript:DSS.switchDir()'>SwtchDir</a></li>
+            <li><a id='sview' href='javascript:DSS.viewSegments("default")'>SegVu</a></li>
+            <li><a id='sview' href='javascript:DSS.viewSegments("micro")'>MicVu</a></li>
           </ul>
           <ul class='list3'>
             <li><a id='biview' href='javascript:DSS.variantFinder("viewbinary")'>BiView</a></li>
