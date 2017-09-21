@@ -191,9 +191,10 @@
         $('#messages').html('Error');
     }});
   },
-  viewSegments: function() {
+  viewSegments: function(configName) {
     var data = {
-      'referencems': undefined
+      'referencems': undefined,
+      'segcfg': configName
     };
     var checkboxes = $("input[type='checkbox']").filter(function() { return this.id.match(/refms/); })
     for (var i = 0; i < checkboxes.length; i++) {

@@ -4,6 +4,11 @@
   "segmentOffset": 185,
   "segmentSize": 375,
   "segmentMin": 300,
+
+  "SEGMENT_SETTINGS 2": 0,
+  "segmentOffset": 552,
+  "segmentSize": 1105,
+  "segmentMin": 200,
 },
 {
   "WEB-CONFIG.JSON": 0,
