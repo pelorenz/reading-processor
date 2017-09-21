@@ -130,14 +130,27 @@ class Controller:
         with open(jsonfile, 'r') as file:
             jdata = file.read()
             file.close()
-        return s.templates.viewmultiple(json.loads(jdata))
+        j_load = json.loads(jdata)
+        j_load['title'] = 'Binary'
+        return s.templates.viewmultiple(j_load)
+
+    def viewbinarydl(s):
+        jsonfile = s.config.get('finderFolder') + 'c01-16-binaryDL-variants.json'
+        with open(jsonfile, 'r') as file:
+            jdata = file.read()
+            file.close()
+        j_load = json.loads(jdata)
+        j_load['title'] = 'DL'
+        return s.templates.viewmultiple(j_load)
 
     def viewmultiple(s):
         jsonfile = s.config.get('finderFolder') + 'c01-16-multiple-variants.json'
         with open(jsonfile, 'r') as file:
             jdata = file.read()
             file.close()
-        return s.templates.viewmultiple(json.loads(jdata))
+        j_load = json.loads(jdata)
+        j_load['title'] = 'Multiple'
+        return s.templates.viewmultiple(j_load)
 
     def viewsegments(s):
         udata = web.input()
