@@ -16,7 +16,11 @@ class VariantFinder:
         s.rangeMgr = None
         s.variantModel = None
         s.binaryVariants = { "variant_count": 0, "variant_list": [] }
+        s.binaryVariantsDL = { "variant_count": 0, "variant_list": [] }
         s.multipleVariants = { "variant_count": 0, "variant_list": [] }
+
+        s.refMS_IDs = []
+        s.refMS_ID = None # choose first ID
 
     def info(s, *args):
         info = ''
@@ -37,12 +41,18 @@ class VariantFinder:
                 if vu.isSingular():
                     continue
 
+                is_DL_layer = False
+
                 v_wrapper = {}
                 v_wrapper['label'] = vu.label
                 v_wrapper['variation_unit'] = vu
                 v_wrapper['multiple_readings'] = []
                 c_groups = c.get('coreGroups')
                 for reading in vu.readings:
+                    # determine layer in ref MS
+                    if reading.hasManuscript(s.refMS_ID) and not reading.hasManuscript('35'):
+                        is_DL_layer = True
+
                     r_wrapper = {}
                     r_wrapper['displayValue'] = reading.getDisplayValue()
                     r_wrapper['manuscripts'] = sorted(reading.manuscripts, cmp=sortMSS)
@@ -83,8 +93,12 @@ class VariantFinder:
                 if len(v_wrapper['multiple_readings']) > 1:
                     s.binaryVariants['variant_list'].append(v_wrapper)
 
+                    if is_DL_layer:
+                        s.binaryVariantsDL['variant_list'].append(v_wrapper)
+
         s.multipleVariants['variant_count'] = len(s.multipleVariants['variant_list'])
         s.binaryVariants['variant_count'] = len(s.binaryVariants['variant_list'])
+        s.binaryVariantsDL['variant_count'] = len(s.binaryVariantsDL['variant_list'])
 
     def saveResults(s):
         c = s.config
@@ -106,9 +120,23 @@ class VariantFinder:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
+        resultFile = finderDir + '/' + s.range_id + '-binaryDL-variants.json'
+        jdata = json.dumps(s.binaryVariantsDL, cls=ComplexEncoder, ensure_ascii=False)
+        with open(resultFile, 'w+') as file:
+            file.write(jdata.encode('UTF-8'))
+            file.close()
+
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
+
+        if o.refMSS:
+            s.refMS_IDs = o.refMSS.split(',')
+        else:
+            s.refMS_IDs = c.get('referenceMSS')
+
+        if s.refMS_IDs and len(s.refMS_IDs) > 0:
+            s.refMS_ID = s.refMS_IDs[0]
 
         if o.range:
             s.range_id = o.range

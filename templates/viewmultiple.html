@@ -1,5 +1,5 @@
 $def with (jdata)
-<div class='cluster-heading'>Multiple Variants</div>
+<div class='cluster-heading'>$jdata['title'] Variants</div>
     $for idx, variant in enumerate(jdata['variant_list']):
       $code:
         label = re.sub(r'^(\d{1,2})\.', r'\1:', variant['label'])
