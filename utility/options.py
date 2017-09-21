@@ -17,6 +17,7 @@ class  CommandLine:
         self.parser.add_argument('-S', '--statsdir', help='Folder for stats output (TTMinimizer).')
         self.parser.add_argument('-H', '--hauptliste', help='Generate Hauptliste results for segments (dicer).', action='store_true')
         self.parser.add_argument('-Q', '--qca', help='Generate QCA results for segments (dicer).', action='store_true')
+        self.parser.add_argument('-O', '--offsets', help='Generate offsets for segments (dicer).', action='store_true')
 
     def getOptions(self):
         dict = vars(self.parser.parse_args())

@@ -76,6 +76,7 @@ class Dicer:
 
         s.doHauptliste = False
         s.doQCA = False
+        s.doOffsets = False # include offsets in results
 
     def info(s, *args):
         info = ''
@@ -135,8 +136,9 @@ class Dicer:
                         offset['word_count'] = offset_counter
 
                         if len(s.dicer_segments) > 0:
-                            s.dicer_segments.append(offset)
-                            segment_index = segment_index + 1
+                            if s.doOffsets:
+                                s.dicer_segments.append(offset)
+                                segment_index = segment_index + 1
 
                         offset_counter = 0
                         offset = {}
@@ -997,6 +999,9 @@ class Dicer:
 
         if o.qca:
             s.doQCA = True
+
+        if o.offsets:
+            s.doOffsets = True
 
         s.dicerFolder = c.get('dicerFolder')
         if not os.path.exists(s.dicerFolder):
