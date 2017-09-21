@@ -529,7 +529,7 @@ class Analyzer:
                 procs.append(Process(target=callCormat, args=(lock, rms, s.range_id, 'G')))
 
                 # Distributions for Greek with Latin retroversion
-                procs.append(Process(target=callDistrib, args=(lock, rms, s.range_id, 'GL')))
+                # procs.append(Process(target=callDistrib, args=(lock, rms, s.range_id, 'GL')))
 
                 for p in procs:
                     p.start()
