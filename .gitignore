@@ -25,7 +25,7 @@
 /static/segments
 /static/stats
 /utility/*.pyc
-/variant-data
+/variant-data/_cache
 .project
 .pydevproject
 *Copy*
