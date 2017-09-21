@@ -42,6 +42,151 @@
   "variantDataCache": "variant-data/_cache/variant-data-cache.json",
   "defaultRange": "c01",
   "rangeData": {
+    "c01-02": [
+      {
+        "chapter": "1",
+        "startVerse": 1,
+        "endVerse": 45
+      },
+      {
+        "chapter": "2",
+        "startVerse": 1,
+        "endVerse": 21
+      }
+    ],
+    "c02-04": [
+      {
+        "chapter": "2",
+        "startVerse": 22,
+        "endVerse": 28
+      },
+      {
+        "chapter": "3",
+        "startVerse": 1,
+        "endVerse": 35
+      },
+      {
+        "chapter": "4",
+        "startVerse": 1,
+        "endVerse": 27
+      }
+    ],
+    "c04-06": [
+      {
+        "chapter": "4",
+        "startVerse": 28,
+        "endVerse": 41
+      },
+      {
+        "chapter": "5",
+        "startVerse": 1,
+        "endVerse": 43
+      },
+      {
+        "chapter": "6",
+        "startVerse": 1,
+        "endVerse": 9
+      }
+    ],
+    "c06-07": [
+      {
+        "chapter": "6",
+        "startVerse": 10,
+        "endVerse": 56
+      },
+      {
+        "chapter": "7",
+        "startVerse": 1,
+        "endVerse": 18
+      }
+    ],
+    "c07-09": [
+      {
+        "chapter": "7",
+        "startVerse": 19,
+        "endVerse": 37
+      },
+      {
+        "chapter": "8",
+        "startVerse": 1,
+        "endVerse": 38
+      },
+      {
+        "chapter": "9",
+        "startVerse": 1,
+        "endVerse": 8
+      }
+    ],
+    "c09-10": [
+      {
+        "chapter": "9",
+        "startVerse": 9,
+        "endVerse": 50
+      },
+      {
+        "chapter": "10",
+        "startVerse": 1,
+        "endVerse": 24
+      }
+    ],
+    "c10-12": [
+      {
+        "chapter": "10",
+        "startVerse": 25,
+        "endVerse": 52
+      },
+      {
+        "chapter": "11",
+        "startVerse": 1,
+        "endVerse": 33
+      },
+      {
+        "chapter": "12",
+        "startVerse": 1,
+        "endVerse": 4
+      }
+    ],
+    "c12-13": [
+      {
+        "chapter": "12",
+        "startVerse": 5,
+        "endVerse": 44
+      },
+      {
+        "chapter": "13",
+        "startVerse": 1,
+        "endVerse": 21
+      }
+    ],
+    "c13-14": [
+      {
+        "chapter": "13",
+        "startVerse": 22,
+        "endVerse": 37
+      },
+      {
+        "chapter": "14",
+        "startVerse": 1,
+        "endVerse": 54
+      }
+    ],
+    "c14-16": [
+      {
+        "chapter": "14",
+        "startVerse": 55,
+        "endVerse": 72
+      },
+      {
+        "chapter": "15",
+        "startVerse": 1,
+        "endVerse": 47
+      },
+      {
+        "chapter": "16",
+        "startVerse": 1,
+        "endVerse": 8
+      }
+    ],
     "c01": [
       {
         "chapter": "1",
@@ -414,13 +559,6 @@
         "startVerse": 9,
         "endVerse": 15
       }
-    ],
-    "16,9-16,15": [
-      {
-        "chapter": "16",
-        "startVerse": 9,
-        "endVerse": 15
-      }
     ]
   },
   "referenceMSS": [
@@ -669,9 +807,9 @@
     }
   ],
   "dicerFolder": "dicer-results/",
-  "segmentOffset": 185,
-  "segmentSize": 375,
-  "segmentMin": 300,
+  "segmentOffset": 552,
+  "segmentSize": 1105,
+  "segmentMin": 200,
   "extraSegments": [ "16,9-16,15" ],
   "dicerQCASet": "basic",
   "dicerStatsFolder": "static/segments/"
