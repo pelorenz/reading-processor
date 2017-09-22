@@ -880,6 +880,50 @@ DSS.ReadingUnit = function(t_idx, c_num, v_num, a_idx, txt) {
 DSS.ReadingUnit.constructor = DSS.ReadingUnit;
 DSS.ReadingUnit.prototype = Object.create(DSS.AddressSlot.prototype);
 
+DSS.mssListToString = function(mss_list){
+  var g_list = [];
+  var l_list = [];
+  var has_19A = false;
+  var has_vg = false;
+  for (var i = 0; i < mss_list.length; i++) {
+    var ms = mss_list[i];
+    if (ms.match(/^VL/)) {
+      l_list.push(ms.substring(2));
+    }
+    else if (ms == '19A') {
+      has_19A = true;
+    }
+    else if (ms == 'vg') {
+      has_vg = true;
+    }
+    else {
+      g_list.push(ms);
+    }
+  }
+
+  if (has_19A) {
+    l_list.push('19A');
+  }
+
+  var mss_str = '';
+  if (g_list.length > 0) {
+    mss_str = g_list.join(' ');
+  }
+  if (l_list.length > 0) {
+    if (mss_str.length > 0) {
+      mss_str = mss_str + ' ';
+    }
+    mss_str = mss_str + 'VL(' + l_list.join(' ') + ')';
+  }
+  if (has_vg) {
+    if (mss_str.length > 0) {
+      mss_str = mss_str + ' ';
+    }
+    mss_str = mss_str + 'vg';
+  }
+  return mss_str;
+};
+
 DSS.Reading = function () {
   this.type = 'reading';
   this.readingUnits = [];
@@ -888,16 +932,7 @@ DSS.Reading = function () {
 };
 DSS.Reading.constructor = DSS.Reading;
 DSS.Reading.prototype.toString = function(){
-  var txt_str = this.getText();
-  var mss_str = '';
-  for (var i = 0; i < this.manuscripts.length; i++) {
-    var ms = this.manuscripts[i];
-    if (mss_str.length > 0) {
-      mss_str = mss_str + ' ';
-    }
-    mss_str = mss_str + ms;
-  }
-  return txt_str + '] ' + mss_str;
+  return this.getText() + '] ' + DSS.mssListToString(this.manuscripts);
 };
 DSS.Reading.prototype.hasManuscript = function(id){
   for (var i = 0; i < this.manuscripts.length; i++) {
@@ -964,16 +999,7 @@ DSS.ReadingGroup = function () {
 };
 DSS.ReadingGroup.constructor = DSS.Reading;
 DSS.ReadingGroup.prototype.toString = function(){
-  var txt_str = this.getText();
-  var mss_str = '';
-  for (var i = 0; i < this.manuscripts.length; i++) {
-    var ms = this.manuscripts[i];
-    if (mss_str.length > 0) {
-      mss_str = mss_str + ' ';
-    }
-    mss_str = mss_str + ms;
-  }
-  return txt_str + '] ' + mss_str;
+  return this.getText() + '] ' + DSS.mssListToString(this.manuscripts);
 };
 DSS.ReadingGroup.prototype.getText = function() {
   return this.displayValue;
