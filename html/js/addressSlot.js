@@ -932,7 +932,11 @@ DSS.Reading = function () {
 };
 DSS.Reading.constructor = DSS.Reading;
 DSS.Reading.prototype.toString = function(){
-  return this.getText() + '] ' + DSS.mssListToString(this.manuscripts);
+  var mss_str = ''
+  if (this.manuscripts.length > 0) {
+    mss_str = this.getText() + '] ' + DSS.mssListToString(this.manuscripts);
+  }
+  return mss_str;
 };
 DSS.Reading.prototype.hasManuscript = function(id){
   for (var i = 0; i < this.manuscripts.length; i++) {
@@ -999,7 +1003,11 @@ DSS.ReadingGroup = function () {
 };
 DSS.ReadingGroup.constructor = DSS.Reading;
 DSS.ReadingGroup.prototype.toString = function(){
-  return this.getText() + '] ' + DSS.mssListToString(this.manuscripts);
+  var mss_str = ''
+  if (this.manuscripts.length > 0) {
+    mss_str = this.getText() + '] ' + DSS.mssListToString(this.manuscripts);
+  }
+  return mss_str;
 };
 DSS.ReadingGroup.prototype.getText = function() {
   return this.displayValue;
