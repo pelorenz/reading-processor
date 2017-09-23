@@ -239,7 +239,12 @@ DSS.Chapter.handleSave = function (event, isDiff) {
             }
             j_form['textForms'].push(j_subform);
           };
-          j_addr['textForms'].push(j_form);
+          if (j_form['textForms'].length > 0) {
+            if (!j_form['mainForm']) {
+              j_form['mainForm'] = j_form['textForms'][0]['form'];
+            }
+            j_addr['textForms'].push(j_form);
+          }
         }
         else if (!isDiff && frm.type == 'form') {
           var j_form = {
