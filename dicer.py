@@ -1028,5 +1028,16 @@ class Dicer:
         s.info('Done')
 
 # Invoke via entry point
+#
+# Output only segment divisions
 # dicer.py -v -a c01-16 -R 05
+#
+# Generate segments with QCA analysis
+# dicer.py -v -a c01-16 -R 05 -Q
+#
+# Generate regular block-sized segments (default configuration)
+# dicer.py -v -a c01-16 -R 05 -H
+#
+# Generate segments with configuration (e.g. micro configuration)
+# dicer.py -v -a c01-16 -R 05 -G [micro] -H
 Dicer().main(sys.argv[1:])
