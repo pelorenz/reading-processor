@@ -1,4 +1,19 @@
 ;DSS = {
+  showDirectories: function() {
+    var data = {
+        'statsdir': 'static/stats/'
+    };
+    $.ajax({url: '/app/switchDir',
+      data: data,
+      success: function(response) {
+        $('#messages').text('Switched menu!');
+        $('#dirslist').empty();
+        $('#dirslist').html(response);
+      },
+      error: function(xhr, status, error) {
+        $('#messages').html('Error');
+    }});
+  },
   switchDir: function() {
     DSS.statsdir = $('#statsdir').val();
     var statsdir = DSS.statsdir;
@@ -22,12 +37,12 @@
   boolAnalyze: function() {
     DSS.analyze('boolanalyze')
   },
-  findVariants: function() {
-    $.ajax({url: '/app/findVariants',
+  startFinderInterface: function() {
+    $.ajax({url: '/app/startFinder',
       success: function(response) {
         $('#messages').text('Done!');
-        $('#content').empty();
-        $('#content').html(response);
+        $('#dirslist').empty();
+        $('#dirslist').html(response);
       },
       error: function(xhr, status, error) {
         $('#messages').html('Error');
@@ -51,6 +66,7 @@
       }
     }
     if (!hasRefMSS) {
+      $('#messages').text('Please select a reference manuscript.');
       return;
     }
 
@@ -227,5 +243,13 @@
       error: function(xhr, status, error) {
         $('#messages').html('Error');
     }});
+  },
+  initPage: function() {
+    // Keyboard events for file operations
+    $(window).keydown(function(event){
+      if (event.altKey && event.keyCode === 81) { // Q = do query
+        DSS.finder.doQuery.call(event);
+      }
+    });
   }
 }

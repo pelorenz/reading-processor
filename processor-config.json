@@ -40,7 +40,7 @@
     { "subdir": "c16", "file": "mark-16a-all" }
   ],
   "variantDataCache": "variant-data/_cache/variant-data-cache.json",
-  "defaultRange": "c01",
+  "defaultRange": "c01-16",
   "rangeData": {
     "c01-02": [
       {
@@ -822,12 +822,13 @@
     "05": {
       "bchart_ref_mss": [ "03", "032", "038", "1582", "788", "28", "565", "700", "VL8" ],
       "bchart_ref_mss_colors": [ "#d9b3ff", "#66b3ff", "#ff6", "#f99", "#fc6", "#d9b38c", "#fdf", "#e6e600", "#84e184" ],
-      "lchart_ref_mss": [ "03", "032", "038", "565", "VL8" ],
+      "lchart_ref_mss": [ "03", "032", "038", "565", "788", "VL8" ],
       "lchart_ref_mss_colors": {
             "03": "#a64dff",
             "032": "#0080ff",
             "038": "#fc0",
             "565": "#f3f",
+            "788": "#ff8080",
             "VL8": "#28a428"
       }
     }
@@ -840,8 +841,8 @@
       "segmentMin": 300
     },
     "micro": {
-      "segmentOffset": 22,
-      "segmentSize": 45,
+      "segmentOffset": 21,
+      "segmentSize": 43,
       "segmentMin": 20
     },
     "macro": {
@@ -852,5 +853,46 @@
   },
   "extraSegments": [ "16,9-16,15" ],
   "dicerQCASet": "basic",
-  "dicerStatsFolder": "static/segments/"
+  "dicerStatsFolder": "static/segments/",
+  "finderCriteria": {
+    "harris_tunc": {
+      "reference_forms": [ "τοτε" ],
+      "reading_forms": [ "tunc" ],
+      "variant_forms": [ "και", "et" ],
+      "layers": [ "D", "L" ],
+      "result_file": "harris-tunc"
+    },
+    "harris_tunc_expanded": {
+      "reference_forms": [ "τοτε" ],
+      "variant_forms": [ "και", "et" ],
+      "layers": [ "D", "L", "M" ],
+      "result_file": "harris-tunc-expanded"
+    },
+    "harris_tunc_all": {
+      "variant_forms": [ "τοτε" ],
+      "layers": [ "D", "L" ],
+      "result_file": "harris-tunc-all"
+    },
+    "harris_tunc_reverse": {
+      "reference_forms": [ "και" ],
+      "reading_forms": [ "ετ" ],
+      "variant_forms": [ "τοτε", "tunc" ],
+      "layers": [ "D", "L" ],
+      "result_file": "harris-tunc-reverse"
+    },
+    "harris_et": {
+      "reference_forms": [ "και" ],
+      "reading_forms": [ "et" ],
+      "variant_forms": [ "δε", "autem" ],
+      "layers": [ "D", "L" ],
+      "result_file": "harris-et"
+    },
+    "harris_et_reverse": {
+      "reference_forms": [ "δε" ],
+      "reading_forms": [ "autem" ],
+      "variant_forms": [ "και", "et" ],
+      "layers": [ "D", "L" ],
+      "result_file": "harris-et-reverse"
+    }
+  }
 }

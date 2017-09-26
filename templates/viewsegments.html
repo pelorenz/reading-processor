@@ -114,6 +114,7 @@ $def with (jdata)
           </table>
         </td>
         <td class='segment-cell'>
+          <div>D Layer</div>
           <table class='hauptliste-table'>
             <tr>
               <th>MS</th>
@@ -153,6 +154,7 @@ $def with (jdata)
               <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
             </tr>
           </table>
+          <div>L Layer</div>
           <table>
             <tr>
               <th>MS</th>
@@ -296,7 +298,7 @@ $def with (jdata)
         }
       });
     </script>
-    <div class="segment-heading">Layer Frequency in $jdata['ref_ms'] per Segment</div>
+    <div class="segment-heading">Layer Spacing in $jdata['ref_ms'] per Segment</div>
     <canvas id='LayerFreqCanvas' class='line-canvas'></canvas>
     <script type='text/javascript'>
       var ctxLayerFreqCanvas = document.getElementById('LayerFreqCanvas').getContext('2d');
@@ -347,7 +349,7 @@ $def with (jdata)
         }
       });
     </script>
-    <div class="segment-heading">Rate of Change of Layer Frequency in $jdata['ref_ms'] per Segment</div>
+    <div class="segment-heading">Rate of Change of Layer Spacing in $jdata['ref_ms'] per Segment</div>
     <canvas id='LayerDeltaCanvas' class='line-canvas'></canvas>
     <script type='text/javascript'>
       var ctxLayerDeltaCanvas = document.getElementById('LayerDeltaCanvas').getContext('2d');

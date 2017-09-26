@@ -19,7 +19,7 @@
   vertical-align:top;
 }
 #dirslist {
-  height:650px;
+  height:700px;
   overflow-y: scroll;
 }
 #qca-div {
@@ -186,6 +186,7 @@ a.disable-link {
   pointer-events: none;
 }
 ul {
+  margin: 0;
   list-style: none;
   padding-left: 0px;
   padding-top: 0px;
@@ -396,7 +397,7 @@ th.segment-figure, td.segment-figure {
   border: none;
   padding-right: 10px;
 }
-th.highlight, td.highlight {
+div.highlight, th.highlight, td.highlight {
   font-weight: bold;
 }
 th.hi-positive, td.hi-positive {
@@ -480,4 +481,19 @@ span.f05 {
 span.ms032 {
   color: #3bf;
   font-weight: bold;
+}
+#results-layout {
+  display: inline-block;
+  table-layout: fixed;
+  border-collapse: collapse;
+  vertical-align: top;
+  width: 100%;
+}
+div.result-heading {
+  padding-top: 10px;
+}
+td.result-cell {
+  border: none;
+  vertical-align: top;
+  padding-left: 10px;
 }

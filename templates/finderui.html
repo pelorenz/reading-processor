@@ -1,0 +1,75 @@
+$def with (jdata)
+  <div class="highlight">Recent Searches</div>
+  <select id='finder-select' size='8' onchange='DSS.finder.selectCriteria()'>
+    $for query in reversed(jdata['recent_queries']):
+      $code:
+        name = ''
+        if jdata['query_map'].has_key(query):
+          name = jdata['query_map'][query]['generated_name']
+      <option value='$query'>$name</option>
+  </select>
+  $code:
+    cur_criteria = {}
+    cur_key = ''
+    if len(jdata['recent_queries']) > 0:
+      cur_key = jdata['recent_queries'][0]
+      if jdata['query_map'].has_key(cur_key):
+        cur_criteria = jdata['query_map'][cur_key]
+  <div class='highlight'>Reference Forms:</div>
+  $code:
+    ref_str = ''
+    if cur_criteria.has_key('reference_forms'):
+      for word in cur_criteria['reference_forms']:
+        if len(ref_str) > 0: ref_str = ref_str + ','
+        ref_str = ref_str + word
+  <textarea id='ref-area' rows="2" cols="35">$ref_str</textarea>
+  <div class='highlight'>Reading Forms:</div>
+  $code:
+    read_str = ''
+    if cur_criteria.has_key('reading_forms'):
+      for word in cur_criteria['reading_forms']:
+        if len(read_str) > 0: read_str = read_str + ','
+        read_str = read_str + word
+  <textarea id='read-area' rows="2" cols="35">$read_str</textarea>
+  <div class='highlight'>Variant Forms:</div>
+  $code:
+    var_str = ''
+    if cur_criteria.has_key('variant_forms'):
+      for word in cur_criteria['variant_forms']:
+        if len(var_str) > 0: var_str = var_str + ','
+        var_str = var_str + word
+  <textarea id='var-area' rows="2" cols="35">$var_str</textarea>
+  <div class='highlight'>Layers:</div>
+  $code:
+    m_checked = ''
+    d_checked = ''
+    l_checked = ''
+    if cur_criteria.has_key('layers'):
+      layers = cur_criteria['layers']
+      if 'M' in layers:
+        m_checked = 'checked'
+      if 'D' in layers:
+        d_checked = 'checked'
+      if 'L' in layers:
+        l_checked = 'checked'
+  <ul class='list3'>
+    <li><input id='cblayerM' type='checkbox' value='M' $m_checked> M
+    <li><input id='cblayerD' type='checkbox' value='M' $d_checked> D
+    <li><input id='cblayerL' type='checkbox' value='M' $l_checked> L
+  </ul>
+  <div class='highlight'>Name:</div>
+  <textarea id='name-area' rows="1" cols="35">$cur_key</textarea>
+  <ul class='list2'>
+    <li><input id='cbsave' type='checkbox' value='save'> Save Forms
+    <li><button id='query-button' type='button' onclick='DSS.finder.doQuery()'> Find
+  </ul>
+  <div class="highlight">Recent Results</div>
+  <select id='results-select' size='8' onchange='DSS.finder.selectResult()'>
+    $for result in reversed(jdata['recent_results']):
+      <option value='$result["result_id"]'>$result['ref_ms'] $result['query_name']</option>
+  </select>
+  <script type='text/javascript'>
+    DSS.finder.queryBase = JSON.parse('$:jdata["json_string"]');
+    document.getElementById("finder-select").selectedIndex = "0";
+    DSS.finder.selectCriteria();
+  </script>

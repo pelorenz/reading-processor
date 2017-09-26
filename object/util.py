@@ -145,3 +145,14 @@ def sortVariations(v1, v2):
         return 1
 
     return 0
+
+def isLatinLayer(greek_counter, latin_counter):
+    is_latin = False
+    if latin_counter >= greek_counter and latin_counter > 2 and greek_counter <= 3:
+        is_latin = True
+    else:
+        if latin_counter >= greek_counter and latin_counter > 1 and greek_counter <= 2:
+            is_latin = True
+        elif latin_counter >= greek_counter and latin_counter > 0 and greek_counter <= 1:
+            is_latin = True
+    return is_latin
