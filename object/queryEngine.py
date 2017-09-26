@@ -5,6 +5,7 @@ import web, sys, os, string, re
 
 from object.jsonEncoder import *
 from object.rangeManager import *
+from object.util import *
 
 from utility.config import *
 from utility.options import *
@@ -30,12 +31,80 @@ class QueryEngine:
         s.queryCriteria = None
         s.queryMatches = []
 
+        # stats
+        s.stats_data = {}
+        s.stats_data['D_instances'] = {}
+        s.stats_data['L_instances'] = {}
+
+        s.stats_data['D_lac'] = {}
+        s.stats_data['L_lac'] = {}
+
+        s.stats_data['D_readings'] = []
+        s.stats_data['L_readings'] = []
+
+        s.stats_data['latin_mss'] = []
+        s.stats_data['greek_mss'] = []
+        s.stats_data['latin_mss_Lsort'] = []
+        s.stats_data['greek_mss_Lsort'] = []
+
     def info(s, *args):
         info = ''
         for i, arg in enumerate(args):
             if i > 0: info += ' '
             info += str(arg).strip()
         web.debug(info)
+
+    def computeStats(s):
+        for ms in s.variantModel['manuscripts']:
+            if ms == s.refMS:
+                continue
+
+            msdat = {}
+            msdat['manuscript'] = ms
+
+            # L layer stats
+            msdat['L_instance_count'] = 0
+            if s.stats_data['L_instances'].has_key(ms):
+                msdat['L_instance_count'] = len(s.stats_data['L_instances'][ms])
+
+            msdat['L_lac_count'] = 0
+            if s.stats_data['L_lac'].has_key(ms):
+                msdat['L_lac_count'] = len(s.stats_data['L_lac'][ms])
+
+            msdat['L_count'] = len(s.stats_data['L_readings']) - msdat['L_lac_count']
+
+            ratio = 0.0
+            if msdat['L_count']:
+                ratio = msdat['L_instance_count'] * 1.0 / msdat['L_count']
+                ratio = round(ratio, 3)
+            msdat['L_ratio'] = ratio
+
+            # D layer stats
+            msdat['D_instance_count'] = 0
+            if s.stats_data['D_instances'].has_key(ms):
+                msdat['D_instance_count'] = len(s.stats_data['D_instances'][ms])
+
+            msdat['D_lac_count'] = 0
+            if s.stats_data['D_lac'].has_key(ms):
+                msdat['D_lac_count'] = len(s.stats_data['D_lac'][ms])
+
+            msdat['D_count'] = len(s.stats_data['D_readings']) - msdat['D_lac_count']
+
+            ratio = 0.0
+            if msdat['D_count']:
+                ratio = msdat['D_instance_count'] * 1.0 / msdat['D_count']
+                ratio = round(ratio, 3)
+            msdat['D_ratio'] = ratio
+
+            if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
+                s.stats_data['latin_mss'].append(msdat)
+            else:
+                s.stats_data['greek_mss'].append(msdat)
+
+            s.stats_data['greek_mss'] = sorted(s.stats_data['greek_mss'], cmp=sortHauptlisteD)
+            s.stats_data['latin_mss'] = sorted(s.stats_data['latin_mss'], cmp=sortHauptlisteD)
+            s.stats_data['greek_mss_Lsort'] = sorted(s.stats_data['greek_mss'], cmp=sortHauptlisteL)
+            s.stats_data['latin_mss_Lsort'] = sorted(s.stats_data['latin_mss'], cmp=sortHauptlisteL)
 
     def getAddrKey(s, addr):
         return str(addr.chapter_num) + '-' + str(addr.verse_num) + '-' + str(addr.addr_idx)
@@ -48,12 +117,9 @@ class QueryEngine:
         for addr in s.variantModel['addresses']:
             s.addrLookup[s.getAddrKey(addr)] = addr
 
-    def computeLayer(s, reading):
+    def computeLayer(s, reading, latin_mss, greek_mss):
         if reading.hasManuscript('35'):
             return 'M'
-
-        latin_mss = []
-        greek_mss = []
 
         for ms in reading.manuscripts:
             if ms == s.refMS:
@@ -150,7 +216,7 @@ class QueryEngine:
             return True
 
         values = []
-        for key, val in enumerate(text_forms[forms_key]):
+        for key, val in text_forms[forms_key].iteritems():
             if text_forms[forms_key].has_key(key):
                 values.extend(text_forms[forms_key][key])
         return len(set(s.queryCriteria[forms_key]) & set(values)) > 0
@@ -160,7 +226,7 @@ class QueryEngine:
             return True
 
         values = []
-        for key, val in enumerate(text_forms[forms_key]):
+        for key, val in text_forms[forms_key].iteritems():
             if text_forms[forms_key].has_key(key):
                 values.extend(text_forms[forms_key][key])
         return len(set(s.queryCriteria[forms_key]) - set(values)) == 0
@@ -197,34 +263,92 @@ class QueryEngine:
                     if not r_reading:
                         continue
 
-                    layer = s.computeLayer(r_reading)
+                    latin_mss = []
+                    greek_mss = []
+                    layer = s.computeLayer(r_reading, latin_mss, greek_mss)
                     find_layers = s.queryCriteria['layers']
                     if not layer in find_layers:
                         continue
 
                     text_forms = s.getTextForms(vu, s.refMS)
 
+                    #if addr.chapter_num == "8" and addr.verse_num == 29 and addr.addr_idx == 1:
+                    #    i = 0
+                    #    j = 1
+                    #    k = i + j
+
                     has_refs = s.isSubset('reference_forms', text_forms)
                     has_readings = s.isSubset('reading_forms', text_forms)
                     has_variants = s.isIntersection('variant_forms', text_forms)
 
-                    if has_refs and has_readings and has_variants:
-                        v_summary = {}
-                        v_summary['label'] = vu.label
-                        csv_file.write((vu.label + u'\t\n').encode('UTF-8'))
-                        v_summary['layer'] = layer
-                        v_summary['readings'] = []
-                        for reading in vu.readings:
-                            r_summary = {}
+                    if not has_refs or not has_readings or not has_variants:
+                        continue
 
-                            r_summary['displayValue'] = reading.getDisplayValue()
-                            r_summary['manuscripts'] = ' '.join(sorted(reading.manuscripts, cmp=sortMSS))
-                            r_summary['mss_string'] = mssListToString(reading.manuscripts)
+                    # query results
+                    v_summary = {}
+                    v_summary['label'] = vu.label
+                    csv_file.write((vu.label + u'\t\n').encode('UTF-8'))
+                    v_summary['layer'] = layer
+                    v_summary['readings'] = []
+                    for reading in vu.readings:
+                        r_summary = {}
 
-                            csv_file.write((r_summary['displayValue'] + u'\t' + r_summary['manuscripts'] + u'\n').encode('UTF-8'))
+                        r_summary['displayValue'] = reading.getDisplayValue()
+                        r_summary['manuscripts'] = ' '.join(sorted(reading.manuscripts, cmp=sortMSS))
+                        r_summary['mss_string'] = mssListToString(reading.manuscripts)
 
-                            v_summary['readings'].append(r_summary)
-                        s.queryMatches.append(v_summary)
+                        csv_file.write((r_summary['displayValue'] + u'\t' + r_summary['manuscripts'] + u'\n').encode('UTF-8'))
+
+                        v_summary['readings'].append(r_summary)
+                    s.queryMatches.append(v_summary)
+
+                    # stats for D and L layers
+                    reading_info = {}
+                    reading_info['variant_label'] = vu.label
+                    reading_info['reading_value'] = r_reading.getDisplayValue()
+                    reading_info['layer'] = layer
+                    reading_info['latin_mss'] = latin_mss
+                    reading_info['greek_mss'] = greek_mss
+                    reading_info['mss_string'] = mssListToString(r_reading.manuscripts)
+
+                    if layer == 'L':
+                        s.stats_data['L_readings'].append(reading_info)
+                    elif layer == 'D':
+                        s.stats_data['D_readings'].append(reading_info)
+
+                    for ms in s.variantModel['manuscripts']:
+                        if ms == s.refMS or ms == '35':
+                            continue
+
+                        # Is ms attested at this variant?
+                        rdg = vu.getReadingForManuscript(ms)
+                        if not rdg:
+                            if layer == 'L':
+                                if not s.stats_data['L_lac'].has_key(ms):
+                                    s.stats_data['L_lac'][ms] = []
+                                s.stats_data['L_lac'][ms].append(vu.label)
+                            elif layer == 'D':
+                                if not s.stats_data['D_lac'].has_key(ms):
+                                    s.stats_data['D_lac'][ms] = []
+                                s.stats_data['D_lac'][ms].append(vu.label)
+                            continue
+
+                        # Does ms support present reading?
+                        if not r_reading.hasManuscript(ms):
+                            continue
+
+                        ms_instance = {}
+                        ms_instance['variant_label'] = vu.label
+                        ms_instance['reading_value'] = reading_info['reading_value']
+
+                        if layer == 'L':
+                            if not s.stats_data['L_instances'].has_key(ms):
+                                s.stats_data['L_instances'][ms] = []
+                            s.stats_data['L_instances'][ms].append(ms_instance)
+                        elif layer == 'D':
+                            if not s.stats_data['D_instances'].has_key(ms):
+                                s.stats_data['D_instances'][ms] = []
+                            s.stats_data['D_instances'][ms].append(ms_instance)
 
             csv_file.close()
 
@@ -236,6 +360,14 @@ class QueryEngine:
 
         jsonFile = finderDir + '/query-results/' + s.refMS + s.queryCriteria['generated_id'] + '.json'
         jdata = json.dumps(saved_query, ensure_ascii=False)
+        with open(jsonFile, 'w+') as file:
+            file.write(jdata.encode('UTF-8'))
+            file.close()
+
+        s.computeStats()
+
+        jsonFile = finderDir + '/query-results/' + s.refMS + s.queryCriteria['generated_id'] + '-stats.json'
+        jdata = json.dumps(s.stats_data, ensure_ascii=False)
         with open(jsonFile, 'w+') as file:
             file.write(jdata.encode('UTF-8'))
             file.close()

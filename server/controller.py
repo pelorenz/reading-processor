@@ -170,7 +170,19 @@ class Controller:
         with open(r_file, 'r') as file:
             jdata = file.read()
             file.close()
-        jmap = json.loads(jdata)
+        qmap = json.loads(jdata)
+
+        # load query stats
+        r_file = s.config.get('finderFolder') + '/query-results/' + udata.result_id + '-stats.json'
+        with open(r_file, 'r') as file:
+            jdata = file.read()
+            file.close()
+        smap = json.loads(jdata)
+
+        jmap = {
+          'query_results': qmap,
+          'stats_results': smap
+        }
 
         return s.templates.queryresults(jmap)
 
@@ -268,7 +280,19 @@ class Controller:
         with open(r_file, 'r') as file:
             jdata = file.read()
             file.close()
-        jmap = json.loads(jdata)
+        qmap = json.loads(jdata)
+
+        # load query stats
+        r_file = s.config.get('finderFolder') + '/query-results/' + refMSS[0] + query['generated_id'] + '-stats.json'
+        with open(r_file, 'r') as file:
+            jdata = file.read()
+            file.close()
+        smap = json.loads(jdata)
+
+        jmap = {
+          'query_results': qmap,
+          'stats_results': smap
+        }
 
         return s.templates.queryresults(jmap)
 

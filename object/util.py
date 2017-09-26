@@ -193,3 +193,53 @@ def isLatinLayer(greek_counter, latin_counter):
         elif latin_counter >= greek_counter and latin_counter > 0 and greek_counter <= 1:
             is_latin = True
     return is_latin
+
+def sortHauptlisteD(mi1, mi2):
+    pc1 = mi1['D_ratio']
+    pc2 = mi2['D_ratio']
+    if pc1 < pc2:
+        return 1
+    elif pc1 > pc2:
+        return -1
+
+    i1 = abs(mi1['D_instance_count'])
+    i2 = abs(mi2['D_instance_count'])
+    if i1 < i2:
+        return 1
+    elif i1 > i2:
+        return -1
+
+    if mi1.has_key('D_ratio_delta') and mi2.has_key('D_ratio_delta'): 
+        d1 = abs(mi1['D_ratio_delta'])
+        d2 = abs(mi2['D_ratio_delta'])
+        if d1 < d2:
+            return 1
+        elif d1 > d2:
+            return -1
+
+    return 0
+
+def sortHauptlisteL(mi1, mi2):
+    pc1 = mi1['L_ratio']
+    pc2 = mi2['L_ratio']
+    if pc1 < pc2:
+        return 1
+    elif pc1 > pc2:
+        return -1
+
+    i1 = abs(mi1['L_instance_count'])
+    i2 = abs(mi2['L_instance_count'])
+    if i1 < i2:
+        return 1
+    elif i1 > i2:
+        return -1
+
+    if mi1.has_key('L_ratio_delta') and mi2.has_key('L_ratio_delta'): 
+        d1 = abs(mi1['L_ratio_delta'])
+        d2 = abs(mi2['L_ratio_delta'])
+        if d1 < d2:
+            return 1
+        elif d1 > d2:
+            return -1
+
+    return 0
