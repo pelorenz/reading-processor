@@ -27,6 +27,12 @@ class  Reading(object):
     def hasManuscripts(s, ids):
         return len(set(s.manuscripts) & set(ids)) > 0
 
+    def getFirstGreekManuscript(s):
+        for ms in s.manuscripts:
+            if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
+                return ms
+        return None
+
     def getDisplayValue(s):
         if s.displayValue:
             return s.displayValue

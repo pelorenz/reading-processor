@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, collections, json
+from object.util import *
 
 class  ReadingGroup(object):
 
@@ -27,5 +28,23 @@ class  ReadingGroup(object):
     def hasManuscripts(s, ids):
         return set(s.manuscripts) & set(ids) > 0
 
+    def getFirstGreekManuscript(s):
+        mss = sorted(s.manuscripts, cmp=sortMSS)
+        for ms in mss:
+            if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
+                return ms
+        return None
+
+    def getManuscriptReading(s, ms):
+        for reading in s.readings:
+            if reading.hasManuscript(ms):
+                return reading
+        return None
+
     def getDisplayValue(s):
+        first_greek = s.getFirstGreekManuscript()
+        if s.displayValue != 'om.' and re.search(r'[A-Za-z]{1,}', s.displayValue) and first_greek:
+            # choose Greek reading
+            return s.getManuscriptReading(first_greek).getDisplayValue()
+
         return s.displayValue
