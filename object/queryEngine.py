@@ -128,7 +128,7 @@ class QueryEngine:
         else:
             s.getFormsFromReading(reading, t_forms, is_ref)
 
-    def getTextForms(s, v_unit):
+    def getTextForms(s, v_unit, ref_ms):
         # maps of text-form lists keyed by reading unit index
         t_forms = {
             'reference_forms': {},
@@ -140,7 +140,7 @@ class QueryEngine:
             if len(reading.manuscripts) == 0:
                 continue
 
-            is_ref = reading.hasManuscript(s.refMS)
+            is_ref = reading.hasManuscript(ref_ms)
             s.getForms(reading, t_forms, is_ref)
 
         return t_forms
@@ -164,6 +164,9 @@ class QueryEngine:
             if text_forms[forms_key].has_key(key):
                 values.extend(text_forms[forms_key][key])
         return len(set(s.queryCriteria[forms_key]) - set(values)) == 0
+
+    def getGreekReading(s, reading):
+        return ''
 
     def findMatches(s):
         c = s.config
@@ -199,7 +202,7 @@ class QueryEngine:
                     if not layer in find_layers:
                         continue
 
-                    text_forms = s.getTextForms(vu)
+                    text_forms = s.getTextForms(vu, s.refMS)
 
                     has_refs = s.isSubset('reference_forms', text_forms)
                     has_readings = s.isSubset('reading_forms', text_forms)
@@ -213,6 +216,7 @@ class QueryEngine:
                         v_summary['readings'] = []
                         for reading in vu.readings:
                             r_summary = {}
+
                             r_summary['displayValue'] = reading.getDisplayValue()
                             r_summary['manuscripts'] = ' '.join(sorted(reading.manuscripts, cmp=sortMSS))
                             r_summary['mss_string'] = mssListToString(reading.manuscripts)
