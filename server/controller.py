@@ -158,7 +158,7 @@ class Controller:
         with open(q_file, 'r') as file:
             jdata = file.read()
             file.close()
-        jmap = json.loads(jdata, cls=ComplexDecoder)
+        jmap = json.loads(jdata)
         jmap['json_string'] = jdata
         return s.templates.finderui(jmap)
 
@@ -234,9 +234,7 @@ class Controller:
 
         recent_queries.append(udata.generated_id)
         saved_queries['recent_queries'] = recent_queries
-
-        if udata.save_query == '1':
-            saved_queries['query_map'][udata.generated_id] = query
+        saved_queries['query_map'][udata.generated_id] = query
 
         # Run query
         query_engine = QueryEngine()

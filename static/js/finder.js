@@ -1,13 +1,28 @@
 ;DSS.finder = {
   doQuery: function() {
     console.log('Running query');
+
+    var ref_forms = [];
+    if ($("#ref-area").val()) {
+      ref_forms = $("#ref-area").val().split(',');
+    }
+    var read_forms = [];
+    if ($("#read-area").val()) {
+      read_forms = $("#read-area").val().split(',');
+    }
+    var var_forms = [];
+    if ($("#var-area").val()) {
+      var_forms = $("#var-area").val().split(',');
+    }
+    var keys = DSS.finder.generateKeys(ref_forms, read_forms, var_forms);
+
     var data = {
       'reference_forms': $("#ref-area").val(),
       'reading_forms': $("#read-area").val(),
       'variant_forms': $("#var-area").val(),
       'name': $("#name-area").val(),
-      'generated_id': DSS.finder.generated_id,
-      'generated_name': DSS.finder.generated_name
+      'generated_id': keys['gen_id'],
+      'generated_name': keys['gen_name']
     };
     var hasRefMSS = false;
     var checkboxes = $("input[type='checkbox']").filter(function() { return this.id.match(/refms/); })
@@ -24,7 +39,6 @@
     document.getElementById('cblayerM').checked ? data['layer_M'] = 1 : data['layer_M'] = 0;
     document.getElementById('cblayerD').checked ? data['layer_D'] = 1 : data['layer_D'] = 0;
     document.getElementById('cblayerL').checked ? data['layer_L'] = 1 : data['layer_L'] = 0;
-    document.getElementById('cbsave').checked ? data['save_query'] = 1 : data['save_query'] = 0;
 
     $('#query-button').prop("disabled",true);
     $('#messages').text('Please wait ...');
@@ -148,5 +162,61 @@
       error: function(xhr, status, error) {
         $('#messages').html('Error');
     }});
- }
+  },
+  generateKeys: function(ref_forms, read_forms, var_forms) {
+    var gen_id = '';
+    var gen_name = '';
+
+    if (ref_forms && ref_forms.length) {
+      gen_id = gen_id + '_REF';
+      text_str = '';
+      for (var i = 0; i < ref_forms.length; i++) {
+        frm = ref_forms[i];
+        if (text_str.length > 0) text_str = text_str + ',';
+        text_str = text_str + frm;
+        gen_id = gen_id + '_' + frm;
+      }
+      gen_name = gen_name + text_str;
+    }
+
+    if (read_forms && read_forms.length) {
+      gen_id = gen_id + '_READ';
+      text_str = '';
+      for (var i = 0; i < read_forms.length; i++) {
+        frm = read_forms[i];
+        if (text_str.length > 0) text_str = text_str + ',';
+        text_str = text_str + frm;
+        gen_id = gen_id + '_' + frm;
+      }
+      if (text_str.length > 0) {
+        if (gen_name.length > 0) {
+          gen_name = gen_name + '; ';
+        }
+        gen_name = gen_name + 'R: ' + text_str;
+      }
+    }
+
+    if (var_forms && var_forms.length) {
+      gen_id = gen_id + '_VAR';
+      text_str = '';
+      for (var i = 0; i < var_forms.length; i++) {
+        frm = var_forms[i];
+        if (text_str.length > 0) text_str = text_str + ',';
+        text_str = text_str + frm;
+        gen_id = gen_id + '_' + frm;
+      }
+      if (text_str.length > 0) {
+        if (gen_name.length > 0) {
+          gen_name = gen_name + '; ';
+        }
+        gen_name = gen_name + 'V: ' + text_str;
+      }
+    }
+
+    var gen_vals = {
+      'gen_id': gen_id,
+      'gen_name': gen_name
+    };
+    return gen_vals;
+  }
 }
