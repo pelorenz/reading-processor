@@ -215,6 +215,7 @@ class QueryEngine:
                             r_summary = {}
                             r_summary['displayValue'] = reading.getDisplayValue()
                             r_summary['manuscripts'] = ' '.join(sorted(reading.manuscripts, cmp=sortMSS))
+                            r_summary['mss_string'] = mssListToString(reading.manuscripts)
 
                             csv_file.write((r_summary['displayValue'] + u'\t' + r_summary['manuscripts'] + u'\n').encode('UTF-8'))
 
