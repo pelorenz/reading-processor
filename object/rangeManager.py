@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os, string, re, json
+import web, sys, os, string, re, json
 
 from object.jsonDecoder import *
 from object.jsonEncoder import *
@@ -20,7 +20,7 @@ class RangeManager:
         for i, arg in enumerate(args):
             if i > 0: info += ' '
             info += str(arg).strip()
-        print(info)
+        print(info) if not web.isWeb else web.debug(info)
 
     def appendModel(s, base, nmod):
         base['addresses'].extend(nmod['addresses'])

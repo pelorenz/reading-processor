@@ -10,5 +10,7 @@ urls = (
 )
 
 if __name__ == "__main__":
-    app = web.application(urls, globals())
-    app.run()
+    web.app = web.application(urls, globals())
+    web.variantModel = None
+    web.isWeb = True
+    web.app.run()

@@ -8,8 +8,9 @@ $def with (args)
   <link rel="stylesheet" href="static/css/style.css">
   <script src="static/js/jquery-3.2.1.js"></script>
   <script src="static/js/controller.js"></script>
+  <script src="static/js/finder.js"></script>
   <script src="static/js/Chart.js"></script>
-<body>
+<body onload='DSS.initPage()'>
 
   <div id='container'>
     <div id='header'>
@@ -32,15 +33,17 @@ $def with (args)
       </ul>
       <ul class='list3'>
         $for ms in args['config'].get('referenceMSS'):
-            <li><input id='refms$ms' type='checkbox' value='$ms'> $ms
+          <li><input id='refms$ms' type='checkbox' value='$ms'> $ms
       </ul>
       <ul>
         <li>
-          <ul class='list3'>
+          <ul class='list4'>
             <li><a id='canalyze' href='javascript:DSS.clustAnalyze()'>ClustRun</a></li>
             <li><a id='banalyze' href='javascript:DSS.boolAnalyze()'>BoolRun</a>
             </li>
-            <li><a id='multivars' href='javascript:DSS.findVariants()'>MultiVars</a>
+            <li><a id='showdirs' href='javascript:DSS.showDirectories()'>DirsList</a>
+            </li>
+            <li><a id='startfinder' href='javascript:DSS.startFinderInterface()'>Finder</a>
             </li>
           </ul>
           <ul class='list4'>

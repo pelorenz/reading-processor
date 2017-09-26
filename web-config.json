@@ -15,6 +15,7 @@
     "static/stats/",
     "static/segments/"
   ],
+  "defaultRange": "c01-16",
   "boolDir": "C:/Data/Workspace/reading-processor/csv-bool/",
   "dicerFolder": "dicer-results/",
   "finderFolder": "finder-results/",

@@ -19,6 +19,7 @@ class  CommandLine:
         self.parser.add_argument('-Q', '--qca', help='Generate QCA results for segments (dicer).', action='store_true')
         self.parser.add_argument('-O', '--offsets', help='Generate offsets for segments (dicer).', action='store_true')
         self.parser.add_argument('-G', '--segmentConfig', help='Configuration of segment divisions (dicer).', default='default')
+        self.parser.add_argument('-K', '--criteria', help='Criteria for variant search (variantFinder).', default='default')
 
     def getOptions(self):
         dict = vars(self.parser.parse_args())

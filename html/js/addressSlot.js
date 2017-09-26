@@ -703,6 +703,9 @@ DSS.TextFormGroup.prototype.toString = function(){
   return this.textForms.join(' ');
 };
 DSS.TextFormGroup.sortMSS = function (ms1, ms2) {
+  if (ms1 == '19A') ms1 = 'VL19';
+  if (ms2 == '19A') ms2 = 'VL19';
+
   ms1 = ms1.toLowerCase();
   ms2 = ms2.toLowerCase();
   var c1 = ms1.charAt(0);
@@ -769,9 +772,7 @@ DSS.TextFormGroup.sortMSS = function (ms1, ms2) {
   else if (n2 < n1) {
     return 1;
   }
-  else {
-    return 0;
-  }
+  return 0;
 };
 DSS.TextFormGroup.prototype.sortMSS = function() {
   this.sortedMSS = [];
@@ -886,6 +887,8 @@ DSS.ReadingUnit.constructor = DSS.ReadingUnit;
 DSS.ReadingUnit.prototype = Object.create(DSS.AddressSlot.prototype);
 
 DSS.mssListToString = function(mss_list){
+  mss_list.sort(DSS.TextFormGroup.sortMSS);
+
   var g_list = [];
   var l_list = [];
   var has_19A = false;

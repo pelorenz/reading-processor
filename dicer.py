@@ -89,11 +89,11 @@ class Dicer:
 
         s.info('Dicing text')
 
-        c_count = 0
+        c_count = 1
         v_count = 0
         w_count = 0
 
-        cur_c = 0
+        cur_c = 1
         cur_v = 0
         match_forms = ['om.', '-', '~', ' ', '']
 
@@ -108,10 +108,6 @@ class Dicer:
         logfile = s.dicerFolder + ms + '-words.log'
         with open(logfile, 'w+') as file:
             for addr in s.variantModel['addresses']:
-                if int(addr.chapter_num) != cur_c:
-                    cur_c = int(addr.chapter_num)
-                    c_count = c_count + 1
-
                 if addr.verse_num != cur_v:
                     if segment_counter > s.segmentConfig['segmentSize']:
                         segment['end_chapter'] = str(cur_c)
@@ -144,6 +140,10 @@ class Dicer:
 
                     cur_v = addr.verse_num
                     v_count = v_count + 1
+
+                if int(addr.chapter_num) != cur_c:
+                    cur_c = int(addr.chapter_num)
+                    c_count = c_count + 1
 
                 if not segment.has_key('start_verse'):
                     segment['start_chapter'] = str(cur_c)
@@ -265,17 +265,6 @@ class Dicer:
             p.append(s.statsFolder)
             proc = subprocess.Popen(p, env=py3_env, stdout=subprocess.PIPE, shell=True)
             (out, err) = proc.communicate()
-
-    def isLatinLayer(s, greek_counter, latin_counter):
-        is_latin = False
-        if latin_counter >= greek_counter and latin_counter > 2 and greek_counter <= 3:
-            is_latin = True
-        else:
-            if latin_counter >= greek_counter and latin_counter > 1 and greek_counter <= 2:
-                is_latin = True
-            elif latin_counter >= greek_counter and latin_counter > 0 and greek_counter <= 1:
-                is_latin = True
-        return is_latin
 
     c565 = [ '038', '565', '700']
     def isCluster565(s, greek_mss):
@@ -558,7 +547,6 @@ class Dicer:
                         ref_data['majority_count'] = ref_data['majority_count'] + 1
                         continue
 
-
                     reading_info['mss'] = []
                     reading_info['reading_value'] = r_reading.getDisplayValue()
                     latin_mss = []
@@ -584,7 +572,7 @@ class Dicer:
                     reading_info['grouped_apparatus'] = s.groupApparatus(greek_mss, latin_mss)
 
                     # Layer
-                    if (s.isLatinLayer(len(greek_mss), len(latin_mss))):
+                    if isLatinLayer(len(greek_mss), len(latin_mss)):
                         reading_info['L_layer'] = True
                         reading_info['D_layer'] = False
                     else:
@@ -1038,6 +1026,6 @@ class Dicer:
 # Generate regular block-sized segments (default configuration)
 # dicer.py -v -a c01-16 -R 05 -H
 #
-# Generate segments with configuration (e.g. micro configuration)
-# dicer.py -v -a c01-16 -R 05 -G [micro] -H
+# Generate segments with named configuration (e.g. micro configuration)
+# dicer.py -v -a c01-16 -R 05 -G micro -H
 Dicer().main(sys.argv[1:])

@@ -3,6 +3,8 @@ import web, os, json, re
 from object.analyzer import *
 from object.jsonDecoder import *
 from object.qcaRunner import *
+from object.queryEngine import *
+from object.rangeManager import *
 from object.util import *
 
 from utility.config import *
@@ -78,15 +80,6 @@ class Controller:
         result = s.getJSONResult()
         return s.templates.clustresults(result)
 
-    def findVariants(s):
-        finderDir = s.config.get('finderFolder')
-        jsonfile = finderDir + '/c01-16-variants.json'
-        with open(jsonfile, 'r') as file:
-            jdata = file.read()
-            file.close()
-        jmap = json.loads(jdata, cls=ComplexDecoder)
-        return s.templates.rendervariants(jmap)
-
     def switchDir(s):
         udata = web.input()
 
@@ -159,6 +152,127 @@ class Controller:
             jdata = file.read()
             file.close()
         return s.templates.viewsegments(json.loads(jdata))
+
+    def startFinder(s):
+        q_file = s.config.get('finderFolder') + '/query-results/saved-queries.json'
+        with open(q_file, 'r') as file:
+            jdata = file.read()
+            file.close()
+        jmap = json.loads(jdata, cls=ComplexDecoder)
+        jmap['json_string'] = jdata
+        return s.templates.finderui(jmap)
+
+    def fetchresult(s):
+        udata = web.input()
+
+        # load query results
+        r_file = s.config.get('finderFolder') + '/query-results/' + udata.result_id + '.json'
+        with open(r_file, 'r') as file:
+            jdata = file.read()
+            file.close()
+        jmap = json.loads(jdata)
+
+        return s.templates.queryresults(jmap)
+
+    def query(s):
+        udata = web.input()
+
+        refMSS = []
+        for key in udata:
+            if key[:3] == 'rms':
+                refMSS.append(key[3:])
+
+        reference_forms = []
+        if udata.reference_forms:
+            forms = udata.reference_forms.split(',')
+            for form in forms:
+                reference_forms.append(form)
+
+        reading_forms = []
+        if udata.reading_forms:
+            forms = udata.reading_forms.split(',')
+            for form in forms:
+                reading_forms.append(form)
+
+        variant_forms = []
+        if udata.variant_forms:
+            forms = udata.variant_forms.split(',')
+            for form in forms:
+                variant_forms.append(form)
+
+        layers = []
+        if udata.layer_M == '1':
+            layers.append('M')
+        if udata.layer_D == '1':
+            layers.append('D')
+        if udata.layer_L == '1':
+            layers.append('L')
+
+        query = {
+          'name': udata.name,
+          'generated_id': udata.generated_id,
+          'generated_name': udata.generated_name,
+          'reference_forms': reference_forms,
+          'reading_forms': reading_forms,
+          'variant_forms': variant_forms,
+          'layers': layers
+        }
+
+        q_file = s.config.get('finderFolder') + '/query-results/saved-queries.json'
+
+        with open(q_file, 'r') as file:
+            jdata = file.read()
+            file.close()
+
+        saved_queries = json.loads(jdata)
+
+        # Update recent queries
+        recent_queries = []
+        for q in saved_queries['recent_queries']:
+            if saved_queries['query_map'].has_key(q) and q != udata.generated_id:
+                recent_queries.append(q)
+
+        recent_queries.append(udata.generated_id)
+        saved_queries['recent_queries'] = recent_queries
+
+        if udata.save_query == '1':
+            saved_queries['query_map'][udata.generated_id] = query
+
+        # Run query
+        query_engine = QueryEngine()
+        query_engine.refMS = refMSS[0]
+        query_engine.queryCriteria = query
+        query_engine.findMatches()
+
+        # Update recent results
+        recent_results = []
+        for result in saved_queries['recent_results']:
+            result_id = result['result_id']
+            if result_id != refMSS[0] + udata.generated_id:
+                recent_results.append(result)
+
+        result = {
+            'result_id': refMSS[0] + udata.generated_id,
+            'query_name': udata.generated_name,
+            'ref_ms': refMSS[0]
+        }
+        recent_results.append(result)
+        saved_queries['recent_results'] = recent_results
+
+        # Save recent queries, recent results, and (if selected) query criteria
+        jdata = json.dumps(saved_queries, ensure_ascii=False)
+        with open(q_file, 'w+') as file:
+            file.write(jdata.encode('UTF-8'))
+            file.close()
+
+        # load query results
+        r_file = s.config.get('finderFolder') + '/query-results/' + refMSS[0] + query['generated_id'] + '.json'
+        with open(r_file, 'r') as file:
+            jdata = file.read()
+            file.close()
+        jmap = json.loads(jdata)
+
+        return s.templates.queryresults(jmap)
 
     # non-actions
     def getJSONResult(s):
