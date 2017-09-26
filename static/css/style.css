@@ -482,7 +482,7 @@ span.ms032 {
   color: #3bf;
   font-weight: bold;
 }
-#results-layout {
+#results-layout, table.results-layout {
   display: inline-block;
   table-layout: fixed;
   border-collapse: collapse;

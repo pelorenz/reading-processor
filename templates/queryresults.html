@@ -1,6 +1,9 @@
 $def with (jdata)
-  <div class='cluster-heading'>Results $jdata['ref_ms'] $jdata['query_name']</div>
-  $for result in jdata['results']:
+  $code:
+    query_results = jdata['query_results']
+    stats_results = jdata['stats_results']
+  <div class='cluster-heading'>$len(query_results['results']) Results $query_results['ref_ms'] $query_results['query_name']</div>
+  $for result in query_results['results']:
     <div class='result-heading highlight'>$result['label'] $result['layer']</div>
     <table id='results-layout'>
       $for reading in result['readings']:
@@ -9,3 +12,105 @@ $def with (jdata)
         <td class='result-cell'>$reading['mss_string']</td>
       </tr>
     </table>
+
+  <div class='cluster-heading'>Stats</div>
+
+  <div style="display: inline-block;">
+    <div class="result-heading highlight">Greek MSS - D Layer</div>
+    <table class='results-layout'>
+      <tr>
+        <th>MS</th>
+        <th>Ratio</th>
+        <th>Percent</th>
+      </tr>
+    $for ms in stats_results['greek_mss']:
+      $code:
+        row_class = 'X' + ms['manuscript']
+      <tr>
+        <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+        <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
+        <td class='hauptliste-figure'>$ms['D_ratio']</td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="display: inline-block;">
+    <div class="result-heading highlight">Greek MSS - L Layer</div>
+    <table class='results-layout'>
+      <tr>
+        <th>MS</th>
+        <th>Ratio</th>
+        <th>Percent</th>
+      </tr>
+    $for ms in stats_results['greek_mss_Lsort']:
+      $code:
+        row_class = 'X' + ms['manuscript']
+      <tr>
+        <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+        <td class='hauptliste-figure'>$ms['L_instance_count'] / $ms['L_count']</td>
+        <td class='hauptliste-figure'>$ms['L_ratio']</td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="display: inline-block;">
+    <div class="result-heading highlight">Latin MSS - D Layer</div>
+    <table class='results-layout'>
+      <tr>
+        <th>MS</th>
+        <th>Ratio</th>
+        <th>Percent</th>
+      </tr>
+    $for ms in stats_results['latin_mss']:
+      $code:
+        row_class = ''
+        if ms['manuscript'] == 'VL8':
+          row_class = 'VL'
+        elif ms['manuscript'] == 'vg':
+          row_class = 'vg'
+        else:
+          if ms['manuscript'] == 'VL1' or ms['manuscript'] == 'VL2':
+            row_class = 'af'
+          elif ms['manuscript'] == 'VL3' or ms['manuscript'] == 'VL16':
+            row_class = 'eu'
+          else:
+            if ms['manuscript'] == 'VL5':
+              row_class = 'VL5'
+      <tr>
+        <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+        <td class='hauptliste-figure'>$ms['D_instance_count'] / $ms['D_count']</td>
+        <td class='hauptliste-figure'>$ms['D_ratio']</td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="display: inline-block;">
+    <div class="result-heading highlight">Latin MSS - L Layer</div>
+    <table class='results-layout'>
+      <tr>
+        <th>MS</th>
+        <th>Ratio</th>
+        <th>Percent</th>
+      </tr>
+    $for ms in stats_results['latin_mss_Lsort']:
+      $code:
+        row_class = ''
+        if ms['manuscript'] == 'VL8':
+          row_class = 'VL'
+        elif ms['manuscript'] == 'vg':
+          row_class = 'vg'
+        else:
+          if ms['manuscript'] == 'VL1' or ms['manuscript'] == 'VL2':
+            row_class = 'af'
+          elif ms['manuscript'] == 'VL3' or ms['manuscript'] == 'VL16':
+            row_class = 'eu'
+          else:
+            if ms['manuscript'] == 'VL5':
+              row_class = 'VL5'
+      <tr>
+        <td class='hauptliste-ms $row_class'>$ms['manuscript']</td>
+        <td class='hauptliste-figure'>$ms['L_instance_count'] / $ms['L_count']</td>
+        <td class='hauptliste-figure'>$ms['L_ratio']</td>
+      </tr>
+    </table>
+  </div>

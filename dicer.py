@@ -11,54 +11,6 @@ from object.util import *
 from utility.config import *
 from utility.options import *
 
-def sortHauptlisteD(mi1, mi2):
-    pc1 = mi1['D_ratio']
-    pc2 = mi2['D_ratio']
-    if pc1 < pc2:
-        return 1
-    elif pc1 > pc2:
-        return -1
-
-    i1 = abs(mi1['D_instance_count'])
-    i2 = abs(mi2['D_instance_count'])
-    if i1 < i2:
-        return 1
-    elif i1 > i2:
-        return -1
-
-    d1 = abs(mi1['D_ratio_delta'])
-    d2 = abs(mi2['D_ratio_delta'])
-    if d1 < d2:
-        return 1
-    elif d1 > d2:
-        return -1
-
-    return 0
-
-def sortHauptlisteL(mi1, mi2):
-    pc1 = mi1['L_ratio']
-    pc2 = mi2['L_ratio']
-    if pc1 < pc2:
-        return 1
-    elif pc1 > pc2:
-        return -1
-
-    i1 = abs(mi1['L_instance_count'])
-    i2 = abs(mi2['L_instance_count'])
-    if i1 < i2:
-        return 1
-    elif i1 > i2:
-        return -1
-
-    d1 = abs(mi1['L_ratio_delta'])
-    d2 = abs(mi2['L_ratio_delta'])
-    if d1 < d2:
-        return 1
-    elif d1 > d2:
-        return -1
-
-    return 0
-
 class Dicer:
 
     def __init__(s):
