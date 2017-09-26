@@ -35,6 +35,16 @@
         $('#query-button').prop("disabled", false);
         $('#content').empty();
         $('#content').html(response);
+
+        $.ajax({url: '/app/startFinder',
+          success: function(response) {
+            $('#messages').text('Done!');
+            $('#dirslist').empty();
+            $('#dirslist').html(response);
+          },
+          error: function(xhr, status, error) {
+            $('#messages').html('Error');
+        }});
       },
       error: function(xhr, status, error) {
         $('#messages').html('Error');

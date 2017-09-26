@@ -25,6 +25,43 @@ def makeParts(v):
         parts.append(lastpart)
     return parts
 
+def mssListToString(mss_list):
+    mss_list = sorted(mss_list, cmp=sortMSS)
+
+    g_list = []
+    l_list = []
+    has_19A = False
+    has_vg = False
+    for ms in mss_list:
+        if ms[:2] == 'VL':
+            l_list.append(ms[2:])
+        elif ms == '19A':
+            has_19A = True
+        else:
+            if ms == 'vg':
+                has_vg = True
+            else:
+                g_list.append(ms)
+
+    if has_19A:
+        l_list.append('19A')
+
+    mss_str = ''
+    if len(g_list) > 0:
+        mss_str = ' '.join(g_list)
+
+    if len(l_list) > 0:
+        if len(mss_str) > 0:
+            mss_str = mss_str + ' '
+        mss_str = mss_str + 'VL(' + ' '.join(l_list) + ')'
+
+    if has_vg:
+        if len(mss_str) > 0:
+            mss_str = mss_str + ' '
+        mss_str = mss_str + 'vg'
+
+    return mss_str
+
 def sortMSS(ms1, ms2):
     ms1 = ms1.lower()
     ms2 = ms2.lower()
