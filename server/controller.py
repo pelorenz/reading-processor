@@ -194,12 +194,6 @@ class Controller:
             if key[:3] == 'rms':
                 refMSS.append(key[3:])
 
-        reference_forms = []
-        if udata.reference_forms:
-            forms = udata.reference_forms.split(',')
-            for form in forms:
-                reference_forms.append(form)
-
         reading_forms = []
         if udata.reading_forms:
             forms = udata.reading_forms.split(',')
@@ -224,9 +218,10 @@ class Controller:
           'name': udata.name,
           'generated_id': udata.generated_id,
           'generated_name': udata.generated_name,
-          'reference_forms': reference_forms,
           'reading_forms': reading_forms,
+          'read_op': udata.read_op,
           'variant_forms': variant_forms,
+          'var_op': udata.var_op,
           'layers': layers
         }
 

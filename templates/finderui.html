@@ -15,14 +15,6 @@ $def with (jdata)
       cur_key = jdata['recent_queries'][0]
       if jdata['query_map'].has_key(cur_key):
         cur_criteria = jdata['query_map'][cur_key]
-  <div class='highlight'>Reference Forms:</div>
-  $code:
-    ref_str = ''
-    if cur_criteria.has_key('reference_forms'):
-      for word in cur_criteria['reference_forms']:
-        if len(ref_str) > 0: ref_str = ref_str + ','
-        ref_str = ref_str + word
-  <textarea id='ref-area' rows="2" cols="35">$ref_str</textarea>
   <div class='highlight'>Reading Forms:</div>
   $code:
     read_str = ''
@@ -31,6 +23,13 @@ $def with (jdata)
         if len(read_str) > 0: read_str = read_str + ','
         read_str = read_str + word
   <textarea id='read-area' rows="2" cols="35">$read_str</textarea>
+  <ul class='list3'>
+    <li><input id='rbReadOpAnd' type='radio' name="rbReadOp" value='and'> 
+    <label for="rbReadOpAnd">AND</label>
+    <li><input id='rbReadOpOr' type='radio' name="rbReadOp" value='or'>
+    <label for="rbReadOpOr">OR</label>
+    <li>
+  </ul>
   <div class='highlight'>Variant Forms:</div>
   $code:
     var_str = ''
@@ -39,6 +38,13 @@ $def with (jdata)
         if len(var_str) > 0: var_str = var_str + ','
         var_str = var_str + word
   <textarea id='var-area' rows="2" cols="35">$var_str</textarea>
+  <ul class='list3'>
+    <li><input id='rbVarOpAnd' type='radio' name="rbVarOp" value='and'> 
+    <label for="rbVarOpAnd">AND</label>
+    <li><input id='rbVarOpOr' type='radio' name="rbVarOp" value='or'>
+    <label for="rbVarOpOr">OR</label>
+    <li>
+  </ul>
   <div class='highlight'>Layers:</div>
   $code:
     m_checked = ''
