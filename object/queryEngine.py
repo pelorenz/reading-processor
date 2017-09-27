@@ -133,81 +133,25 @@ class QueryEngine:
 
         return 'L' if isLatinLayer(len(greek_mss), len(latin_mss)) else 'D'
 
-    def getRUTextForms(s, r_unit, ru_idx, t_forms, is_ref):
-        addr = s.lookupAddr(r_unit)
-
-        for t_form in addr.sorted_text_forms:
-            if type(t_form) is TextFormGroup:
-                s_forms = []
-                match_form = None
-                for s_form in t_form.textForms:
-                    if s_form.form == r_unit.text:
-                        match_form = s_form.form
-                    else:
-                        if s_form.form != 'om.':
-                            s_forms.append(s_form.form)
-
-                if match_form:
-                    if is_ref:
-                        s.appendForm(match_form, t_forms['reference_forms'], ru_idx)
-
-                        s.extendForms(s_forms, t_forms['reading_forms'], ru_idx)
-                    else:
-                        s_forms.append(match_form)
-                        s.extendForms(s_forms, t_forms['variant_forms'], ru_idx)
-                    break
-            else:
-                if t_form.form == r_unit.text:
-                    if is_ref:
-                        if s.refMS in t_form.linked_mss:
-                            s.appendForm(t_form.form, t_forms['reference_forms'], ru_idx)
-                        else:
-                            s.appendForm(t_form.form, t_forms['reading_forms'], ru_idx)
-                    else:
-                        s.appendForm(t_form.form, t_forms['variant_forms'], ru_idx)
-                    break
-
-    def appendForm(s, form, form_map, key):
-        if not form_map.has_key(key):
-            form_map[key] = []
-        if not form in form_map[key] and form != 'om.':
-            form_map[key].append(form)
-
-    def extendForms(s, forms, form_map, key):
-        if not form_map.has_key(key):
-            form_map[key] = []
-        form_map[key] = list(set(form_map[key]) | set(forms))
-
-    # accepts only reading (not readingGroup)
-    def getFormsFromReading(s, reading, t_forms, is_ref):
-        if not type(reading) is Reading:
-            return
-
-        for idx, ru in enumerate(reading.readingUnits):
-            s.getRUTextForms(ru, idx, t_forms, is_ref)
-
-    # accepts reading or readingGroup
-    def getForms(s, reading, t_forms, is_ref):
-        if type(reading) is ReadingGroup:
-            for s_rdg in reading.readings:
-                s.getFormsFromReading(s_rdg, t_forms, is_ref)
-        else:
-            s.getFormsFromReading(reading, t_forms, is_ref)
-
-    def getTextForms(s, v_unit, ref_ms):
+    def getTextForms(s, v_unit):
         # maps of text-form lists keyed by reading unit index
         t_forms = {
-            'reference_forms': {},
-            'reading_forms': {},
-            'variant_forms': {}
+            'reading_forms': [],
+            'variant_forms': []
         }
 
-        for reading in v_unit.readings:
-            if len(reading.manuscripts) == 0:
-                continue
+        r_reading = v_unit.getReadingForManuscript(s.refMS)
+        reading_tokens = r_reading.getAllTokens()
 
-            is_ref = reading.hasManuscript(ref_ms)
-            s.getForms(reading, t_forms, is_ref)
+        r_iter = r_reading if type(r_reading) is Reading else r_reading.readings[0]
+        for ru in r_iter.readingUnits:
+            addr = s.lookupAddr(ru)
+            t_forms['reading_forms'].extend(addr.getMatchingForms(reading_tokens))
+
+            t_forms['variant_forms'].extend(addr.getAllForms())
+
+        t_forms['reading_forms'] = list(set(t_forms['reading_forms']))
+        t_forms['variant_forms'] = list(set(t_forms['variant_forms']))
 
         return t_forms
 
@@ -215,21 +159,13 @@ class QueryEngine:
         if not s.queryCriteria.has_key(forms_key) or len(s.queryCriteria[forms_key]) == 0:
             return True
 
-        values = []
-        for key, val in text_forms[forms_key].iteritems():
-            if text_forms[forms_key].has_key(key):
-                values.extend(text_forms[forms_key][key])
-        return len(set(s.queryCriteria[forms_key]) & set(values)) > 0
+        return len(set(s.queryCriteria[forms_key]) & set(text_forms[forms_key])) > 0
 
     def isSubset(s, forms_key, text_forms):
         if not s.queryCriteria.has_key(forms_key) or len(s.queryCriteria[forms_key]) == 0:
             return True
 
-        values = []
-        for key, val in text_forms[forms_key].iteritems():
-            if text_forms[forms_key].has_key(key):
-                values.extend(text_forms[forms_key][key])
-        return len(set(s.queryCriteria[forms_key]) - set(values)) == 0
+        return len(set(s.queryCriteria[forms_key]) - set(text_forms[forms_key])) == 0
 
     def getGreekReading(s, reading):
         return ''
@@ -270,18 +206,28 @@ class QueryEngine:
                     if not layer in find_layers:
                         continue
 
-                    text_forms = s.getTextForms(vu, s.refMS)
+                    if addr.chapter_num == "12" and addr.verse_num == 17 and addr.addr_idx == 1:
+                        i = 0
+                        j = 1
+                        k = i + j
 
-                    #if addr.chapter_num == "8" and addr.verse_num == 29 and addr.addr_idx == 1:
-                    #    i = 0
-                    #    j = 1
-                    #    k = i + j
+                    text_forms = s.getTextForms(vu)
 
-                    has_refs = s.isSubset('reference_forms', text_forms)
-                    has_readings = s.isSubset('reading_forms', text_forms)
-                    has_variants = s.isIntersection('variant_forms', text_forms)
+                    if not s.queryCriteria.has_key('read_op'):
+                        s.queryCriteria['read_op'] = 'and'
+                    if s.queryCriteria['read_op'] == 'and':
+                        has_readings = s.isSubset('reading_forms', text_forms)
+                    else:
+                        has_readings = s.isIntersection('reading_forms', text_forms)
 
-                    if not has_refs or not has_readings or not has_variants:
+                    if not s.queryCriteria.has_key('var_op'):
+                        s.queryCriteria['var_op'] = 'and'
+                    if s.queryCriteria['var_op'] == 'and':
+                        has_variants = s.isSubset('variant_forms', text_forms) 
+                    else:
+                        has_variants = s.isIntersection('variant_forms', text_forms)
+
+                    if not has_readings or not has_variants:
                         continue
 
                     # query results

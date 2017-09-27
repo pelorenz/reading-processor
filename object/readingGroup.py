@@ -48,3 +48,9 @@ class  ReadingGroup(object):
             return s.getManuscriptReading(first_greek).getDisplayValue()
 
         return s.displayValue
+
+    def getAllTokens(s):
+        values = []
+        for reading in s.readings:
+            values.extend(reading.getAllTokens())
+        return list(set(values))

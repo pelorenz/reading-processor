@@ -54,3 +54,9 @@ class  Reading(object):
             txt_str = txt_str + ru.text
 
         return txt_str
+
+    def getAllTokens(s):
+        values = []
+        for ru in s.readingUnits:
+            values.append(ru.text)
+        return values

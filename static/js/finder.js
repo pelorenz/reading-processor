@@ -2,10 +2,6 @@
   doQuery: function() {
     console.log('Running query');
 
-    var ref_forms = [];
-    if ($("#ref-area").val()) {
-      ref_forms = $("#ref-area").val().split(',');
-    }
     var read_forms = [];
     if ($("#read-area").val()) {
       read_forms = $("#read-area").val().split(',');
@@ -14,12 +10,13 @@
     if ($("#var-area").val()) {
       var_forms = $("#var-area").val().split(',');
     }
-    var keys = DSS.finder.generateKeys(ref_forms, read_forms, var_forms);
+    var keys = DSS.finder.generateKeys(read_forms, var_forms);
 
     var data = {
-      'reference_forms': $("#ref-area").val(),
       'reading_forms': $("#read-area").val(),
+      'read_op': $("[name='rbReadOp']:checked").val(),
       'variant_forms': $("#var-area").val(),
+      'var_op': $("[name='rbVarOp']:checked").val(),
       'name': $("#name-area").val(),
       'generated_id': keys['gen_id'],
       'generated_name': keys['gen_name']
@@ -70,23 +67,6 @@
     var c_id = $('#finder-select option:selected').val().trim();
     var criteria = DSS.finder.queryBase.query_map[c_id];
 
-    var ref_forms = criteria['reference_forms'];
-    if (ref_forms) {
-      gen_id = gen_id + '_REF';
-      text_str = '';
-      for (var i = 0; i < ref_forms.length; i++) {
-        frm = ref_forms[i];
-        if (text_str.length > 0) text_str = text_str + ',';
-        text_str = text_str + frm;
-        gen_id = gen_id + '_' + frm;
-      }
-      gen_name = gen_name + text_str;
-      $("#ref-area").val(text_str);
-    }
-    else {
-      $("#ref-area").val('');
-    }
-
     var read_forms = criteria['reading_forms'];
     if (read_forms) {
       gen_id = gen_id + '_READ';
@@ -131,6 +111,20 @@
       $("#var-area").val('');
     }
 
+    if (criteria['read_op'] && criteria['read_op'] == 'or') {
+      document.getElementById("rbReadOpOr").checked = true;
+    }
+    else {
+      document.getElementById("rbReadOpAnd").checked = true;
+    }
+
+    if (criteria['var_op'] && criteria['var_op'] == 'or') {
+      document.getElementById("rbVarOpOr").checked = true;
+    }
+    else {
+      document.getElementById("rbVarOpAnd").checked = true;
+    }
+
     var layers = criteria['layers'];
     if (layers) {
       layers.indexOf('M') >= 0 ? document.getElementById('cblayerM').checked = true : document.getElementById('cblayerM').checked = false;
@@ -163,21 +157,9 @@
         $('#messages').html('Error');
     }});
   },
-  generateKeys: function(ref_forms, read_forms, var_forms) {
+  generateKeys: function(read_forms, var_forms) {
     var gen_id = '';
     var gen_name = '';
-
-    if (ref_forms && ref_forms.length) {
-      gen_id = gen_id + '_REF';
-      text_str = '';
-      for (var i = 0; i < ref_forms.length; i++) {
-        frm = ref_forms[i];
-        if (text_str.length > 0) text_str = text_str + ',';
-        text_str = text_str + frm;
-        gen_id = gen_id + '_' + frm;
-      }
-      gen_name = gen_name + text_str;
-    }
 
     if (read_forms && read_forms.length) {
       gen_id = gen_id + '_READ';
