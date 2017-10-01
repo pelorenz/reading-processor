@@ -5,8 +5,16 @@ from object.jsonDecoder import *
 from utility.config import *
 
 def sortLabels(lab1, lab2):
-    r1 = 'c' + re.search(r'^Mark (\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab1).group(1)
-    r2 = 'c' + re.search(r'^Mark (\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab2).group(1)
+    i1 = 'c' + re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab1).group(1)
+    i2 = 'c' + re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab2).group(1)
+
+    if i1 < i2:
+        return -1
+    elif i1 > i2:
+        return 1
+
+    r1 = 'c' + re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab1).group(2)
+    r2 = 'c' + re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab2).group(2)
 
     pos1 = 1000
     ranges = Util().config.get('ranges')
@@ -22,8 +30,8 @@ def sortLabels(lab1, lab2):
     elif pos1 > pos2:
         return 1
 
-    ms1 = re.search(r'^Mark (\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab1).group(2)
-    ms2 = re.search(r'^Mark (\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab2).group(2)
+    ms1 = re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab1).group(3)
+    ms2 = re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab2).group(3)
 
     if ms1[:1] == '0' and ms2[:1] != '0':
         return -1
@@ -48,8 +56,8 @@ def sortLabels(lab1, lab2):
         elif ms1[:1] != 'v' and ms2[:1] == 'v':
             return -1
 
-    cod1 = re.search(r'^Mark (\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab1).group(3)
-    cod2 = re.search(r'^Mark (\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab2).group(3)
+    cod1 = re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab1).group(4)
+    cod2 = re.search(r'^([A-Za-z ]+)(\d{2,2}\-{0,1}\d{0,2})(\-\d{1,4})([A-Z].*)$', lab2).group(4)
 
     if cod1 < cod2:
         return -1

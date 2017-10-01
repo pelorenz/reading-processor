@@ -20,7 +20,10 @@ class RangeManager:
         for i, arg in enumerate(args):
             if i > 0: info += ' '
             info += str(arg).strip()
-        print(info) if not web.isWeb else web.debug(info)
+        if web and hasattr(web, 'isWeb') and web.isWeb:
+            web.debug(info)
+        else:
+            print(info) 
 
     def appendModel(s, base, nmod):
         base['addresses'].extend(nmod['addresses'])

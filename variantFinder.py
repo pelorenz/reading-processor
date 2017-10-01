@@ -20,9 +20,10 @@ class VariantFinder:
         s.multipleVariants = { "variant_count": 0, "variant_list": [] }
 
         s.refMS_IDs = []
-        s.refMS_ID = None # choose first ID
+        s.refMS = None # choose first ID
 
         s.addrLookup = {}
+        s.layer = 'L'
         s.queryCriteria = None
         s.finderMatches = []
 
@@ -44,15 +45,12 @@ class VariantFinder:
         for addr in s.variantModel['addresses']:
             s.addrLookup[s.getAddrKey(addr)] = addr
 
-    def computeLayer(s, reading):
+    def computeLayer(s, reading, greek_mss, latin_mss):
         if reading.hasManuscript('35'):
             return 'M'
 
-        latin_mss = []
-        greek_mss = []
-
         for ms in reading.manuscripts:
-            if ms == s.refMS_ID:
+            if ms == s.refMS:
                 continue
 
             if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
@@ -89,7 +87,7 @@ class VariantFinder:
             else:
                 if t_form.form == r_unit.text:
                     if is_ref:
-                        if s.refMS_ID in t_form.linked_mss:
+                        if s.refMS in t_form.linked_mss:
                             s.appendForm(t_form.form, t_forms['reference_forms'], ru_idx)
                         else:
                             s.appendForm(t_form.form, t_forms['reading_forms'], ru_idx)
@@ -136,7 +134,7 @@ class VariantFinder:
             if len(reading.manuscripts) == 0:
                 continue
 
-            is_ref = reading.hasManuscript(s.refMS_ID)
+            is_ref = reading.hasManuscript(s.refMS)
             s.getForms(reading, t_forms, is_ref)
 
         return t_forms
@@ -182,15 +180,17 @@ class VariantFinder:
                     if vu.isSingular():
                         continue
 
-                    if vu.isReferenceSingular(s.refMS_ID):
+                    if vu.isReferenceSingular(s.refMS):
                         continue
 
-                    r_reading = vu.getReadingForManuscript(s.refMS_ID)
+                    r_reading = vu.getReadingForManuscript(s.refMS)
 
                     if not r_reading:
                         continue
 
-                    layer = s.computeLayer(r_reading)
+                    latin_mss = []
+                    greek_mss = []
+                    layer = s.computeLayer(r_reading, greek_mss, latin_mss)
                     find_layers = s.queryCriteria['layers']
                     if not layer in find_layers:
                         continue
@@ -247,7 +247,7 @@ class VariantFinder:
                 c_groups = c.get('coreGroups')
                 for reading in vu.readings:
                     # determine layer in ref MS
-                    if reading.hasManuscript(s.refMS_ID) and not reading.hasManuscript('35'):
+                    if reading.hasManuscript(s.refMS) and not reading.hasManuscript('35'):
                         is_DL_layer = True
 
                     r_wrapper = {}
@@ -323,6 +323,53 @@ class VariantFinder:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
+    def generateLayerApparatus(s, layer):
+        c = s.config
+        s.info('Generating layer apparatus')
+
+        csvFile = c.get('finderFolder') + '/' + s.refMS + '-apparatus-' + layer + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            csv_file.write('Reference\tReadings\tReading Count\tGreek Count\tLatin Count\tMSS\tLayer\tApparatus\n')
+            for addr in s.variantModel['addresses']:
+                for vu in addr.variation_units:
+                    if not vu.startingAddress:
+                        vu.startingAddress = addr
+
+                    r_layer = ''
+                    if vu.isReferenceSingular(s.refMS):
+                        if layer != 'L':
+                            continue
+                        r_layer = 'S'
+                    elif vu.isSingular():
+                        continue
+
+                    r_reading = vu.getReadingForManuscript(s.refMS)
+                    if not r_reading:
+                        continue
+
+                    latin_mss = []
+                    greek_mss = []
+                    if r_layer != 'S':
+                        r_layer = s.computeLayer(r_reading, greek_mss, latin_mss)
+                        if r_layer != layer:
+                            continue
+
+                    r_mss = mssListToString(r_reading.manuscripts)
+
+                    all_readings = ''
+                    all_readings = all_readings + r_reading.getDisplayValue()
+                    for reading in vu.readings:
+                        if reading == r_reading:
+                            continue
+
+                        if len(all_readings) > 0:
+                            all_readings = all_readings + ' | '
+                        all_readings = all_readings + reading.getDisplayValue()
+
+                    csv_file.write((vu.label + u'\t' + all_readings + u'\t' + str(len(vu.readings)) + u'\t' + str(len(greek_mss)) + u'\t' + str(len(latin_mss)) + u'\t' + r_mss + u'\t' + r_layer + u'\t' + vu.toApparatusString() + u'\n').encode('UTF-8'))
+
+            csv_file.close()
+
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
@@ -333,7 +380,7 @@ class VariantFinder:
             s.refMS_IDs = c.get('referenceMSS')
 
         if s.refMS_IDs and len(s.refMS_IDs) > 0:
-            s.refMS_ID = s.refMS_IDs[0]
+            s.refMS = s.refMS_IDs[0]
 
         if o.range:
             s.range_id = o.range
@@ -343,18 +390,24 @@ class VariantFinder:
         if o.criteria:
             s.queryCriteria = c.get('queryCriteria')[o.criteria]
 
+        if o.layer and o.layer not in ['L', 'D', 'M']:
+            s.info('If specified, layer must be one of \'L\', \'D\', or \'M\'')
+            return
+
         # load variant data
         s.rangeMgr = RangeManager()
         s.rangeMgr.load()
 
         s.variantModel = s.rangeMgr.getModel(s.range_id)
 
-        if not s.queryCriteria:
-            s.findMultiwayVariants()
-            s.saveMultiwayVariants()
-        else:
+        if s.queryCriteria:
             s.initAddrLookup()
             s.findCriteria()
+        elif o.layer:
+            s.generateLayerApparatus(o.layer)
+        else:
+            s.findMultiwayVariants()
+            s.saveMultiwayVariants()
 
         s.info('Done')
 

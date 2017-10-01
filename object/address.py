@@ -160,7 +160,7 @@ class  Address(AddressSlot):
                 if f_obj.form and f_obj.form != '' and f_obj.form in tokens:
                     values.append(f_obj.form)
 
-        return values
+        return list(set(values))
 
     def getAllForms(s):
         values = []
@@ -173,4 +173,37 @@ class  Address(AddressSlot):
                 if f_obj.form and f_obj.form != '':
                     values.append(f_obj.form)
 
-        return values
+        return list(set(values))
+
+    def getMatchingLemmas(s, tokens):
+        lemmas = []
+        for f_obj in s.sorted_text_forms:
+            if type(f_obj) is TextFormGroup:
+                g_frms = []
+                is_match = False
+                for frm in f_obj.textForms:
+                    if frm.form and frm.form != '':
+                        if frm.form in tokens:
+                            is_match = True
+                        g_frms.append(frm)
+                if is_match:
+                    for frm in g_frms:
+                        lemmas.extend(frm.getLemmas())
+            else: # TextForm
+                if f_obj.form and f_obj.form != '' and f_obj.form in tokens:
+                    lemmas.extend(f_obj.getLemmas())
+
+        return list(set(lemmas))
+
+    def getAllLemmas(s):
+        lemmas = []
+        for f_obj in s.sorted_text_forms:
+            if type(f_obj) is TextFormGroup:
+                for frm in f_obj.textForms:
+                    if frm.form and frm.form != '':
+                        lemmas.extend(frm.getLemmas())
+            else: # TextForm
+                if f_obj.form and f_obj.form != '':
+                    lemmas.extend(f_obj.getLemmas())
+
+        return list(set(lemmas))

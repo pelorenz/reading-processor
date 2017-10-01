@@ -61,6 +61,14 @@ class  VariationUnit(object):
 
         return nonSing > 2
 
+    def toApparatusString(s):
+        app_str = ''
+        for reading in s.readings:
+            if len(app_str):
+                app_str = app_str + ' '
+            app_str = app_str + reading.toApparatusString()
+        return app_str
+
     def getReadingSnippet(s, rdg):
         snippet = rdg.getDisplayValue()
         if len(snippet) > 50:

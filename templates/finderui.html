@@ -60,12 +60,13 @@ $def with (jdata)
         l_checked = 'checked'
   <ul class='list3'>
     <li><input id='cblayerM' type='checkbox' value='M' $m_checked> M
-    <li><input id='cblayerD' type='checkbox' value='M' $d_checked> D
-    <li><input id='cblayerL' type='checkbox' value='M' $l_checked> L
+    <li><input id='cblayerD' type='checkbox' value='D' $d_checked> D
+    <li><input id='cblayerL' type='checkbox' value='L' $l_checked> L
   </ul>
   <div class='highlight'>Name:</div>
   <textarea id='name-area' rows="1" cols="35">$cur_key</textarea>
-  <ul>
+  <ul class='list2'>
+    <li><input id='cblemma' type='checkbox' value='L'> Lemma
     <li><button id='query-button' type='button' onclick='DSS.finder.doQuery()'> Find
   </ul>
   <div class="highlight">Recent Results</div>
