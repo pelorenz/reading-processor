@@ -11,6 +11,7 @@ urls = (
 
 if __name__ == "__main__":
     web.app = web.application(urls, globals())
+    web.morphCache = None
     web.variantModel = None
     web.isWeb = True
     web.app.run()

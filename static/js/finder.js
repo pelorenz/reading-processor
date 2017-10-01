@@ -10,6 +10,11 @@
     if ($("#var-area").val()) {
       var_forms = $("#var-area").val().split(',');
     }
+    if (!var_forms.length && !read_forms.length) {
+      $('#messages').text('Please enter some search text.');
+      return;
+    }
+
     var keys = DSS.finder.generateKeys(read_forms, var_forms);
 
     var data = {
@@ -36,6 +41,8 @@
     document.getElementById('cblayerM').checked ? data['layer_M'] = 1 : data['layer_M'] = 0;
     document.getElementById('cblayerD').checked ? data['layer_D'] = 1 : data['layer_D'] = 0;
     document.getElementById('cblayerL').checked ? data['layer_L'] = 1 : data['layer_L'] = 0;
+
+    document.getElementById('cblemma').checked ? data['is_lemma'] = 1 : data['is_lemma'] = 0;
 
     $('#query-button').prop("disabled",true);
     $('#messages').text('Please wait ...');
@@ -131,6 +138,8 @@
       layers.indexOf('D') >= 0 ? document.getElementById('cblayerD').checked = true : document.getElementById('cblayerD').checked = false;
       layers.indexOf('L') >= 0 ? document.getElementById('cblayerL').checked = true : document.getElementById('cblayerL').checked = false;
     }
+
+    criteria['is_lemma'] ? document.getElementById('cblemma').checked = true : document.getElementById('cblemma').checked = false;
 
     $("#name-area").val(criteria['generated_name']);
 

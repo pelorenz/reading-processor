@@ -214,6 +214,10 @@ class Controller:
         if udata.layer_L == '1':
             layers.append('L')
 
+        is_lemma = False
+        if udata.is_lemma == '1':
+            is_lemma = True
+
         query = {
           'name': udata.name,
           'generated_id': udata.generated_id,
@@ -222,7 +226,8 @@ class Controller:
           'read_op': udata.read_op,
           'variant_forms': variant_forms,
           'var_op': udata.var_op,
-          'layers': layers
+          'layers': layers,
+          'is_lemma': is_lemma
         }
 
         q_file = s.config.get('finderFolder') + '/query-results/saved-queries.json'
@@ -264,7 +269,7 @@ class Controller:
         recent_results.append(result)
         saved_queries['recent_results'] = recent_results
 
-        # Save recent queries, recent results, and (if selected) query criteria
+        # Save recent queries, recent results, and query criteria
         jdata = json.dumps(saved_queries, ensure_ascii=False)
         with open(q_file, 'w+') as file:
             file.write(jdata.encode('UTF-8'))

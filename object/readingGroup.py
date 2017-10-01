@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, collections, json
-from object.util import *
+from util import *
 
 class  ReadingGroup(object):
 
@@ -40,6 +40,13 @@ class  ReadingGroup(object):
             if reading.hasManuscript(ms):
                 return reading
         return None
+
+    def toApparatusString(s):
+        mss_str = ''
+        if len(s.manuscripts):
+            mss_str = s.getDisplayValue() + '] ' + mssListToString(s.manuscripts)
+
+        return mss_str
 
     def getDisplayValue(s):
         first_greek = s.getFirstGreekManuscript()

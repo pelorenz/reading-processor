@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, collections, json
+from util import *
 
 class  Reading(object):
 
@@ -32,6 +33,13 @@ class  Reading(object):
             if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
                 return ms
         return None
+
+    def toApparatusString(s):
+        mss_str = ''
+        if len(s.manuscripts):
+            mss_str = s.getDisplayValue() + '] ' + mssListToString(s.manuscripts)
+
+        return mss_str
 
     def getDisplayValue(s):
         if s.displayValue:

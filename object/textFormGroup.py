@@ -21,6 +21,12 @@ class  TextFormGroup(object):
     def getForm(s):
         return s.mainForm
 
+    def getLemmas(s):
+        lemmas = []
+        for frm in s.textForms:
+            lemmas.extend(frm.getLemmas())
+        return list(set(lemmas))
+
     def initMSS(s):
         s.linked_mss = []
         for frm in s.textForms:

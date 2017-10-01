@@ -29,7 +29,7 @@ class  TextForm(object):
         # morph str
         s.morphstr = mstr
 
-        # leema str
+        # lemma str
         s.lemmastr = lstr
 
         # morphology data
@@ -90,6 +90,24 @@ class  TextForm(object):
             return 'om.'
         else:
             return s.form
+
+    def getLemmas(s):
+        lemmas = []
+        if not s.form or not TextForm.morph_cache:
+            return lemmas
+
+        if not TextForm.morph_cache.has_key(s.form):
+            return lemmas
+
+        if s.isIgnoreMorph(s.form):
+            return lemmas
+
+        morphs = TextForm.morph_cache[s.form]
+        for morph in morphs:
+            if morph.has_key('lemma') and not morph['lemma'] in lemmas:
+                lemmas.append(morph['lemma'])
+
+        return lemmas
 
     def concatManuscripts(s):
         return ' '.join([ms.displayId for ms in s.linked_mss])

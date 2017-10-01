@@ -5,6 +5,7 @@ import web, sys, os, string, re
 
 from object.jsonEncoder import *
 from object.rangeManager import *
+from object.textForm import *
 from object.util import *
 
 from utility.config import *
@@ -13,15 +14,25 @@ from utility.options import *
 class QueryEngine:
 
     def __init__(s):
-        s.config = Config('processor-config.json')
+        s.config = c = Config('processor-config.json')
 
-        s.range_id = s.config.get('defaultRange')
+        s.range_id = c.get('defaultRange')
 
         if not web.variantModel:
             rangeMgr = RangeManager()
             rangeMgr.load()
             web.variantModel = rangeMgr.getModel(s.range_id)
         s.variantModel = web.variantModel
+
+        if not web.morphCache:
+            web.debug('Loading morph cache')
+            m_data = ''
+            cachefile = c.get('cacheFolder') + c.get('morphCache')
+            with open(cachefile, 'r') as file:
+                m_data = file.read().decode('utf-8')
+                file.close()
+            web.morphCache = json.loads(m_data)
+        TextForm.morph_cache = web.morphCache
 
         s.refMS = None # choose first ID
 
@@ -133,7 +144,7 @@ class QueryEngine:
 
         return 'L' if isLatinLayer(len(greek_mss), len(latin_mss)) else 'D'
 
-    def getTextForms(s, v_unit):
+    def getTextForms(s, v_unit, is_lemma):
         # maps of text-form lists keyed by reading unit index
         t_forms = {
             'reading_forms': [],
@@ -142,16 +153,18 @@ class QueryEngine:
 
         r_reading = v_unit.getReadingForManuscript(s.refMS)
         reading_tokens = r_reading.getAllTokens()
-
         r_iter = r_reading if type(r_reading) is Reading else r_reading.readings[0]
         for ru in r_iter.readingUnits:
             addr = s.lookupAddr(ru)
-            t_forms['reading_forms'].extend(addr.getMatchingForms(reading_tokens))
+            if is_lemma:
+                t_forms['reading_forms'].extend(addr.getMatchingLemmas(reading_tokens))
+                t_forms['variant_forms'].extend(addr.getAllLemmas())
+            else:
+                t_forms['reading_forms'].extend(addr.getMatchingForms(reading_tokens))
+                t_forms['variant_forms'].extend(addr.getAllForms())
 
-            t_forms['variant_forms'].extend(addr.getAllForms())
-
-        t_forms['reading_forms'] = list(set(t_forms['reading_forms']))
-        t_forms['variant_forms'] = list(set(t_forms['variant_forms']))
+        t_forms['reading_forms'] = t_forms['reading_forms']
+        t_forms['variant_forms'] = t_forms['variant_forms']
 
         return t_forms
 
@@ -191,8 +204,8 @@ class QueryEngine:
                     if vu.isSingular():
                         continue
 
-                    if vu.isReferenceSingular(s.refMS):
-                        continue
+                    #if vu.isReferenceSingular(s.refMS):
+                    #    continue
 
                     r_reading = vu.getReadingForManuscript(s.refMS)
 
@@ -206,12 +219,11 @@ class QueryEngine:
                     if not layer in find_layers:
                         continue
 
-                    if addr.chapter_num == "12" and addr.verse_num == 17 and addr.addr_idx == 1:
+                    if addr.chapter_num == "2" and addr.verse_num == 25 and addr.addr_idx == 34:
                         i = 0
-                        j = 1
-                        k = i + j
+                        j = i + 1
 
-                    text_forms = s.getTextForms(vu)
+                    text_forms = s.getTextForms(vu, s.queryCriteria['is_lemma'])
 
                     if not s.queryCriteria.has_key('read_op'):
                         s.queryCriteria['read_op'] = 'and'
