@@ -15,7 +15,7 @@ DSS.Chapter = function () {
       var slot = model.addresses[j];
       if (slot._type == 'verse') {
         if (j >= this.addresses.length) { // new tokens only!
-          var vDelim = new DSS.VerseDelimiter(slot.tokenIndex, slot.verse);
+          var vDelim = new DSS.VerseDelimiter(slot.tokenIndex, this.chapterNum, slot.verse);
           this.addresses.push(vDelim);
         }
       }
