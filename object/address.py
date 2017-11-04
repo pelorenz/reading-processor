@@ -101,6 +101,25 @@ class  Address(AddressSlot):
 
         return ''
 
+    def getAltFormsForReadingUnit(s, text):
+        text_forms = []
+        for tform in s.sorted_text_forms:
+            if isinstance(tform, TextForm):
+                if tform.getForm() == text:
+                    text_forms.append(tform.getForm())
+            elif isinstance(tform, TextFormGroup):
+                maybe_forms = []
+                is_match = False
+                for sform in tform.textForms:
+                    maybe_forms.append(sform.getForm())
+                    if sform.getForm() == text:
+                        is_match = True
+                if is_match:
+                    text_forms = maybe_forms
+                    break
+
+        return text_forms
+
     def buildSortedItems(s):
         s.sorted_form_content = []
         s.sorted_attestations = []

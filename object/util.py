@@ -1,5 +1,8 @@
 import sys, os, re
 
+class Util:
+    MS_OVERLAYS = [ 'na28' ]
+
 def makePart(tok, lpart):
     part = {}
     vtoks = tok.split('.') if '.' in tok else [ tok ]
@@ -63,6 +66,17 @@ def mssListToString(mss_list):
     return mss_str
 
 def sortMSS(ms1, ms2):
+    if ms1 in Util.MS_OVERLAYS and not ms2 in Util.MS_OVERLAYS:
+        return -1
+    elif ms2 in Util.MS_OVERLAYS and not ms1 in Util.MS_OVERLAYS:
+        return 1
+    else:
+        if ms1 in Util.MS_OVERLAYS and ms2 in Util.MS_OVERLAYS:
+            if Util.MS_OVERLAYS.index(ms1) < Util.MS_OVERLAYS.index(ms2):
+                return -1
+            elif Util.MS_OVERLAYS.index(ms1) > Util.MS_OVERLAYS.index(ms2):
+                return 1
+
     ms1 = ms1.lower()
     ms2 = ms2.lower()
 
@@ -184,6 +198,13 @@ def sortVariations(v1, v2):
     return 0
 
 def isLatinLayer(greek_counter, latin_counter):
+    is_latin = False
+    #if latin_counter >= 10 and greek_counter == 5:
+    #    is_latin = True
+    #elif latin_counter >= 8 and greek_counter == 4:
+    #    is_latin = True
+    #return is_latin
+
     is_latin = False
     if latin_counter >= greek_counter and latin_counter > 2 and greek_counter <= 3:
         is_latin = True
