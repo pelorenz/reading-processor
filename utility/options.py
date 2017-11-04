@@ -21,6 +21,7 @@ class  CommandLine:
         self.parser.add_argument('-G', '--segmentConfig', help='Configuration of segment divisions (dicer).', default='default')
         self.parser.add_argument('-K', '--criteria', help='Criteria for variant search (variantFinder).')
         self.parser.add_argument('-L', '--layer', help='Generate apparatus for selected layer, one of \'L\', \'D\', or \'M\' (variantFinder).')
+        self.parser.add_argument('-Z', '--harmonization', help='Generate CSV template to record harmonization data (variantFinder).', action='store_true')
 
     def getOptions(self):
         dict = vars(self.parser.parse_args())

@@ -31,7 +31,7 @@ class  ReadingGroup(object):
     def getFirstGreekManuscript(s):
         mss = sorted(s.manuscripts, cmp=sortMSS)
         for ms in mss:
-            if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
+            if ms != '19A' and ms != 'vg' and ms[:1] != 'V' and ms not in Util.MS_OVERLAYS:
                 return ms
         return None
 
