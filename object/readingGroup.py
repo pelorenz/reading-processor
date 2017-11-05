@@ -16,8 +16,11 @@ class  ReadingGroup(object):
         # manuscripts
         s.manuscripts = []
 
+        # synoptic parallels
+        s.synopticParallels = []
+
     def jsonSerialize(s):
-        return { '_type': 'readingGroup', 'displayValue': s.displayValue, 'readings': s.readings, 'manuscripts': s.manuscripts }
+        return { '_type': 'readingGroup', 'displayValue': s.displayValue, 'readings': s.readings, 'manuscripts': s.manuscripts, 'synopticParallels': s.synopticParallels }
 
     def hasManuscript(s, id):
         for ms in s.manuscripts:
@@ -61,3 +64,11 @@ class  ReadingGroup(object):
         for reading in s.readings:
             values.extend(reading.getAllTokens())
         return list(set(values))
+
+    def getParallels(s):
+        parallels = ''
+        for p in s.synopticParallels:
+            if len(parallels) > 0:
+                parallels = parallels + ','
+            parallels = parallels + str(p)
+        return parallels

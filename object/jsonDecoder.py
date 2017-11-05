@@ -5,6 +5,7 @@ from object.manuscript import *
 from object.reading import *
 from object.readingGroup import *
 from object.readingUnit import *
+from object.synopticParallel import *
 from object.textForm import *
 from object.textFormGroup import *
 from object.variationUnit import *
@@ -38,15 +39,25 @@ class ComplexDecoder(json.JSONDecoder):
             reading = Reading(obj['displayValue'])
             reading.manuscripts = obj['manuscripts']
             reading.readingUnits = obj['readingUnits']
+            try:
+                reading.synopticParallels = obj['synopticParallels']
+            except KeyError as e:
+                action = None
             return reading
         if type == 'readingGroup':
             reading_group = ReadingGroup(obj['displayValue'])
             reading_group.readings = obj['readings']
             reading_group.manuscripts = obj['manuscripts']
+            try:
+                reading_group.synopticParallels = obj['synopticParallels']
+            except KeyError as e:
+                action = None
             return reading_group
         if type == 'readingUnit':
             reading_unit = ReadingUnit(obj['tokenIndex'], obj['chapter'], obj['verse'], obj['addressIndex'], obj['text'])
             return reading_unit
+        if type == 'synopticParallel':
+            return SynopticParallel(obj['text'], obj['book'], obj['chapter'], obj['verses'], obj['words'])
         if type == 'textForm':
             morph = ''
             if obj.has_key('morph'): lang = obj['morph']

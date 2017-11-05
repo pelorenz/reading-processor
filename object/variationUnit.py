@@ -36,6 +36,13 @@ class  VariationUnit(object):
                 nonSing = nonSing + 1
         return nonSing == 1
 
+    def getSingularMSS(s):
+        mss = []
+        for reading in s.readings:
+            if len(reading.manuscripts) == 1:
+                mss.append(reading.manuscripts[0])
+        return mss
+
     def isReferenceSingular(s, ms):
         reading = s.getReadingForManuscript(ms)
         if reading and len(reading.manuscripts) == 1:

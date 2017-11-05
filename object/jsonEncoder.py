@@ -5,6 +5,7 @@ from object.manuscript import *
 from object.reading import *
 from object.readingGroup import *
 from object.readingUnit import *
+from object.synopticParallel import *
 from object.textForm import *
 from object.textFormGroup import *
 from object.variationUnit import *
@@ -17,6 +18,7 @@ class ComplexEncoder(json.JSONEncoder):
             isinstance(obj, Reading) or \
             isinstance(obj, ReadingGroup) or \
             isinstance(obj, ReadingUnit) or \
+            isinstance(obj, SynopticParallel) or \
             isinstance(obj, TextForm) or \
             isinstance(obj, TextFormGroup) or \
             isinstance(obj, VariationUnit) or \
