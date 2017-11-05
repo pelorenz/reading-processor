@@ -47,7 +47,7 @@ class VariantFinder:
         for addr in s.variantModel['addresses']:
             s.addrLookup[s.getAddrKey(addr)] = addr
 
-    def computeLayer(s, var_label, reading, greek_mss, latin_mss, NEW_LAYER_CODES):
+    def computeLayer(s, var_label, reading, NEW_LAYER_CODES):
         if not NEW_LAYER_CODES:
             if reading.hasManuscript('35'):
                 return 'M'
@@ -202,9 +202,7 @@ class VariantFinder:
                     if not r_reading:
                         continue
 
-                    latin_mss = []
-                    greek_mss = []
-                    layer = s.computeLayer(vu.label, r_reading, greek_mss, latin_mss, False)
+                    layer = s.computeLayer(vu.label, r_reading, False)
                     find_layers = s.queryCriteria['layers']
                     if not layer in find_layers:
                         continue
@@ -348,9 +346,12 @@ class VariantFinder:
         # letters[3] == 'c'
         letters = dict(enumerate(string.ascii_lowercase, 1))
 
+        # show singulars for these MSS
+        showSingulars = c.get('showSingulars')
+
         csvFile = c.get('finderFolder') + '/' + s.refMS + '-harmonization-template.csv'
         with open(csvFile, 'w+') as csv_file:
-            csv_file.write('reading_id\tsort_id\treading_text\tis_singular\tlayer')
+            csv_file.write('reading_id\tsort_id\treading_text\tis_singular\tparallels\tlayer')
             for ms in msOverlays:
                 csv_file.write('\t' + ms)
             for ms in greekMSS:
@@ -371,10 +372,13 @@ class VariantFinder:
                     if not r_reading:
                         r_layer = 'NA'
 
-                    latin_mss = []
-                    greek_mss = []
+                    if vu.isSingular():
+                        sgMSS = vu.getSingularMSS()
+                        if not set(sgMSS) & set(showSingulars):
+                            continue
+
                     if r_layer != 'S' and r_layer != 'NA':
-                        r_layer = s.computeLayer(vu.label, r_reading, greek_mss, latin_mss, True)
+                        r_layer = s.computeLayer(vu.label, r_reading, True)
 
                     for idx, reading in enumerate(vu.readings):
                         reading_id = vu.label + letters[idx + 1]
@@ -382,10 +386,14 @@ class VariantFinder:
                         reading_text = reading.getDisplayValue()
 
                         is_singular = ''
-                        if len(reading.manuscripts) < 2:
-                            is_singular = 'sg'
+                        if len(reading.manuscripts) == 1:
+                            is_singular = reading.manuscripts[0]
+                            if not is_singular in showSingulars:
+                                continue
 
-                        csv_file.write((reading_id + u'\t' + sort_id + u'\t' + reading_text + u'\t' + is_singular + u'\t' + r_layer).encode('UTF-8'))
+                        parallels = reading.getParallels()
+
+                        csv_file.write((reading_id + u'\t' + sort_id + u'\t' + reading_text + u'\t' + is_singular + u'\t' + parallels + u'\t' + r_layer).encode('UTF-8'))
                         for ms in msOverlays:
                             csv_file.write('\t' + s.getMSValue(vu, reading, ms))
                         for ms in greekMSS:
@@ -418,6 +426,75 @@ class VariantFinder:
             s_label = s_label + num + sep
         return s_label
 
+    def generateVariationHeader(s):
+        c = s.config
+        s.info('Generating variation header')
+
+        ranges = c.get('rangeData')[s.range_id]
+        if not ranges:
+            raise ValueError('Please specify one range (chapter).')
+        elif len(ranges) > 1:
+            raise ValueError('Variation header currently supports ranges consisting of just one chapter.')
+        chapter = ranges[0]['chapter']
+        cur_v = ranges[0]['startVerse']
+
+        SEP = u'\t'
+        lines = ['', '', '']
+        lines[0] = str(cur_v).decode('utf-8') + SEP
+        lines[1] = str(cur_v).decode('utf-8') + SEP
+        lines[2] = str(cur_v).decode('utf-8') + SEP
+        for addr in s.variantModel['addresses']:
+            while cur_v < addr.verse_num:
+                cur_v = cur_v + 1
+                lines[0] = lines[0] + str(cur_v).decode('utf-8') + SEP
+                lines[1] = lines[1] + str(cur_v).decode('utf-8') + SEP
+                lines[2] = lines[2] + str(cur_v).decode('utf-8') + SEP
+
+            for vidx, vu in enumerate(addr.variation_units):
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                r_layer = ''
+                is_singular = False
+                if vu.isReferenceSingular(s.refMS):
+                    is_singular = True
+                    r_layer = 'S'
+                elif vu.isSingular():
+                    is_singular = True
+
+                r_reading = vu.getReadingForManuscript(s.refMS)
+                if not r_reading:
+                    r_layer = 'N'
+
+                if not r_layer:
+                    r_layer = s.computeLayer(vu.label, r_reading, True)
+
+                output = r_layer + vu.label
+                if is_singular:
+                    output = '*' + output
+                if r_reading:
+                    output = output + ' ' + r_reading.getDisplayValue()
+                else:
+                    output = output + ' '
+                for reading in vu.readings:
+                    if reading == r_reading:
+                        continue
+                    if len(output) > 0 and output[-1] != ' ':
+                        output = output + ' | '
+                    output = output + reading.getDisplayValue()
+
+                lines[vidx] = lines[vidx] + output + SEP
+
+            for i in range(len(addr.variation_units), 3):
+                lines[i] = lines[i] + SEP
+
+        csvFile = c.get('finderFolder') + '/' + s.refMS + '-varheader-' + s.range_id + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            csv_file.write((lines[0] + u'\n').encode('utf-8'))
+            csv_file.write((lines[1] + u'\n').encode('utf-8'))
+            csv_file.write((lines[2] + u'\n').encode('utf-8'))
+            csv_file.close()
+
     def generateLayerApparatus(s, layer):
         c = s.config
         s.info('Generating layer apparatus')
@@ -444,10 +521,8 @@ class VariantFinder:
                     if not r_reading:
                         continue
 
-                    latin_mss = []
-                    greek_mss = []
                     if r_layer != 'S':
-                        r_layer = s.computeLayer(vu.label, r_reading, greek_mss, latin_mss, False)
+                        r_layer = s.computeLayer(vu.label, r_reading, False)
                         if r_layer != layer:
                             continue
 
@@ -525,6 +600,8 @@ class VariantFinder:
             #s.findMissingLatinVariants()
         elif o.harmonization:
             s.generateHarmonizationTemplate()
+        elif o.varheader:
+            s.generateVariationHeader()
         else:
             s.findMultiwayVariants()
             s.saveMultiwayVariants()
@@ -541,4 +618,7 @@ class VariantFinder:
 #
 # Generate harmonization template
 # variantFinder.py -v -a c14 -R 05 -Z
+#
+# Generate variation header for collation
+# variantFinder.py -v -a c14pt1 -R 05 -V
 VariantFinder().main(sys.argv[1:])

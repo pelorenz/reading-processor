@@ -66,6 +66,9 @@ def mssListToString(mss_list):
     return mss_str
 
 def sortMSS(ms1, ms2):
+    if ms1 == ms2:
+        raise ValueError('Duplicate witness in list %s' % ms1)
+
     if ms1 in Util.MS_OVERLAYS and not ms2 in Util.MS_OVERLAYS:
         return -1
     elif ms2 in Util.MS_OVERLAYS and not ms1 in Util.MS_OVERLAYS:

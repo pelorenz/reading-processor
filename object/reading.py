@@ -16,8 +16,11 @@ class  Reading(object):
         # constituent word addresses
         s.readingUnits = []
 
+        # synoptic parallels
+        s.synopticParallels = []
+
     def jsonSerialize(s):
-        return { '_type': 'reading', 'displayValue': s.displayValue, 'manuscripts': s.manuscripts, 'readingUnits': s.readingUnits }
+        return { '_type': 'reading', 'displayValue': s.displayValue, 'manuscripts': s.manuscripts, 'readingUnits': s.readingUnits, 'synopticParallels': s.synopticParallels }
 
     def hasManuscript(s, id):
         for ms in s.manuscripts:
@@ -68,3 +71,11 @@ class  Reading(object):
         for ru in s.readingUnits:
             values.append(ru.text)
         return values
+
+    def getParallels(s):
+        parallels = ''
+        for p in s.synopticParallels:
+            if len(parallels) > 0:
+                parallels = parallels + ','
+            parallels = parallels + str(p)
+        return parallels
