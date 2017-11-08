@@ -45,10 +45,35 @@ class  SynopticParallel(object):
             value = value + '.' + verse + '.' + words
         else: # multiple verses
             words = ''
-            for idx, verse in s.verses:
+            for idx, verse in enumerate(s.verses):
                 word = verse + '.' + s.words[idx]
                 if len(words) > 0:
                     words = words + ','
                 words = words + word
             value = value + '.' + words
+        return value
+
+    def getBook(s):
+        if s.book == 'M':
+            return 'Mt'
+        elif s.book == 'K':
+            return 'Mk'
+        else:
+            if s.book == 'L':
+                return 'Lk'
+            elif s.book == 'J':
+                return 'Jn'
+            else:
+                return ''
+
+    def getSummary(s):
+        value = s.getBook() + u' ' + s.chapter
+        if len(set(s.verses)) == 1: # single verse
+            value = value + ':' + s.verses[0]
+        else: # multiple verses
+            value = ''
+            for verse in s.verses:
+                if len(value) > 0:
+                    value = value + u', '
+                value = value + verse
         return value

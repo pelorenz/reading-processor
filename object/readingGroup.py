@@ -38,6 +38,12 @@ class  ReadingGroup(object):
                 return ms
         return None
 
+    def hasGreekManuscript(s):
+        for reading in s.readings:
+            if reading.hasGreekManuscript():
+                return True
+        return False
+
     def getManuscriptReading(s, ms):
         for reading in s.readings:
             if reading.hasManuscript(ms):
@@ -69,6 +75,14 @@ class  ReadingGroup(object):
         parallels = ''
         for p in s.synopticParallels:
             if len(parallels) > 0:
-                parallels = parallels + ','
-            parallels = parallels + str(p)
+                parallels = parallels + u', '
+            parallels = parallels + p.getSummary()
         return parallels
+
+    def getSynopticReadings(s):
+        readings = ''
+        for p in s.synopticParallels:
+            if len(readings) > 0:
+                readings = readings + ' | '
+            readings = readings + p.text + u' {' + str(p) + u'}'
+        return readings
