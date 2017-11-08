@@ -37,6 +37,14 @@ class  Reading(object):
                 return ms
         return None
 
+    def hasGreekManuscript(s):
+        for ms in s.manuscripts:
+            if ms in Util.MS_OVERLAYS:
+                continue
+            if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
+                return True
+        return False
+
     def toApparatusString(s):
         mss_str = ''
         if len(s.manuscripts):
@@ -76,6 +84,14 @@ class  Reading(object):
         parallels = ''
         for p in s.synopticParallels:
             if len(parallels) > 0:
-                parallels = parallels + ','
-            parallels = parallels + str(p)
+                parallels = parallels + u', '
+            parallels = parallels + p.getSummary()
         return parallels
+
+    def getSynopticReadings(s):
+        readings = ''
+        for p in s.synopticParallels:
+            if len(readings) > 0:
+                readings = readings + ' | '
+            readings = readings + p.text + u' {' + str(p) + u'}'
+        return readings

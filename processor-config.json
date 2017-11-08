@@ -40,6 +40,7 @@
     { "subdir": "c16", "file": "mark-16a-all" }
   ],
   "variantDataCache": "variant-data/_cache/variant-data-cache.json",
+  "variantDataCacheDir": "variant-data/_cache/",
   "defaultRange": "c01-16",
   "rangeData": {
     "c01-02": [
@@ -930,6 +931,6 @@
   "msOverlays": [ "na28" ],
   "synopticOverlays": [ "mk2", "mt1", "mt2", "lk1", "lk2", "jn1", "ex1" ],
   "showSingulars": [
-    "P45","01","02","03","04","05","019","032","038","28","565","700","VL1","VL2","VL3","VL4","VL5","VL6","VL8","VL10","VL13","VL14","VL15","VL16","VL17","VL19","vg","19A","VL271"
+    "05","01","02","03","04","019","032","038","28","565","700","VL1","VL2","VL3","VL4","VL5","VL6","VL8","VL10","VL13","VL14","VL15","VL16","VL17","VL19","vg","19A","VL271","P45"
   ]
 }

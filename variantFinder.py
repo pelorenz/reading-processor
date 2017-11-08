@@ -351,7 +351,7 @@ class VariantFinder:
 
         csvFile = c.get('finderFolder') + '/' + s.refMS + '-harmonization-template.csv'
         with open(csvFile, 'w+') as csv_file:
-            csv_file.write('reading_id\tsort_id\treading_text\tis_singular\tparallels\tlayer')
+            csv_file.write('reading_id\tsort_id\treading_text\tis_singular\tis_latin\tis_none\tparallels\tsynoptic_rdgs\tlayer')
             for ms in msOverlays:
                 csv_file.write('\t' + ms)
             for ms in greekMSS:
@@ -381,6 +381,10 @@ class VariantFinder:
                         r_layer = s.computeLayer(vu.label, r_reading, True)
 
                     for idx, reading in enumerate(vu.readings):
+                        is_none = ''
+                        if len(reading.manuscripts) == 0:
+                            continue
+
                         reading_id = vu.label + letters[idx + 1]
                         sort_id = s.generateSortLabel(vu.label) + letters[idx + 1]
                         reading_text = reading.getDisplayValue()
@@ -391,9 +395,14 @@ class VariantFinder:
                             if not is_singular in showSingulars:
                                 continue
 
-                        parallels = reading.getParallels()
+                        is_latin = ''
+                        if not reading.hasGreekManuscript():
+                            is_latin = 'la'
 
-                        csv_file.write((reading_id + u'\t' + sort_id + u'\t' + reading_text + u'\t' + is_singular + u'\t' + parallels + u'\t' + r_layer).encode('UTF-8'))
+                        parallels = reading.getParallels()
+                        p_readings = reading.getSynopticReadings()
+
+                        csv_file.write((reading_id + u'\t' + sort_id + u'\t' + reading_text + u'\t' + is_singular + u'\t' + is_latin + u'\t' + is_none + u'\t' + parallels + u'\t' + p_readings + u'\t' + r_layer).encode('UTF-8'))
                         for ms in msOverlays:
                             csv_file.write('\t' + s.getMSValue(vu, reading, ms))
                         for ms in greekMSS:
