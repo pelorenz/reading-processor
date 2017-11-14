@@ -74,14 +74,29 @@ class  ReadingGroup(object):
     def getParallels(s):
         parallels = ''
         for p in s.synopticParallels:
+            if p.text == '{NA}':
+                continue
             if len(parallels) > 0:
                 parallels = parallels + u', '
             parallels = parallels + p.getSummary()
         return parallels
 
+    def isNA(s):
+        is_na = False
+        for p in s.synopticParallels:
+            if 'NA' in p.text:
+                is_na = True
+            else:
+                is_na = False
+                break
+        return is_na
+
     def getSynopticReadings(s):
         readings = ''
         for p in s.synopticParallels:
+            if p.text == '{NA}':
+                continue
+
             if len(readings) > 0:
                 readings = readings + ' | '
             readings = readings + p.text + u' {' + str(p) + u'}'

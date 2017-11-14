@@ -56,10 +56,6 @@ class OverlayManager:
         for slot_idx, start_addr in enumerate(vmodel['addresses']):
             for vu in start_addr.variation_units:
                 for o_id, o_verses in o_lookup.iteritems():
-                    if vu.label == '14.70.19-20' and o_id == 'ex1':
-                        i = 0
-                        j = 1
-                        k = i + j
                     # for now, do not create new reading if no match
                     for reading in vu.readings:
                         if len(reading.manuscripts) == 0:

@@ -335,7 +335,7 @@ class VariantFinder:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
-    def generateHarmonizationTemplate(s):
+    def generateHarmonizationTemplate(s, range_id):
         c = s.config
         s.info('Generating harmonization template')
 
@@ -349,9 +349,9 @@ class VariantFinder:
         # show singulars for these MSS
         showSingulars = c.get('showSingulars')
 
-        csvFile = c.get('finderFolder') + '/' + s.refMS + '-harmonization-template.csv'
+        csvFile = c.get('finderFolder') + '/' + s.refMS + '-harmonization-template-' + range_id + '.csv'
         with open(csvFile, 'w+') as csv_file:
-            csv_file.write('reading_id\tsort_id\treading_text\tis_singular\tis_latin\tis_none\tparallels\tsynoptic_rdgs\tlayer')
+            csv_file.write('reading_id\tsort_id\treading_text\tis_singular\tis_latin\tparallels\tsynoptic_rdgs\tlayer')
             for ms in msOverlays:
                 csv_file.write('\t' + ms)
             for ms in greekMSS:
@@ -381,8 +381,7 @@ class VariantFinder:
                         r_layer = s.computeLayer(vu.label, r_reading, True)
 
                     for idx, reading in enumerate(vu.readings):
-                        is_none = ''
-                        if len(reading.manuscripts) == 0:
+                        if not reading.manuscripts:
                             continue
 
                         reading_id = vu.label + letters[idx + 1]
@@ -399,10 +398,14 @@ class VariantFinder:
                         if not reading.hasGreekManuscript():
                             is_latin = 'la'
 
-                        parallels = reading.getParallels()
+                        parallels = ''
+                        if reading.isNA():
+                            parallels = '{NA}'
+                        else:
+                            parallels = reading.getParallels()
                         p_readings = reading.getSynopticReadings()
 
-                        csv_file.write((reading_id + u'\t' + sort_id + u'\t' + reading_text + u'\t' + is_singular + u'\t' + is_latin + u'\t' + is_none + u'\t' + parallels + u'\t' + p_readings + u'\t' + r_layer).encode('UTF-8'))
+                        csv_file.write((reading_id + u'\t' + sort_id + u'\t' + reading_text + u'\t' + is_singular + u'\t' + is_latin + u'\t' + parallels + u'\t' + p_readings + u'\t' + r_layer).encode('UTF-8'))
                         for ms in msOverlays:
                             csv_file.write('\t' + s.getMSValue(vu, reading, ms))
                         for ms in greekMSS:
@@ -487,6 +490,8 @@ class VariantFinder:
                     output = output + ' '
                 for reading in vu.readings:
                     if reading == r_reading:
+                        continue
+                    if not reading.manuscripts:
                         continue
                     if len(output) > 0 and output[-1] != ' ':
                         output = output + ' | '
@@ -608,7 +613,7 @@ class VariantFinder:
             s.generateLayerApparatus(o.layer)
             #s.findMissingLatinVariants()
         elif o.harmonization:
-            s.generateHarmonizationTemplate()
+            s.generateHarmonizationTemplate(s.range_id)
         elif o.varheader:
             s.generateVariationHeader()
         else:
@@ -625,9 +630,12 @@ class VariantFinder:
 # Specify criteria to find search matches
 # variantFinder.py -v -a c01-16 -R 05 -K my-criteria
 #
+# Generate layer apparatus
+# variantFinder.py -v -a c01-16 -R 05 -L
+#
 # Generate harmonization template
-# variantFinder.py -v -a c14 -R 05 -Z
+# variantFinder.py -v -a c13 -R 05 -Z
 #
 # Generate variation header for collation
-# variantFinder.py -v -a c14pt1 -R 05 -V
+# variantFinder.py -v -a c13 -R 05 -V
 VariantFinder().main(sys.argv[1:])

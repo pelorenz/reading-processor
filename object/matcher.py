@@ -37,7 +37,9 @@ class Matcher:
             return s.isSynopticMatch(r_match, r_container)
         return False
 
-    def handleKeyError(e, ru_addr):
+    def handleKeyError(s, e, ru_addr):
+        if ru_addr.chapter_num == '16' and int(ru_addr.verse_num) > 8:
+            return
         print 'Key Error: ' + str(e) + ', chapter=' + ru_addr.chapter_num + ', verse=' + str(ru_addr.verse_num) + ', address=' + str(ru_addr.addr_idx)
 
     def getAddressForReadingUnit(s, ru):
@@ -122,6 +124,12 @@ class Matcher:
                     else:
                         is_match = False
                         break
+                else:
+                    rs = re.search(r'\{NA\}', o_unit)
+                    if rs:
+                        sp = SynopticParallel('{NA}', '', '', '', '')
+                        r_container.synopticParallels.append(sp)
+                        continue
 
                 if o_unit == 'om.':
                     continue

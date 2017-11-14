@@ -15,6 +15,8 @@ def sortMSCounts(msc1, msc2):
 
 class HarmAnalyzer:
 
+    NO_MAJ = True
+
     def __init__(s):
         s.config = None
         s.options = None
@@ -40,12 +42,13 @@ class HarmAnalyzer:
 
         csvFile = c.get('outputFolder') + h_label + '-agreements.csv'
         with open(csvFile, 'w+') as csv_file:
-            csv_file.write('M Layer\n')
-            csv_file.write('Manuscript\tCount\n')
-            for msc in s.bz_mss:
-                csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '\n')
+            if not HarmAnalyzer.NO_MAJ:
+                csv_file.write('M Layer\n')
+                csv_file.write('Manuscript\tCount\n')
+                for msc in s.bz_mss:
+                    csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '\n')
+                csv_file.write('\n')
 
-            csv_file.write('\n')
             csv_file.write('G Layer\n')
             csv_file.write('Manuscript\tCount\n')
             for msc in s.gr_mss:
@@ -67,7 +70,8 @@ class HarmAnalyzer:
                 csv_file.write(ms_results['ms'] + '\n')
                 csv_file.write('Layer\tVariation Units\tPossible Parallels\t' + ms_results['ms'] + ' Parallels\t' + ms_results['ms'] + ' Ratio\n')
 
-                csv_file.write('Majority Greek\t' + str(ms_results['rdg_count_byz']) + '\t' + str(ms_results['rdg_count_byz_possible']) + '\t' + str(ms_results['rdg_count_byz_parallel']) + '\t' + str(ms_results['pc_byz_parallels']) + '\n')
+                if not HarmAnalyzer.NO_MAJ:
+                    csv_file.write('Majority Greek\t' + str(ms_results['rdg_count_byz']) + '\t' + str(ms_results['rdg_count_byz_possible']) + '\t' + str(ms_results['rdg_count_byz_parallel']) + '\t' + str(ms_results['pc_byz_parallels']) + '\n')
 
                 csv_file.write('Non-majority Greek\t' + str(ms_results['rdg_count_nonbyz_greek']) + '\t' + str(ms_results['rdg_count_nonbyz_greek_possible']) + '\t' + str(ms_results['rdg_count_nonbyz_greek_parallel']) + '\t' + str(ms_results['pc_nonbyz_parallels']) + '\n')
 
@@ -75,18 +79,22 @@ class HarmAnalyzer:
 
                 csv_file.write('Singular\t' + str(ms_results['rdg_count_singular']) + '\t' + str(ms_results['rdg_count_singular_possible']) + '\t' + str(ms_results['rdg_count_singular_parallel']) + '\t' + str(ms_results['pc_singular_parallels']) + '\n')
 
-                csv_file.write('Total\t' + str(ms_results['vu_count']) + '\t' + str(ms_results['vu_count_w_parallel']) + '\t' + str(ms_results['rdg_count_w_parallel']) + '\t' + str(ms_results['pc_parallels']) + '\n')
+                if not HarmAnalyzer.NO_MAJ:
+                    csv_file.write('Total\t' + str(ms_results['vu_count']) + '\t' + str(ms_results['vu_count_w_parallel']) + '\t' + str(ms_results['rdg_count_w_parallel']) + '\t' + str(ms_results['pc_parallels']) + '\n')
+                else:
+                    csv_file.write('Total\t' + str(ms_results['vu_count']))
 
                 csv_file.write('\n')
 
-            csv_file.write('Attestation Ratio of Possible Non-majority Parallels in Select Manuscripts\n')
-            csv_file.write('Manuscript\tVariation Units\tPossible Parallels\tManuscript Parallels\tRatio of Attested to Possible Parallels\n')
-            for ms_results in s.results['reference_mss']:
-                csv_file.write(ms_results['ms'] + '\t')
-                csv_file.write(str(ms_results['rdg_count_nonbyz_greek']) + '\t')
-                csv_file.write(str(ms_results['rdg_count_nonbyz_greek_possible']) + '\t')
-                csv_file.write(str(ms_results['rdg_count_nonbyz_greek_parallel']) + '\t')
-                csv_file.write(str(ms_results['pc_nonbyz_parallels']) + '\n')
+            if not HarmAnalyzer.NO_MAJ:
+                csv_file.write('Attestation Ratio of Possible Non-majority Parallels in Select Manuscripts\n')
+                csv_file.write('Manuscript\tVariation Units\tPossible Parallels\tManuscript Parallels\tRatio of Attested to Possible Parallels\n')
+                for ms_results in s.results['reference_mss']:
+                    csv_file.write(ms_results['ms'] + '\t')
+                    csv_file.write(str(ms_results['rdg_count_nonbyz_greek']) + '\t')
+                    csv_file.write(str(ms_results['rdg_count_nonbyz_greek_possible']) + '\t')
+                    csv_file.write(str(ms_results['rdg_count_nonbyz_greek_parallel']) + '\t')
+                    csv_file.write(str(ms_results['pc_nonbyz_parallels']) + '\n')
             
             csv_file.close()
 
@@ -228,6 +236,7 @@ class HarmAnalyzer:
         rdgs_w_non_byz_parallel = []
         rdgs_w_non_byz_or_init_parallel = []
 
+        noparl_rdgs_against_init_parallel = []
         rdgs_against_init_parallel = []
         rdgs_with_init_parallel = []
 
@@ -258,10 +267,15 @@ class HarmAnalyzer:
                 ms_rdg = s.vuGetManuscriptReading(vu, ms)
                 ms_parallel = ms_rdg['parallels']
 
+                if HarmAnalyzer.NO_MAJ and vu['layer'] == 'M':
+                    continue
+
                 if init_parallel and init_rdg['reading_id'] == ms_rdg['reading_id']:
                     rdgs_with_init_parallel.append(vu['label'])
                 elif init_parallel and init_rdg['reading_id'] != ms_rdg['reading_id']:
                     rdgs_against_init_parallel.append(vu['label'])
+                    if not ms_parallel:
+                        noparl_rdgs_against_init_parallel.append(vu['label'])
 
                 if len(ms_rdg['mss']) == 1 or (ms == '05' and len(ms_rdg['mss']) == 2 and 'VL5' in ms_rdg['mss']):
                     singular_layer.append(vu['label'])
@@ -308,7 +322,7 @@ class HarmAnalyzer:
                     if ms_parallel:
                         rdgs_w_non_byz_parallel.append(vu['label'])
 
-        ms_results['vu_count'] = len(vus)
+        ms_results['vu_count'] = len(s.vus)
 
         ms_results['vu_count_w_parallel'] = len(vus_w_parallel)
         ms_results['rdg_count_w_parallel'] = len(rdgs_w_parallel)
@@ -316,6 +330,7 @@ class HarmAnalyzer:
 
         ms_results['initial_parallel_count'] = len(initial_parallels)
         ms_results['rdg_count_against_init_parallel'] = len(rdgs_against_init_parallel)
+        ms_results['rdg_count_against_init_parallel_w_no_parallel'] = len(noparl_rdgs_against_init_parallel)
         ms_results['rdg_count_with_init_parallel'] = len(rdgs_with_init_parallel)
 
         ms_results['pc_against_init_parallels'] = round(ms_results['rdg_count_against_init_parallel'] * 1.0 /  ms_results['initial_parallel_count'], 3) if ms_results['initial_parallel_count'] != 0 else 0
@@ -407,8 +422,8 @@ class HarmAnalyzer:
                     if col_name == 'reading_id':
                         # 14.1.36a
                         # 1.7.7-10,12-13,16-19,21-22,8.1-2,4-5,7-8a
-                        rs = re.search(r'((\d{1,2})\.(\d{1,2})\.([0-9\-,]{1,}))(,(\d{1,2})\.([0-9\-,]{1,})){0,1}([a-z])', part)
-                        if rs and rs.group(8) == 'a':
+                        rs = re.search(r'((\d{1,2})\.(\d{1,2})\.([0-9\-,]{1,}))(,(\d{1,2})\.([0-9\-,]{1,})){0,1}(,(\d{1,2})\.([0-9\-,]{1,})){0,1}([a-z])', part)
+                        if rs and rs.group(11) == 'a':
                             if vu:
                                 s.vus.append(vu)
 
@@ -416,14 +431,16 @@ class HarmAnalyzer:
                             vu['label'] = rs.group(1)
                             if rs.group(5):
                                 vu['label'] = vu['label'] + rs.group(5)
+                            if rs.group(8):
+                                vu['label'] = vu['label'] + rs.group(8)
                             vu['chapter'] = rs.group(2)
                             vu['start_verse'] = rs.group(3)
                             vu['start_addrs'] = rs.group(4)
                             if rs.group(6) and rs.group(7):
                                 vu['end_verse'] = rs.group(6)
-                                vu['end_verse'] = rs.group(7)
+                                vu['end_addrs'] = rs.group(7)
                             vu['readings'] = []
-                        rdg['code'] = rs.group(8)
+                        rdg['code'] = rs.group(11)
                         rdg['reading_id'] = vu['label'] + rdg['code']
                         rdg['mss'] = []
                         vu['readings'].append(rdg)
@@ -502,6 +519,8 @@ class HarmAnalyzer:
         s.results['byz_count_w_parallel'] = len(byzes_w_parallel)
         s.results['reference_mss'] = []
         for ms in s.refMS_IDs:
+            if HarmAnalyzer.NO_MAJ and ms != '05':
+                continue
             s.computeResults(ms)
 
         s.computeBezanAgreements()
@@ -517,5 +536,5 @@ class HarmAnalyzer:
         s.info('Done')
 
 # Produce harmonization analysis for reference MSS
-# harmAnalyzer.py -v -f harm-14
+# harmAnalyzer.py -v -f harm-16
 HarmAnalyzer().main(sys.argv[1:])

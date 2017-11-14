@@ -83,10 +83,22 @@ class  Reading(object):
     def getParallels(s):
         parallels = ''
         for p in s.synopticParallels:
+            if 'NA' in p.text:
+                continue
             if len(parallels) > 0:
                 parallels = parallels + u', '
             parallels = parallels + p.getSummary()
         return parallels
+
+    def isNA(s):
+        is_na = False
+        for p in s.synopticParallels:
+            if p.text == '{NA}':
+                is_na = True
+            else:
+                is_na = False
+                break
+        return is_na
 
     def getSynopticReadings(s):
         readings = ''
