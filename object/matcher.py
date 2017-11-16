@@ -111,7 +111,13 @@ class Matcher:
             ru_addr = s.getAddressForReadingUnit(ru)
             try:
                 o_unit = s.v_lookup[ru.verse_num][ru.addr_idx]
+                rs_test = re.search(r'REF', o_unit)
                 rs = re.search(ur'\{REF\:([0-9\.\-,]+);VAL\:([\u0391-\u03A9\u03B1-\u03C9 A-Za-z\.]+)\|\|([J-M])([0-9]{1,2})\.([0-9]{1,2})\.([0-9\-,]+)\}', o_unit)
+
+                # flag unparsable REF's
+                if rs_test and not rs:
+                    s.info('Unparsed REF at chapter', ru.chapter_num, ', verse', str(ru.verse_num), ', index', str(ru.addr_idx))
+
                 if rs:
                     if rs.group(1) == s.var_unit.label and rs.group(2) == r_match.getDisplayValue():
                         o_book = rs.group(3)
