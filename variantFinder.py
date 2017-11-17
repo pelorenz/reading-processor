@@ -600,9 +600,13 @@ class VariantFinder:
 
         s.latinLayerVariants = c.get('latinLayerVariants').split(u'|')
 
+        is_refresh = False
+        if o.refreshCache:
+            is_refresh = True
+
         # load variant data
         s.rangeMgr = RangeManager()
-        s.rangeMgr.load()
+        s.rangeMgr.load(is_refresh)
 
         s.variantModel = s.rangeMgr.getModel(s.range_id)
 

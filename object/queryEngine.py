@@ -20,7 +20,7 @@ class QueryEngine:
 
         if not web.variantModel:
             rangeMgr = RangeManager()
-            rangeMgr.load()
+            rangeMgr.load(False)
             web.variantModel = rangeMgr.getModel(s.range_id)
         s.variantModel = web.variantModel
 

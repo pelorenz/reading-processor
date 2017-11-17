@@ -949,9 +949,13 @@ class Dicer:
         if not os.path.exists(s.statsFolder):
             os.makedirs(s.statsFolder)
 
+        is_refresh = False
+        if o.refreshCache:
+            is_refresh = True
+
         # load variant data
         s.rangeMgr = RangeManager()
-        s.rangeMgr.load()
+        s.rangeMgr.load(is_refresh)
 
         s.variantModel = s.rangeMgr.getModel(s.range_id)
 

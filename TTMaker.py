@@ -44,9 +44,13 @@ class TTMaker:
         else:
             s.tt.qcaSet = c.get('qcaSet')
 
+        is_refresh = False
+        if o.refreshCache:
+            is_refresh = True
+
         # load variant data
         s.tt.rangeMgr = RangeManager()
-        s.tt.rangeMgr.load()
+        s.tt.rangeMgr.load(is_refresh)
 
         s.tt.variantModel = s.tt.rangeMgr.getModel(s.tt.range_id)
 
