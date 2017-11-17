@@ -15,6 +15,7 @@ class  CommandLine:
         # modes
         self.parser.add_argument('-v', '--verbose', help='Display verbose output', action='store_true')
         self.parser.add_argument('-s', '--silent', help='Prevent output', action='store_true')
+        self.parser.add_argument('-r', '--refreshCache', help='Clear and refresh the variant cache', action='store_true')
 
         # args
         self.parser.add_argument('-a', '--range', help='Range identifier to specify range of variants for processing.')

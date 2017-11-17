@@ -55,12 +55,12 @@ class RangeManager:
             vmodel = s.appendModel(lookup, vmodel)
         s.chapterLookup[chapter] = vmodel
 
-    def load(s):
+    def load(s, is_refresh):
         c = s.config = Config('processor-config.json')
         s.info('Loading variant data')
 
         vcachefile = c.get('variantDataCache')
-        if os.path.isfile(vcachefile):
+        if os.path.isfile(vcachefile) and not is_refresh:
             with open(vcachefile, 'r') as file:
                 j_data = file.read().decode('utf-8-sig') # Remove BOM
                 j_data = j_data.encode('utf-8') # Reencode without BOM

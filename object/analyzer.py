@@ -566,7 +566,7 @@ class Analyzer:
 
         # load variant data
         s.rangeMgr = RangeManager()
-        s.rangeMgr.load()
+        s.rangeMgr.load(False)
 
         s.variantModel = s.rangeMgr.getModel(s.range_id)
 
