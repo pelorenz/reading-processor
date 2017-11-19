@@ -7,9 +7,11 @@ from utility.config import *
 from utility.options import *
 
 def sortMSCounts(msc1, msc2):
-    if msc1['count'] < msc2['count']:
+    pc1 = msc1['count'] * 1.0 / msc1['extant'] if msc1['extant'] != 0 else 0
+    pc2 = msc2['count'] * 1.0 / msc2['extant'] if msc2['extant'] != 0 else 0
+    if pc1 < pc2:
         return 1
-    elif msc1['count'] > msc2['count']:
+    elif pc1 > pc2:
         return -1
     return 0
 
@@ -26,10 +28,6 @@ class HarmAnalyzer:
         s.results = {}
         s.reading_map = {}
 
-        s.bz_mss = []
-        s.gr_mss = []
-        s.la_mss = []
-
     def info(s, *args):
         info = ''
         for i, arg in enumerate(args):
@@ -37,28 +35,34 @@ class HarmAnalyzer:
             info += str(arg).strip()
         print(info)
 
-    def harmonizationsByAgreement(s, h_label):
+    def harmonizationsByAgreement(s, ms, h_label):
         c = s.config
+
+        ms_results = {}
+        for res in s.results['reference_mss']:
+            if res['ms'] == ms:
+                ms_results = res
+                break
 
         csvFile = c.get('outputFolder') + h_label + '-agreements.csv'
         with open(csvFile, 'w+') as csv_file:
             if not HarmAnalyzer.NO_MAJ:
-                csv_file.write('M Layer\n')
+                csv_file.write('M Layer (' + str(len(ms_results['byz_parallels'])) + ' parallels)\n')
                 csv_file.write('Manuscript\tCount\n')
-                for msc in s.bz_mss:
-                    csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '\n')
+                for msc in ms_results['bz_mss']:
+                    csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '/' + str(ms_results['bz_extant'][msc['ms']]) + '\t' + str(round(msc['count'] * 1.0 / ms_results['bz_extant'][msc['ms']], 3) if ms_results['bz_extant'][msc['ms']] else 0) + '\n')
                 csv_file.write('\n')
 
-            csv_file.write('G Layer\n')
+            csv_file.write('G Layer (' + str(len(ms_results['greek_parallels'])) + ' parallels)\n')
             csv_file.write('Manuscript\tCount\n')
-            for msc in s.gr_mss:
-                csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '\n')
+            for msc in ms_results['gr_mss']:
+                csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '/' + str(ms_results['gr_extant'][msc['ms']]) + '\t' + str(round(msc['count'] * 1.0 / ms_results['gr_extant'][msc['ms']], 3) if ms_results['gr_extant'][msc['ms']] else 0) + '\n')
 
             csv_file.write('\n')
-            csv_file.write('L Layer\n')
+            csv_file.write('L Layer (' + str(len(ms_results['latin_parallels'])) + ' parallels)\n')
             csv_file.write('Manuscript\tCount\n')
-            for msc in s.la_mss:
-                csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '\n')
+            for msc in ms_results['la_mss']:
+                csv_file.write(msc['ms'] + '\t' + str(msc['count']) + '/' + str(ms_results['la_extant'][msc['ms']]) + '\t' + str(round(msc['count'] * 1.0 / ms_results['la_extant'][msc['ms']], 3) if ms_results['la_extant'][msc['ms']] else 0) + '\n')
 
             csv_file.close()
 
@@ -129,6 +133,13 @@ class HarmAnalyzer:
                 return rdg
         return None
 
+    def vuCountInitialReadings(s, vu):
+        counter = 0
+        for rdg in vu['readings']:
+            if rdg['na28'] == '1':
+                counter = counter + 1
+        return counter
+
     def vuGetManuscriptReading(s, vu, ms):
         for rdg in vu['readings']:
             if ms in rdg['mss']:
@@ -165,7 +176,7 @@ class HarmAnalyzer:
                 return True
         return False
 
-    def computeBezanAgreements(s):
+    def computeReferenceAgreements(s, refMS):
         c = s.config
 
         map_M = {}
@@ -183,41 +194,77 @@ class HarmAnalyzer:
             map_G[ms] = 0
             map_L[ms] = 0
 
-        b_results = {}
+        ms_results = {}
         for res in s.results['reference_mss']:
-            if res['ms'] == '05':
-                b_results = res
+            if res['ms'] == refMS:
+                ms_results = res
                 break
 
+        greekMSS = c.get('greekMSS')
+        latinMSS = c.get('latinMSS')
+
         # Majority layer
-        s.bz_mss = []
-        for r_id in b_results['byz_parallels']:
+        ms_results['bz_mss'] = []
+        ms_results['bz_extant'] = {}
+        for gms in greekMSS:
+            ms_results['bz_extant'][gms] = 0
+        for lms in latinMSS:
+            ms_results['bz_extant'][lms] = 0
+        for r_id in ms_results['byz_parallels']:
             rdg = s.reading_map[r_id]
             for ms in rdg['mss']:
                 map_M[ms] = map_M[ms] + 1
+            for gms in greekMSS:
+                if s.vuHasManuscript(rdg['vu'], gms):
+                    ms_results['bz_extant'][gms] = ms_results['bz_extant'][gms] + 1
+            for lms in latinMSS:
+                if s.vuHasManuscript(rdg['vu'], lms):
+                    ms_results['bz_extant'][lms] = ms_results['bz_extant'][lms] + 1
         for ms, count in map_M.iteritems():
-            s.bz_mss.append({'ms': ms, 'count': count})
-        s.bz_mss = sorted(s.bz_mss, cmp=sortMSCounts)
+            ms_results['bz_mss'].append({'ms': ms, 'count': count, 'extant': ms_results['bz_extant'][ms]})
+        ms_results['bz_mss'] = sorted(ms_results['bz_mss'], cmp=sortMSCounts)
 
         # Greek layer
-        s.gr_mss = []
-        for r_id in b_results['greek_parallels']:
+        ms_results['gr_mss'] = []
+        ms_results['gr_extant'] = {}
+        for gms in greekMSS:
+            ms_results['gr_extant'][gms] = 0
+        for lms in latinMSS:
+            ms_results['gr_extant'][lms] = 0
+        for r_id in ms_results['greek_parallels']:
             rdg = s.reading_map[r_id]
             for ms in rdg['mss']:
                 map_G[ms] = map_G[ms] + 1
+            for gms in greekMSS:
+                if s.vuHasManuscript(rdg['vu'], gms):
+                    ms_results['gr_extant'][gms] = ms_results['gr_extant'][gms] + 1
+            for lms in latinMSS:
+                if s.vuHasManuscript(rdg['vu'], lms):
+                    ms_results['gr_extant'][lms] = ms_results['gr_extant'][lms] + 1
         for ms, count in map_G.iteritems():
-            s.gr_mss.append({'ms': ms, 'count': count})
-        s.gr_mss = sorted(s.gr_mss, cmp=sortMSCounts)
+            ms_results['gr_mss'].append({'ms': ms, 'count': count, 'extant': ms_results['gr_extant'][ms]})
+        ms_results['gr_mss'] = sorted(ms_results['gr_mss'], cmp=sortMSCounts)
 
         # Latin layer
-        s.la_mss = []
-        for r_id in b_results['latin_parallels']:
+        ms_results['la_mss'] = []
+        ms_results['la_extant'] = {}
+        for gms in greekMSS:
+            ms_results['la_extant'][gms] = 0
+        for lms in latinMSS:
+            ms_results['la_extant'][lms] = 0
+        for r_id in ms_results['latin_parallels']:
             rdg = s.reading_map[r_id]
             for ms in rdg['mss']:
                 map_L[ms] = map_L[ms] + 1
+            for gms in greekMSS:
+                if s.vuHasManuscript(rdg['vu'], gms):
+                    ms_results['la_extant'][gms] = ms_results['la_extant'][gms] + 1
+            for lms in latinMSS:
+                if s.vuHasManuscript(rdg['vu'], lms):
+                    ms_results['la_extant'][lms] = ms_results['la_extant'][lms] + 1
         for ms, count in map_L.iteritems():
-            s.la_mss.append({'ms': ms, 'count': count})
-        s.la_mss = sorted(s.la_mss, cmp=sortMSCounts)
+            ms_results['la_mss'].append({'ms': ms, 'count': count, 'extant': ms_results['la_extant'][ms]})
+        ms_results['la_mss'] = sorted(ms_results['la_mss'], cmp=sortMSCounts)
 
     def computeResults(s, ms):
         s.info('Computing harmonization results for', ms)
@@ -259,6 +306,10 @@ class HarmAnalyzer:
 
         for vu in s.vus:
             if s.vuHasManuscript(vu, ms):
+                init_count = s.vuCountInitialReadings(vu)
+                if init_count > 1 and vu['layer'] != 'M' and vu['layer'] != 'NA':
+                    s.info('Multiple initial readings at chapter', vu['chapter'], ', verse', vu['start_verse'], ', index', vu['start_addrs'])
+
                 init_rdg = s.vuGetInitialReading(vu)
                 init_parallel = init_rdg['parallels'] if init_rdg else ''
                 if init_parallel:
@@ -385,115 +436,99 @@ class HarmAnalyzer:
             h_label = c.get('harmonizationFile')
             harm_file = c.get('inputFolder') + h_label + '.csv'
 
-        cachefile = c.get('variantDataCacheDir') + h_label + '.json'
-        if os.path.isfile(cachefile):
-            with open(cachefile, 'r') as file:
-                j_data = file.read().decode('utf-8-sig') # Remove BOM
-                j_data = j_data.encode('utf-8') # Reencode without BOM
-                file.close()
-            s.vus = json.loads(j_data)
-            for vu in s.vus:
-                for rdg in vu['readings']:
-                    s.reading_map[rdg['reading_id']] = rdg
+        csvdata = ''
+        with open(harm_file, 'r') as file:
+            s.info('reading', harm_file)
+            csvdata = file.read().decode('utf-8')
+            file.close()
+
+        vu = {}
+        col_names = []
+        rows = csvdata.split('\n')
+        for rdx, row in enumerate(rows):
+            if rdx == 0: # colnames
+                col_names = row.split('\t')
+                if col_names[0] != 'reading_id':
+                    raise ValueError('reading_id must be first column')
+                continue
+
+            parts = row.split('\t')
+            if len(parts) == 1:
+                continue
+
+            rdg = {}
+            for cdx, col_name in enumerate(col_names):
+                part = parts[cdx]
+                if col_name == 'reading_id':
+                    # 14.1.36a
+                    # 1.7.7-10,12-13,16-19,21-22,8.1-2,4-5,7-8a
+                    rs = re.search(r'((\d{1,2})\.(\d{1,2})\.([0-9\-,]{1,}))(,(\d{1,2})\.([0-9\-,]{1,})){0,1}(,(\d{1,2})\.([0-9\-,]{1,})){0,1}([a-z])', part)
+                    if rs and rs.group(11) == 'a':
+                        if vu:
+                            s.vus.append(vu)
+
+                        vu = {}
+                        vu['label'] = rs.group(1)
+                        if rs.group(5):
+                            vu['label'] = vu['label'] + rs.group(5)
+                        if rs.group(8):
+                            vu['label'] = vu['label'] + rs.group(8)
+                        vu['chapter'] = rs.group(2)
+                        vu['start_verse'] = rs.group(3)
+                        vu['start_addrs'] = rs.group(4)
+                        if rs.group(6) and rs.group(7):
+                            vu['end_verse'] = rs.group(6)
+                            vu['end_addrs'] = rs.group(7)
+                        vu['readings'] = []
+                    rdg['code'] = rs.group(11)
+                    rdg['reading_id'] = vu['label'] + rdg['code']
+                    rdg['mss'] = []
+                    vu['readings'].append(rdg)
+                    rdg['vu'] = vu
+                    s.reading_map[vu['label'] + rdg['code']] = rdg
+                    continue
+
+                if col_name == 'sort_id':
+                    continue
+
+                if col_name == 'reading_text':
+                    rdg['reading_text'] = part
+                    continue
+
+                if col_name == 'is_singular':
+                    rdg['is_singular'] = part
+                    continue
+
+                if col_name == 'is_latin':
+                    rdg['is_latin'] = part
+                    continue
+
+                if col_name == 'parallels':
+                    rdg['parallels'] = part
+                    continue
+
+                if col_name == 'synoptic_rdEgs':
+                    rdg['synoptic_readings'] = part
+                    continue
+
+                if col_name == 'layer':
+                    vu['layer'] = part
+                    continue
+
+                if col_name == 'na28':
+                    rdg['na28'] = part
+                    continue
+
+                if part == '1':
+                    rdg['mss'].append(col_name)
+
+        if vu:
+            s.vus.append(vu)
+
+        if o.refMSS:
+            s.refMS_IDs = o.refMSS.split(',')
         else:
-            csvdata = ''
-            with open(harm_file, 'r') as file:
-                s.info('reading', harm_file)
-                csvdata = file.read().decode('utf-8')
-                file.close()
-
-            vu = {}
-            col_names = []
-            rows = csvdata.split('\n')
-            for rdx, row in enumerate(rows):
-                if rdx == 0: # colnames
-                    col_names = row.split('\t')
-                    if col_names[0] != 'reading_id':
-                        raise ValueError('reading_id must be first column')
-                    continue
-
-                parts = row.split('\t')
-                if len(parts) == 1:
-                    continue
-
-                rdg = {}
-                for cdx, col_name in enumerate(col_names):
-                    part = parts[cdx]
-                    if col_name == 'reading_id':
-                        # 14.1.36a
-                        # 1.7.7-10,12-13,16-19,21-22,8.1-2,4-5,7-8a
-                        rs = re.search(r'((\d{1,2})\.(\d{1,2})\.([0-9\-,]{1,}))(,(\d{1,2})\.([0-9\-,]{1,})){0,1}(,(\d{1,2})\.([0-9\-,]{1,})){0,1}([a-z])', part)
-                        if rs and rs.group(11) == 'a':
-                            if vu:
-                                s.vus.append(vu)
-
-                            vu = {}
-                            vu['label'] = rs.group(1)
-                            if rs.group(5):
-                                vu['label'] = vu['label'] + rs.group(5)
-                            if rs.group(8):
-                                vu['label'] = vu['label'] + rs.group(8)
-                            vu['chapter'] = rs.group(2)
-                            vu['start_verse'] = rs.group(3)
-                            vu['start_addrs'] = rs.group(4)
-                            if rs.group(6) and rs.group(7):
-                                vu['end_verse'] = rs.group(6)
-                                vu['end_addrs'] = rs.group(7)
-                            vu['readings'] = []
-                        rdg['code'] = rs.group(11)
-                        rdg['reading_id'] = vu['label'] + rdg['code']
-                        rdg['mss'] = []
-                        vu['readings'].append(rdg)
-                        s.reading_map[vu['label'] + rdg['code']] = rdg
-                        continue
-
-                    if col_name == 'sort_id':
-                        continue
-
-                    if col_name == 'reading_text':
-                        rdg['reading_text'] = part
-                        continue
-
-                    if col_name == 'is_singular':
-                        rdg['is_singular'] = part
-                        continue
-
-                    if col_name == 'is_latin':
-                        rdg['is_latin'] = part
-                        continue
-
-                    if col_name == 'parallels':
-                        rdg['parallels'] = part
-                        continue
-
-                    if col_name == 'synoptic_rdEgs':
-                        rdg['synoptic_readings'] = part
-                        continue
-
-                    if col_name == 'layer':
-                        vu['layer'] = part
-                        continue
-
-                    if col_name == 'na28':
-                        rdg['na28'] = part
-                        continue
-
-                    if part == '1':
-                        rdg['mss'].append(col_name)
-
-            if vu:
-                s.vus.append(vu)
-
-            jdata = json.dumps(s.vus, ensure_ascii=False)
-            with open(cachefile, 'w+') as file:
-                file.write(jdata.encode('UTF-8'))
-                file.close()
-
-        #if o.refMSS:
-        #    s.refMS_IDs = o.refMSS.split(',')
-        #else:
-        #    s.refMS_IDs = c.get('referenceMSS')
-        s.refMS_IDs = c.get('showSingulars')
+            s.refMS_IDs = c.get('showSingulars')
 
         inits_w_parallel = []
         byzes_w_parallel = []
@@ -522,10 +557,10 @@ class HarmAnalyzer:
             if HarmAnalyzer.NO_MAJ and ms != '05':
                 continue
             s.computeResults(ms)
+            s.computeReferenceAgreements(ms)
 
-        s.computeBezanAgreements()
-        s.harmonizationsByLayer(h_label)
-        s.harmonizationsByAgreement(h_label)
+            s.harmonizationsByLayer(h_label)
+            s.harmonizationsByAgreement(ms, h_label)
 
         result_file = c.get('outputFolder') + h_label + '-results.json'
         jdata = json.dumps(s.results, ensure_ascii=False)
