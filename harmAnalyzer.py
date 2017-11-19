@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, string, re
+from collections import OrderedDict
 from object.util import *
 from utility.config import *
 from utility.options import *
@@ -38,7 +39,7 @@ class HarmAnalyzer:
     def harmonizationsByAgreement(s, ms, h_label):
         c = s.config
 
-        ms_results = {}
+        ms_results = OrderedDict()
         for res in s.results['reference_mss']:
             if res['ms'] == ms:
                 ms_results = res
@@ -292,6 +293,15 @@ class HarmAnalyzer:
         greek_layer = []
         byz_layer = []
 
+        latin_initial_p = []
+        greek_initial_p = []
+
+        latin_initial_p_against = []
+        greek_initial_p_against = []
+
+        noparl_latin_initial_p_against = []
+        noparl_greek_initial_p_against = []
+
         singular_layer_possible = []
         latin_layer_possible = []
         greek_layer_possible = []
@@ -342,12 +352,24 @@ class HarmAnalyzer:
                             latin_layer_possible.append(vu['label'])
                         if ms_parallel:
                             latin_layer_hm.append(ms_rdg['reading_id'])
+                        if init_parallel:
+                            latin_initial_p.append(vu['label'])
+                            if init_rdg['reading_id'] != ms_rdg['reading_id']:
+                                latin_initial_p_against.append(vu['label'])
+                                if not ms_parallel:
+                                    noparl_latin_initial_p_against.append(vu['label'])
                     elif layer == 'G':
                         greek_layer.append(vu['label'])
                         if s.vuHasParallel(vu):
                             greek_layer_possible.append(vu['label'])
                         if ms_parallel:
                             greek_layer_hm.append(ms_rdg['reading_id'])
+                        if init_parallel:
+                            greek_initial_p.append(vu['label'])
+                            if init_rdg['reading_id'] != ms_rdg['reading_id']:
+                                greek_initial_p_against.append(vu['label'])
+                                if not ms_parallel:
+                                    noparl_greek_initial_p_against.append(vu['label'])
                     else:
                         byz_layer.append(vu['label'])
                         if s.vuHasParallel(vu):
@@ -372,8 +394,10 @@ class HarmAnalyzer:
                     vus_w_non_byz_parallel.append(vu['label'])
                     if ms_parallel:
                         rdgs_w_non_byz_parallel.append(vu['label'])
+            else:
+                s.info('VU chapter', vu['chapter'], ', verse', vu['start_verse'], ', index', vu['start_addrs'], ' not attested by', ms)
 
-        ms_results['vu_count'] = len(s.vus)
+        ms_results['vu_count'] = len(vus)
 
         ms_results['vu_count_w_parallel'] = len(vus_w_parallel)
         ms_results['rdg_count_w_parallel'] = len(rdgs_w_parallel)
@@ -384,8 +408,9 @@ class HarmAnalyzer:
         ms_results['rdg_count_against_init_parallel_w_no_parallel'] = len(noparl_rdgs_against_init_parallel)
         ms_results['rdg_count_with_init_parallel'] = len(rdgs_with_init_parallel)
 
-        ms_results['pc_against_init_parallels'] = round(ms_results['rdg_count_against_init_parallel'] * 1.0 /  ms_results['initial_parallel_count'], 3) if ms_results['initial_parallel_count'] != 0 else 0
         ms_results['pc_with_init_parallels'] = round(ms_results['rdg_count_with_init_parallel'] * 1.0 /  ms_results['initial_parallel_count'], 3) if ms_results['initial_parallel_count'] != 0 else 0
+        ms_results['pc_against_init_parallels'] = round(ms_results['rdg_count_against_init_parallel'] * 1.0 /  ms_results['initial_parallel_count'], 3) if ms_results['initial_parallel_count'] != 0 else 0
+        ms_results['pc_against_init_parallels_w_no_parallel'] = round(ms_results['rdg_count_against_init_parallel_w_no_parallel'] * 1.0 /  ms_results['rdg_count_against_init_parallel'], 3) if ms_results['initial_parallel_count'] != 0 else 0
 
         ms_results['vu_count_w_non_init_parallel'] = len(vus_w_non_init_parallel)
         ms_results['rdg_count_w_non_init_parallel'] = len(rdgs_w_non_init_parallel)
@@ -399,17 +424,26 @@ class HarmAnalyzer:
         ms_results['rdg_count_w_non_byz_or_init_parallel'] = len(rdgs_w_non_byz_or_init_parallel)
         ms_results['pc_non_byz_or_init_parallels'] = round(ms_results['rdg_count_w_non_byz_or_init_parallel'] * 1.0 /  ms_results['vu_count_w_non_byz_or_init_parallel'], 3) if ms_results['vu_count_w_non_byz_or_init_parallel'] != 0 else 0
 
+        ms_results['singular_layer'] = singular_layer
         ms_results['rdg_count_singular'] = len(singular_layer)
         ms_results['rdg_count_singular_possible'] = len(singular_layer_possible)
         ms_results['rdg_count_singular_parallel'] = len(singular_layer_hm)
         ms_results['pc_singular_parallels'] = round(ms_results['rdg_count_singular_parallel'] * 1.0 /  ms_results['rdg_count_singular_possible'], 3) if ms_results['rdg_count_singular_possible'] != 0 else 0
 
+        ms_results['latin_layer'] = latin_layer
+        ms_results['latin_initial_p'] = latin_initial_p
+        ms_results['latin_initial_p_against'] = latin_initial_p_against
+        ms_results['noparl_latin_initial_p_against'] = noparl_latin_initial_p_against
         ms_results['rdg_count_latin_layer'] = len(latin_layer)
         ms_results['rdg_count_latin_layer_possible'] = len(latin_layer_possible)
         ms_results['rdg_count_latin_parallel'] = len(latin_layer_hm)
         ms_results['latin_parallels'] = latin_layer_hm
         ms_results['pc_latin_parallels'] = round(ms_results['rdg_count_latin_parallel'] * 1.0 /  ms_results['rdg_count_latin_layer_possible'], 3) if ms_results['rdg_count_latin_layer_possible'] != 0 else 0
 
+        ms_results['greek_layer'] = greek_layer
+        ms_results['greek_initial_p'] = greek_initial_p
+        ms_results['greek_initial_p_against'] = greek_initial_p_against
+        ms_results['noparl_greek_initial_p_against'] = noparl_greek_initial_p_against
         ms_results['rdg_count_nonbyz_greek'] = len(greek_layer)
         ms_results['rdg_count_nonbyz_greek_possible'] = len(greek_layer_possible)
         ms_results['rdg_count_nonbyz_greek_parallel'] = len(greek_layer_hm)
@@ -566,6 +600,95 @@ class HarmAnalyzer:
         jdata = json.dumps(s.results, ensure_ascii=False)
         with open(result_file, 'w+') as file:
             file.write(jdata.encode('UTF-8'))
+            file.close()
+
+        result_file = c.get('outputFolder') + h_label + '-results.csv'
+        with open(result_file, 'w+') as file:
+            file.write('VUs\t\t' + str(s.results['variation_units']) + '\n')
+            file.write('VUs with ||\t\t' + str(s.results['vu_count_w_parallel']) + '\n')
+            file.write('Initial Rs with ||\t\t' + str(s.results['init_count_w_parallel']) + '\n')
+            file.write('Byzantine Rs with ||\t\t' + str(s.results['byz_count_w_parallel']) + '\n')
+            file.write('\n')
+            for ms in s.results['reference_mss']:
+                file.write('MS ID\t\t' + ms['ms'] + '\n')
+
+                file.write('Rs Agreeing with Initial ||\t\t' + str(ms['rdg_count_with_init_parallel']) + '\n')
+                file.write('% Agreeing with Initial ||\t' + str(ms['rdg_count_with_init_parallel']) + '/' +  str(ms['initial_parallel_count']) + '\t' + str(ms['pc_with_init_parallels']) + '\n')
+                file.write('\n')
+
+                file.write('Rs Diverging from Initial || (with or without ||)\t\t' + str(ms['rdg_count_against_init_parallel']) + '\n')
+                file.write('% Diverging from Initial ||\t' + str(ms['rdg_count_against_init_parallel']) + '/' +  str(ms['initial_parallel_count']) + '\t' + str(ms['pc_against_init_parallels']) + '\n')
+                file.write('\n')
+
+                file.write('Rs Diverging from Initial || (without ||)\t\t' + str(ms['rdg_count_against_init_parallel_w_no_parallel']) + '\n')
+                file.write('% Diverging from Initial || (without ||)\t' + str(ms['rdg_count_against_init_parallel_w_no_parallel']) + '/' +  str(ms['rdg_count_against_init_parallel']) + '\t' + str(ms['pc_against_init_parallels_w_no_parallel']) + '\n')
+                file.write('\n')
+
+                file.write('VUs with Non-Initial ||\t\t' + str(ms['vu_count_w_non_init_parallel']) + '\n')
+                file.write('Non-Initial Rs with ||\t\t' + str(ms['rdg_count_w_non_init_parallel']) + '\n')
+                file.write('% Non-Initial ||s\t' + str(ms['rdg_count_w_non_init_parallel']) + '/' +  str(ms['vu_count_w_non_init_parallel']) + '\t' + str(ms['pc_non_init_parallels']) + '\n')
+                file.write('\n')
+
+                file.write('VUs with Non-Byzantine ||\t\t' + str(ms['vu_count_w_non_byz_parallel']) + '\n')
+                file.write('Non-Byzantine Rs with ||\t\t' + str(ms['rdg_count_w_non_byz_parallel']) + '\n')
+                file.write('% Non-Byzantine ||s\t' + str(ms['rdg_count_w_non_byz_parallel']) + '/' +  str(ms['vu_count_w_non_byz_parallel']) + '\t' + str(ms['pc_non_byz_parallels']) + '\n')
+                file.write('\n')
+
+                file.write('VUs with Neither Initial nor Byzantine ||\t\t' + str(ms['vu_count_w_non_byz_or_init_parallel']) + '\n')
+                file.write('Non-Initial and Non-Byzantine Rs with ||\t\t' + str(ms['rdg_count_w_non_byz_or_init_parallel']) + '\n')
+                file.write('% Non-Initial and Non-Byzantine ||s\t' + str(ms['rdg_count_w_non_byz_or_init_parallel']) + '/' +  str(ms['vu_count_w_non_byz_or_init_parallel']) + '\t' + str(ms['pc_non_byz_or_init_parallels']) + '\n')
+                file.write('\n')
+
+                file.write('Singular Rs\t\t' + str(ms['rdg_count_singular']) + '\n')
+                file.write('Singular Rs with Possible ||\t\t' + str(ms['rdg_count_singular_possible']) + '\n')
+                file.write('Singular Rs with Attested ||\t\t' + str(ms['rdg_count_singular_parallel']) + '\n')
+                file.write('% Singular ||s\t' + str(ms['rdg_count_singular_parallel']) + '/' +  str(ms['rdg_count_singular_possible']) + '\t' + str(ms['pc_singular_parallels']) + '\n')
+                file.write('\n')
+
+                file.write('Latin Rs\t\t' + str(ms['rdg_count_latin_layer']) + '\n')
+                file.write('Latin Rs with Possible ||\t\t' + str(ms['rdg_count_latin_layer_possible']) + '\n')
+                file.write('Latin Rs with Attested ||\t\t' + str(ms['rdg_count_latin_parallel']) + '\n')
+                file.write('% Latin ||s\t' + str(ms['rdg_count_latin_parallel']) + '/' +  str(ms['rdg_count_latin_layer_possible']) + '\t' + str(ms['pc_latin_parallels']) + '\n')
+                file.write('Latin VUs with Initial ||\t\t' + str(len(ms['latin_initial_p'])) + '\n')
+                file.write('Latin VUs against Initial ||\t\t' + str(len(ms['latin_initial_p_against'])) + '\n')
+                file.write('Latin VUs against Initial || (without ||)\t\t' + str(len(ms['noparl_latin_initial_p_against'])) + '\n')
+                file.write('\n')
+
+                file.write('Non-Byzantine Greek Rs\t\t' + str(ms['rdg_count_nonbyz_greek']) + '\n')
+                file.write('Non-Byzantine Greek Rs with Possible ||\t\t' + str(ms['rdg_count_nonbyz_greek_possible']) + '\n')
+                file.write('Non-Byzantine Greek Rs with Attested ||\t\t' + str(ms['rdg_count_nonbyz_greek_parallel']) + '\n')
+                file.write('% Non-Byzantine Greek ||s\t' + str(ms['rdg_count_nonbyz_greek_parallel']) + '/' +  str(ms['rdg_count_nonbyz_greek_possible']) + '\t' + str(ms['pc_nonbyz_parallels']) + '\n')
+                file.write('Non-Byzantine VUs with Initial ||\t\t' + str(len(ms['greek_initial_p'])) + '\n')
+                file.write('Non-Byzantine VUs against Initial ||\t\t' + str(len(ms['greek_initial_p_against'])) + '\n')
+                file.write('Non-Byzantine VUs against Initial || (without ||)\t\t' + str(len(ms['noparl_greek_initial_p_against'])) + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Singular VUs\t\t')
+                for label in ms['singular_layer']:
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Latin VUs\t\t')
+                for label in ms['latin_layer']:
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Non-Byzantine Greek VUs\t\t')
+                for label in ms['greek_layer']:
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+
             file.close()
 
         s.info('Done')
