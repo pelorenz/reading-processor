@@ -47,33 +47,58 @@ class VariantFinder:
         for addr in s.variantModel['addresses']:
             s.addrLookup[s.getAddrKey(addr)] = addr
 
-    def computeLayer(s, var_label, reading, NEW_LAYER_CODES):
-        if not NEW_LAYER_CODES:
-            if reading.hasManuscript('35'):
-                return 'M'
-            elif var_label in s.latinLayerVariants:
-                return 'L'
+    def isSubSingular(s, vu, ms):
+        reading = vu.getReadingForManuscript(ms)
+        if not reading:
+            return False
 
-            return 'D'
+        if ms == '05':
+            subsingularVariants = s.config.get('subsingularVariants').split('|')
+            if vu.label in subsingularVariants:
+                return True
         else:
-            if reading.hasManuscript('35'):
-                return 'M'
-            elif var_label in s.latinLayerVariants:
-                return 'L'
+            if len(reading.manuscripts) == 2:
+                return True
 
-            return 'G'
+        return False
 
-        #for ms in reading.manuscripts:
-        #    if ms == s.refMS:
-        #        continue
+    def computeLayer(s, var_label, reading, NEW_LAYER_CODES):
+        if s.refMS == '05':
+            if not NEW_LAYER_CODES:
+                if reading.hasManuscript('35'):
+                    return 'M'
+                elif var_label in s.latinLayerVariants:
+                    return 'L'
 
-        #    if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
-        #        if ms[:2] == 'VL': ms = ms[2:]
-        #        latin_mss.append(ms)
-        #    else:
-        #        greek_mss.append(ms)
+                return 'D'
+            else:
+                if reading.hasManuscript('35'):
+                    return 'M'
+                if var_label in s.latinLayerVariants:
+                    return 'L'
+                if reading.hasManuscript('565') or reading.hasManuscript('038') or reading.hasManuscript('700'):
+                    return 'C'
+                if reading.hasManuscript('03'):
+                    return 'B'
+                if reading.hasManuscript('032'):
+                    return 'W'
 
-        #return 'L' if isLatinLayer(len(greek_mss), len(latin_mss)) else 'D'
+                return 'G'
+        else:
+            for ms in reading.manuscripts:
+                if ms == s.refMS:
+                    continue
+
+                if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
+                    if ms[:2] == 'VL': ms = ms[2:]
+                    latin_mss.append(ms)
+                else:
+                    greek_mss.append(ms)
+
+            if not NEW_LAYER_CODES:
+                return 'L' if isLatinLayer(len(greek_mss), len(latin_mss)) else 'D'
+            else:
+                return 'L' if isLatinLayer(len(greek_mss), len(latin_mss)) else 'G'
 
     def getRUTextForms(s, r_unit, ru_idx, t_forms, is_ref):
         addr = s.lookupAddr(r_unit)
@@ -335,6 +360,72 @@ class VariantFinder:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
+    def countLatinOnlyReadings(s):
+        c = s.config
+        s.info('Counting Latin-only readings')
+
+        ref_mss = c.get('latinOnlyCountMSS')
+
+        csvFile = c.get('finderFolder') + '/latin-only-counts-' + s.range_id + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            csv_file.write('Manuscript\tLatin-Only Count\tVerses\t\tVerses (long)\n')
+
+            for ref_ms in ref_mss:
+                csv_file.write(ref_ms + '\t')
+
+                latin_only_count = 0
+                latin_only = []
+                latin_only_short = []
+                short_map = {}
+                for addr in s.variantModel['addresses']:
+                    for vu in addr.variation_units:
+                        if not vu.startingAddress:
+                            vu.startingAddress = addr
+
+                        reading = vu.getReadingForManuscript(ref_ms)
+                        if not reading:
+                            continue
+
+                        if reading.countNonRefGreekManuscripts(ref_ms) == 0 and reading.hasNonRefLatinManuscript(ref_ms):
+                            latin_only_count = latin_only_count + 1
+                            latin_only.append(vu.label)
+
+                            rs = re.search(r'^(\d{1,2})\.(\d{1,2})\..+$', vu.label)
+                            if rs:
+                                chapter = rs.group(1)
+                                verse = rs.group(2)
+
+                            ref = chapter + ':' + verse
+                            if not short_map.has_key(ref):
+                                short_map[ref] = 1
+                                latin_only_short.append(ref)
+                            else:
+                                short_map[ref] = short_map[ref] + 1
+
+                csv_file.write(str(latin_only_count) + '\t')
+                s.info('latin-only count is', str(latin_only_count))
+
+                rdg_str = ''
+                for ref in latin_only_short:
+                    if short_map.has_key(ref) and short_map[ref] > 1:
+                        ref = ref + ' (' + str(short_map[ref]) + 'x)'
+
+                    if rdg_str:
+                        rdg_str = rdg_str + '; '
+                    rdg_str = rdg_str + ref
+                csv_file.write(rdg_str + '\t\t')
+
+                rdg_str = ''
+                for ref in latin_only:
+                    if rdg_str:
+                        rdg_str = rdg_str + '; '
+                    rdg_str = rdg_str + ref
+
+                csv_file.write(rdg_str + '\n')
+                #s.info('latin-only variants', str(latin_only))
+
+            csv_file.close()
+
     def generateHarmonizationTemplate(s, range_id):
         c = s.config
         s.info('Generating harmonization template')
@@ -367,6 +458,8 @@ class VariantFinder:
                     r_layer = ''
                     if vu.isReferenceSingular(s.refMS):
                         r_layer = 'S'
+                    elif s.isSubSingular(vu, s.refMS):
+                        r_layer = 'SS'
 
                     r_reading = vu.getReadingForManuscript(s.refMS)
                     if not r_reading:
@@ -377,7 +470,7 @@ class VariantFinder:
                         if not set(sgMSS) & set(showSingulars):
                             continue
 
-                    if r_layer != 'S' and r_layer != 'NA':
+                    if r_layer != 'S' and r_layer != 'SS' and r_layer != 'NA':
                         r_layer = s.computeLayer(vu.label, r_reading, True)
 
                     for idx, reading in enumerate(vu.readings):
@@ -473,6 +566,10 @@ class VariantFinder:
                     r_layer = 'S'
                 elif vu.isSingular():
                     is_singular = True
+
+                if s.isSubSingular(vu, s.refMS):
+                    is_singular = True
+                    r_layer = 'SS'
 
                 r_reading = vu.getReadingForManuscript(s.refMS)
                 if not r_reading:
@@ -620,6 +717,8 @@ class VariantFinder:
             s.generateHarmonizationTemplate(s.range_id)
         elif o.varheader:
             s.generateVariationHeader()
+        elif o.latinonly:
+            s.countLatinOnlyReadings()
         else:
             s.findMultiwayVariants()
             s.saveMultiwayVariants()

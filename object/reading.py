@@ -45,6 +45,35 @@ class  Reading(object):
                 return True
         return False
 
+    def countNonRefGreekManuscripts(s, refMS):
+        counter = 0
+        for ms in s.manuscripts:
+            if refMS == ms:
+                continue
+            if ms in Util.MS_OVERLAYS:
+                continue
+            if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
+                counter = counter + 1
+        return counter
+
+    def hasLatinManuscript(s):
+        for ms in s.manuscripts:
+            if ms in Util.MS_OVERLAYS:
+                continue
+            if ms == '19A' or ms == 'vg' or ms[:1] == 'V':
+                return True
+        return False
+
+    def hasNonRefLatinManuscript(s, refMS):
+        for ms in s.manuscripts:
+            if ms in Util.MS_OVERLAYS:
+                continue
+            if ms == '19A' or ms == 'vg' or ms[:1] == 'V':
+                if refMS == '05' and ms == 'VL5':
+                    continue
+                return True
+        return False
+
     def toApparatusString(s):
         mss_str = ''
         if len(s.manuscripts):

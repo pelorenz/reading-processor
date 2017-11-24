@@ -32,6 +32,7 @@ class  CommandLine:
         self.parser.add_argument('-Q', '--qca', help='Generate QCA results for segments (dicer).', action='store_true')
         self.parser.add_argument('-V', '--varheader', help='Generate header with variation units for collations (variantFinder).', action='store_true')
         self.parser.add_argument('-Z', '--harmonization', help='Generate CSV template to record harmonization data (variantFinder).', action='store_true')
+        self.parser.add_argument('-Y', '--latinonly', help='Count Latin-only readings (variantFinder).', action='store_true')
 
     def getOptions(self):
         dict = vars(self.parser.parse_args())
