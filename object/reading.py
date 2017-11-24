@@ -56,6 +56,29 @@ class  Reading(object):
                 counter = counter + 1
         return counter
 
+    def countNonRefGreekManuscriptsByGroup(s, refMS, msGroups, g_counts):
+        counter = 0
+        for ms in s.manuscripts:
+            if not msGroups.has_key(ms): # Latins and non-config'ed Greeks excluded
+                continue
+            if refMS == ms:
+                continue
+            if ms in Util.MS_OVERLAYS:
+                continue
+            if ms == '79': # bilingual
+                continue
+            if msGroups[ms] != 'Iso' and msGroups[ms] != 'C28':
+                group = msGroups[ms]
+                # did we count group already?
+                if not g_counts.has_key(group):
+                    counter = counter + 1
+                    g_counts[group] = 1
+                else:
+                    g_counts[group] = g_counts[group] + 1
+            else:
+                counter = counter + 1
+        return counter
+
     def hasLatinManuscript(s):
         for ms in s.manuscripts:
             if ms in Util.MS_OVERLAYS:
@@ -64,15 +87,16 @@ class  Reading(object):
                 return True
         return False
 
-    def hasNonRefLatinManuscript(s, refMS):
+    def countNonRefLatinManuscripts(s, refMS):
+        counter = 0
         for ms in s.manuscripts:
             if ms in Util.MS_OVERLAYS:
                 continue
             if ms == '19A' or ms == 'vg' or ms[:1] == 'V':
                 if refMS == '05' and ms == 'VL5':
                     continue
-                return True
-        return False
+                counter = counter + 1
+        return counter
 
     def toApparatusString(s):
         mss_str = ''

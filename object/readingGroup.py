@@ -50,17 +50,23 @@ class  ReadingGroup(object):
             counter = counter + reading.countNonRefGreekManuscripts(refMS)
         return counter
 
+    def countNonRefGreekManuscriptsByGroup(s, refMS, msGroups, g_counts):
+        counter = 0
+        for reading in s.readings:
+            counter = counter + reading.countNonRefGreekManuscriptsByGroup(refMS, msGroups, g_counts)
+        return counter
+
     def hasLatinManuscript(s):
         for reading in s.readings:
             if reading.hasLatinManuscript():
                 return True
         return False
 
-    def hasNonRefLatinManuscript(s, refMS):
+    def countNonRefLatinManuscripts(s, refMS):
+        counter = 0
         for reading in s.readings:
-            if reading.hasNonRefLatinManuscript(refMS):
-                return True
-        return False
+            counter = counter + reading.countNonRefLatinManuscripts(refMS)
+        return counter
 
     def getManuscriptReading(s, ms):
         for reading in s.readings:

@@ -360,69 +360,207 @@ class VariantFinder:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
-    def countLatinOnlyReadings(s):
+    def countLatinLayerReadings(s, is_group):
         c = s.config
-        s.info('Counting Latin-only readings')
+        s.info('Counting Latin-layer readings, groups =', str(is_group))
 
-        ref_mss = c.get('latinOnlyCountMSS')
+        MAX_RANGE = 9
+        ref_mss = c.get('latinLayerCountMSS')
+        msGroups = c.get('msGroups')
+        base_mss = []
+        base_mss.append('28')
+        for ms, group in msGroups.iteritems():
+            if group == 'F03' or group == 'C565' or group == 'F1' or group == 'F13':
+                base_mss.append(ms)
 
-        csvFile = c.get('finderFolder') + '/latin-only-counts-' + s.range_id + '.csv'
-        with open(csvFile, 'w+') as csv_file:
-            csv_file.write('Manuscript\tLatin-Only Count\tVerses\t\tVerses (long)\n')
+        ref_map = {}
+        for ref_ms in ref_mss:
+            # initialize lists of counts, lists, and maps (1-5)
+            dat = {
+                'l_layer_counts': {},
+                'l_layer': {},
+                'l_short': {},
+                'sh_maps': {}
+            }
 
-            for ref_ms in ref_mss:
-                csv_file.write(ref_ms + '\t')
+            for i in range(0, MAX_RANGE):
+                dat['l_layer_counts'][i] = 0
+                dat['l_layer'][i] = []
+                dat['l_short'][i] = []
+                dat['sh_maps'][i] = {}
 
-                latin_only_count = 0
-                latin_only = []
-                latin_only_short = []
-                short_map = {}
-                for addr in s.variantModel['addresses']:
-                    for vu in addr.variation_units:
-                        if not vu.startingAddress:
-                            vu.startingAddress = addr
+            ref_map[ref_ms] = dat
 
-                        reading = vu.getReadingForManuscript(ref_ms)
-                        if not reading:
-                            continue
+        bz_bas_counts = {}
+        bz_bas_long = {}
+        bz_bas_short = {}
+        bz_bas_sh_maps = {}
 
-                        if reading.countNonRefGreekManuscripts(ref_ms) == 0 and reading.hasNonRefLatinManuscript(ref_ms):
-                            latin_only_count = latin_only_count + 1
-                            latin_only.append(vu.label)
+        bz_lat_counts = {}
+        bz_lat_long = {}
+        bz_lat_short = {}
+        bz_lat_sh_maps = {}
+        for i in range(0, MAX_RANGE):
+            bz_bas_counts[i] = 0
+            bz_bas_long[i] = []
+            bz_bas_short[i] = []
+            bz_bas_sh_maps[i] = {}
 
-                            rs = re.search(r'^(\d{1,2})\.(\d{1,2})\..+$', vu.label)
-                            if rs:
-                                chapter = rs.group(1)
-                                verse = rs.group(2)
+            bz_lat_counts[i] = 0
+            bz_lat_long[i] = []
+            bz_lat_short[i] = []
+            bz_lat_sh_maps[i] = {}
 
-                            ref = chapter + ':' + verse
-                            if not short_map.has_key(ref):
-                                short_map[ref] = 1
-                                latin_only_short.append(ref)
+        for ref_ms in ref_mss:
+            for addr in s.variantModel['addresses']:
+                for vu in addr.variation_units:
+                    if not vu.startingAddress:
+                        vu.startingAddress = addr
+
+                    reading = vu.getReadingForManuscript(ref_ms)
+                    if not reading:
+                        continue
+
+                    nonref_count = 0
+                    latin_count = reading.countNonRefLatinManuscripts(ref_ms)
+                    if is_group:
+                        g_counts = {}
+                        nonref_count = reading.countNonRefGreekManuscriptsByGroup(ref_ms, msGroups, g_counts)
+                    else:
+                        nonref_count = reading.countNonRefGreekManuscripts(ref_ms)
+
+                    if nonref_count >= MAX_RANGE or latin_count < nonref_count or latin_count == 0:
+                        continue
+
+                    ref_map[ref_ms]['l_layer_counts'][nonref_count] = ref_map[ref_ms]['l_layer_counts'][nonref_count] + 1
+                    ref_map[ref_ms]['l_layer'][nonref_count].append(vu.label)
+
+                    rs = re.search(r'^(\d{1,2})\.(\d{1,2})\..+$', vu.label)
+                    if rs:
+                        chapter = rs.group(1)
+                        verse = rs.group(2)
+
+                    ref = chapter + ':' + verse
+                    if not ref_map[ref_ms]['sh_maps'][nonref_count].has_key(ref):
+                        ref_map[ref_ms]['sh_maps'][nonref_count][ref] = 1
+                        ref_map[ref_ms]['l_short'][nonref_count].append(ref)
+                    else:
+                        ref_map[ref_ms]['sh_maps'][nonref_count][ref] = ref_map[ref_ms]['sh_maps'][nonref_count][ref] + 1
+
+                    if ref_ms == '05' and is_group:
+                        if set(base_mss) & set(reading.manuscripts):
+                            bz_bas_counts[nonref_count] = bz_bas_counts[nonref_count] + 1
+                            bz_bas_long[nonref_count].append(vu.label)
+                            if not bz_bas_sh_maps[nonref_count].has_key(ref):
+                                bz_bas_sh_maps[nonref_count][ref] = 1
+                                bz_bas_short[nonref_count].append(ref)
                             else:
-                                short_map[ref] = short_map[ref] + 1
+                                bz_bas_sh_maps[nonref_count][ref] = bz_bas_sh_maps[nonref_count][ref] + 1
+                        else:
+                            bz_lat_counts[nonref_count] = bz_lat_counts[nonref_count] + 1
+                            bz_lat_long[nonref_count].append(vu.label)
+                            if not bz_lat_sh_maps[nonref_count].has_key(ref):
+                                bz_lat_sh_maps[nonref_count][ref] = 1
+                                bz_lat_short[nonref_count].append(ref)
+                            else:
+                                bz_lat_sh_maps[nonref_count][ref] = bz_lat_sh_maps[nonref_count][ref] + 1
 
-                csv_file.write(str(latin_only_count) + '\t')
-                s.info('latin-only count is', str(latin_only_count))
+        file_sfx = ''
+        if is_group:
+            file_sfx = '-grp'
 
-                rdg_str = ''
-                for ref in latin_only_short:
-                    if short_map.has_key(ref) and short_map[ref] > 1:
-                        ref = ref + ' (' + str(short_map[ref]) + 'x)'
+        if is_group:
+            csvFile = c.get('finderFolder') + '/bezan-layers-' + s.range_id + '.csv'
+            with open(csvFile, 'w+') as csv_file:
+                csv_file.write('Manuscripts\tLatin-Layer Count\tVerses\t\tVerses (long)\n')
+                for i in range(0, MAX_RANGE):
+                    csv_file.write(str(i) + '\t')
+                    csv_file.write(str(bz_lat_counts[i]) + '\t')
 
-                    if rdg_str:
-                        rdg_str = rdg_str + '; '
-                    rdg_str = rdg_str + ref
-                csv_file.write(rdg_str + '\t\t')
+                    rdg_str = ''
+                    for ref in bz_lat_short[i]:
+                        if bz_lat_sh_maps[i].has_key(ref) and bz_lat_sh_maps[i][ref] > 1:
+                            ref = ref + ' (' + str(bz_lat_sh_maps[i][ref]) + 'x)'
 
-                rdg_str = ''
-                for ref in latin_only:
-                    if rdg_str:
-                        rdg_str = rdg_str + '; '
-                    rdg_str = rdg_str + ref
+                        if rdg_str:
+                            rdg_str = rdg_str + '; '
+                        rdg_str = rdg_str + ref
+                    csv_file.write(rdg_str + '\t\t')
 
-                csv_file.write(rdg_str + '\n')
-                #s.info('latin-only variants', str(latin_only))
+                    rdg_str = ''
+                    for ref in bz_lat_long[i]:
+                        if rdg_str:
+                            rdg_str = rdg_str + '; '
+                        rdg_str = rdg_str + ref
+                    csv_file.write(rdg_str + '\n')
+
+                csv_file.write('\n')
+                csv_file.write('Manuscripts\tBase-Layer Count\tVerses\t\tVerses (long)\n')
+                for i in range(0, MAX_RANGE):
+                    csv_file.write(str(i) + '\t')
+                    csv_file.write(str(bz_bas_counts[i]) + '\t')
+
+                    rdg_str = ''
+                    for ref in bz_bas_short[i]:
+                        if bz_bas_sh_maps[i].has_key(ref) and bz_bas_sh_maps[i][ref] > 1:
+                            ref = ref + ' (' + str(bz_bas_sh_maps[i][ref]) + 'x)'
+
+                        if rdg_str:
+                            rdg_str = rdg_str + '; '
+                        rdg_str = rdg_str + ref
+                    csv_file.write(rdg_str + '\t\t')
+
+                    rdg_str = ''
+                    for ref in bz_bas_long[i]:
+                        if rdg_str:
+                            rdg_str = rdg_str + '; '
+                        rdg_str = rdg_str + ref
+                    csv_file.write(rdg_str + '\n')
+
+                csv_file.close()
+
+        csvFile = c.get('finderFolder') + '/latin-layer-counts-' + s.range_id + file_sfx + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            for i in range(0, MAX_RANGE):
+                csv_file.write(str(i) + ' Manuscripts\n')
+                csv_file.write('Manuscript\tLatin-Layer Count\tVerses\t\tVerses (long)\n')
+                for ref_ms in ref_mss:
+                    csv_file.write(ref_ms + '\t')
+                    csv_file.write(str(ref_map[ref_ms]['l_layer_counts'][i]) + '\t')
+
+                    rdg_str = ''
+                    for ref in ref_map[ref_ms]['l_short'][i]:
+                        if ref_map[ref_ms]['sh_maps'][i].has_key(ref) and ref_map[ref_ms]['sh_maps'][i][ref] > 1:
+                            ref = ref + ' (' + str(ref_map[ref_ms]['sh_maps'][i][ref]) + 'x)'
+
+                        if rdg_str:
+                            rdg_str = rdg_str + '; '
+                        rdg_str = rdg_str + ref
+                    csv_file.write(rdg_str + '\t\t')
+
+                    rdg_str = ''
+                    for ref in ref_map[ref_ms]['l_layer'][i]:
+                        if rdg_str:
+                            rdg_str = rdg_str + '; '
+                        rdg_str = rdg_str + ref
+
+                    csv_file.write(rdg_str + '\n')
+                csv_file.write('\n')
+
+            csv_file.close()
+
+        csvFile = c.get('finderFolder') + '/latin-layer-all-counts-' + s.range_id + file_sfx + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            csv_file.write('Counts per Manuscript\n')
+            csv_file.write('Manuscript')
+            for i in range(0, MAX_RANGE):
+                csv_file.write('\tCount ' + str(i))
+            csv_file.write('\n')
+            for ref_ms in ref_mss:
+                csv_file.write(ref_ms)
+                for i in range(0, MAX_RANGE):
+                    csv_file.write('\t' + str(ref_map[ref_ms]['l_layer_counts'][i]))
+                csv_file.write('\n')
 
             csv_file.close()
 
@@ -717,8 +855,9 @@ class VariantFinder:
             s.generateHarmonizationTemplate(s.range_id)
         elif o.varheader:
             s.generateVariationHeader()
-        elif o.latinonly:
-            s.countLatinOnlyReadings()
+        elif o.latinlayer:
+            s.countLatinLayerReadings(True)
+            s.countLatinLayerReadings(False)
         else:
             s.findMultiwayVariants()
             s.saveMultiwayVariants()
@@ -741,4 +880,7 @@ class VariantFinder:
 #
 # Generate variation header for collation
 # variantFinder.py -v -a c13 -R 05 -V
+#
+# Latin-layer counter
+# variantFinder.py -v -a c01-16 -R 05 -Y
 VariantFinder().main(sys.argv[1:])
