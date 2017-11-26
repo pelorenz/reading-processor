@@ -44,10 +44,10 @@ class  ReadingGroup(object):
                 return True
         return False
 
-    def countNonRefGreekManuscripts(s, refMS):
+    def countNonRefGreekManuscripts(s, refMS, indiv_mss):
         counter = 0
         for reading in s.readings:
-            counter = counter + reading.countNonRefGreekManuscripts(refMS)
+            counter = counter + reading.countNonRefGreekManuscripts(refMS, indiv_mss)
         return counter
 
     def countNonRefGreekManuscriptsByGroup(s, refMS, msGroups, g_counts):

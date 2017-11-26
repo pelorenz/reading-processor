@@ -42,6 +42,24 @@ class VariantFinder:
     def lookupAddr(s, slot):
         return s.addrLookup[s.getAddrKey(slot)]
 
+    def refListToString(s, ref_list):
+        r_str = ''
+        r_map = {}
+        r_list = []
+        for ref in ref_list:
+            if not r_map.has_key(ref):
+                r_map[ref] = 1
+                r_list.append(ref)
+            else:
+                r_map[ref] = r_map[ref] + 1
+        for ref in r_list:
+            if r_map.has_key(ref) and r_map[ref] > 1:
+                ref = ref + ' (' + str(r_map[ref]) + 'x)'
+            if r_str:
+                r_str = r_str + '; '
+            r_str = r_str + ref
+        return r_str
+
     def initAddrLookup(s):
         s.info('Initializing address map')
         for addr in s.variantModel['addresses']:
@@ -360,16 +378,30 @@ class VariantFinder:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
-    def countLatinLayerReadings(s, is_group):
+    def buildLatinLayer(s):
         c = s.config
-        s.info('Counting Latin-layer readings, groups =', str(is_group))
+        s.info('Building Latin layer by groups')
+
+        importLayer = {}
+        jsondata = ''
+        jsonfile = c.get('inputFolder') + 'latin-layer-import.json'
+        if os.path.exists(jsonfile):
+            with open(jsonfile, 'r') as file:
+                s.info('Reading', jsonfile)
+                jsondata = file.read().decode('utf-8')
+                file.close()
+
+            importLayer = json.loads(jsondata)
 
         MAX_RANGE = 9
         ref_mss = c.get('latinLayerCountMSS')
-        msGroups = c.get('msGroups')
+        msGroupAssignments = c.get('msGroupAssignments')
+        greekMSS = c.get('greekMSS')
+        greekGroups = c.get('greekGroups')
         base_mss = []
         base_mss.append('28')
-        for ms, group in msGroups.iteritems():
+        base_mss.append('2542')
+        for ms, group in msGroupAssignments.iteritems():
             if group == 'F03' or group == 'C565' or group == 'F1' or group == 'F13':
                 base_mss.append(ms)
 
@@ -400,6 +432,11 @@ class VariantFinder:
         bz_lat_long = {}
         bz_lat_short = {}
         bz_lat_sh_maps = {}
+        bz_lat_data = {}
+
+        bz_sing_agreemts = {}
+        bz_sing_group_agreemts = {}
+
         for i in range(0, MAX_RANGE):
             bz_bas_counts[i] = 0
             bz_bas_long[i] = []
@@ -409,25 +446,53 @@ class VariantFinder:
             bz_lat_counts[i] = 0
             bz_lat_long[i] = []
             bz_lat_short[i] = []
-            bz_lat_sh_maps[i] = {}
+            bz_lat_sh_maps[i] = {} # keyed to short ref
+            bz_lat_data[i] = {} # keyed to long ref
 
-        for ref_ms in ref_mss:
+        vu_count = 0
+        retro_count = 0
+        for idx, ref_ms in enumerate(ref_mss):
             for addr in s.variantModel['addresses']:
                 for vu in addr.variation_units:
                     if not vu.startingAddress:
                         vu.startingAddress = addr
 
+                    if idx == 0:
+                        vu_count = vu_count + 1
+                        if vu.hasRetroversion:
+                            retro_count = retro_count + 1
+
                     reading = vu.getReadingForManuscript(ref_ms)
                     if not reading:
                         continue
 
+                    indiv_mss = []
+                    g_counts = {}
                     nonref_count = 0
                     latin_count = reading.countNonRefLatinManuscripts(ref_ms)
-                    if is_group:
-                        g_counts = {}
-                        nonref_count = reading.countNonRefGreekManuscriptsByGroup(ref_ms, msGroups, g_counts)
-                    else:
-                        nonref_count = reading.countNonRefGreekManuscripts(ref_ms)
+                    nonref_count = reading.countNonRefGreekManuscriptsByGroup(ref_ms, msGroupAssignments, g_counts)
+                    nonref_count_indiv = reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
+
+                    # individual singular agreements
+                    if ref_ms == '05' and nonref_count_indiv == 1:
+                        sg_ms = indiv_mss[0]
+
+                        if not bz_sing_agreemts.has_key(sg_ms):
+                            bz_sing_agreemts[sg_ms] = []
+                        ref = str(addr.chapter_num) + ':' + str(addr.verse_num)
+                        bz_sing_agreemts[sg_ms].append(ref)
+
+                    # family singular agreements
+                    if ref_ms == '05' and nonref_count == 1:
+                        for grp, g_mss in g_counts.iteritems():
+                            if grp == 'Byz' or grp == 'Iso':
+                                break;
+                            if not bz_sing_group_agreemts.has_key(grp):
+                                bz_sing_group_agreemts[grp] = []
+
+                            ref = str(addr.chapter_num) + ':' + str(addr.verse_num)
+                            bz_sing_group_agreemts[grp].append(ref)
+                            break
 
                     if nonref_count >= MAX_RANGE or latin_count < nonref_count or latin_count == 0:
                         continue
@@ -447,7 +512,7 @@ class VariantFinder:
                     else:
                         ref_map[ref_ms]['sh_maps'][nonref_count][ref] = ref_map[ref_ms]['sh_maps'][nonref_count][ref] + 1
 
-                    if ref_ms == '05' and is_group:
+                    if ref_ms == '05':
                         if set(base_mss) & set(reading.manuscripts):
                             bz_bas_counts[nonref_count] = bz_bas_counts[nonref_count] + 1
                             bz_bas_long[nonref_count].append(vu.label)
@@ -458,68 +523,150 @@ class VariantFinder:
                                 bz_bas_sh_maps[nonref_count][ref] = bz_bas_sh_maps[nonref_count][ref] + 1
                         else:
                             bz_lat_counts[nonref_count] = bz_lat_counts[nonref_count] + 1
+
+                            readings_str = ''
+                            readings_str = readings_str + reading.getDisplayValue()
+                            for rdg in vu.readings:
+                                if rdg == reading:
+                                    continue
+
+                                if len(readings_str) > 0:
+                                    readings_str = readings_str + ' | '
+                                readings_str = readings_str + rdg.getDisplayValue()
+
                             bz_lat_long[nonref_count].append(vu.label)
+                            is_bilingual = True if '79' in reading.manuscripts else False
+                            r_data = {
+                                'apparatusStr': vu.toApparatusString(),
+                                'mss': mssListToString(reading.manuscripts),
+                                'groupMSS': mssGroupListToString(reading.manuscripts, msGroupAssignments, g_counts),
+                                'groupCounts': g_counts,
+                                'isBilingual': is_bilingual,
+                                'readingsDisplay': readings_str,
+                                'readingCount': len(vu.readings),
+                                'greekCountGrouped': nonref_count,
+                                'greekCountUngrouped': nonref_count_indiv,
+                                'latinCount': latin_count,
+                                'layer': 'L'
+                            }
+                            bz_lat_data[vu.label] = r_data
+
                             if not bz_lat_sh_maps[nonref_count].has_key(ref):
                                 bz_lat_sh_maps[nonref_count][ref] = 1
                                 bz_lat_short[nonref_count].append(ref)
                             else:
                                 bz_lat_sh_maps[nonref_count][ref] = bz_lat_sh_maps[nonref_count][ref] + 1
 
-        file_sfx = ''
-        if is_group:
-            file_sfx = '-grp'
+        csvFile = c.get('finderFolder') + '/bezae-latin-layer-' + s.range_id + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            csv_file.write('Sort Ref\tLayer\tParallels Against\tParallels For\tType\tClass Description\tReference\tReadings\tMSS\tMSS (Indiv)\tLatin Count\tGreek Count (ungrouped)\tGreek Count (grouped)\tReading Count\tBilingual\tGroups\tApparatus\n')
 
-        if is_group:
-            csvFile = c.get('finderFolder') + '/bezan-layers-' + s.range_id + '.csv'
-            with open(csvFile, 'w+') as csv_file:
-                csv_file.write('Manuscripts\tLatin-Layer Count\tVerses\t\tVerses (long)\n')
-                for i in range(0, MAX_RANGE):
-                    csv_file.write(str(i) + '\t')
-                    csv_file.write(str(bz_lat_counts[i]) + '\t')
+            for i in range(0, MAX_RANGE):
+                for label in bz_lat_long[i]:
+                    r_data = bz_lat_data[label]
+                    sort_label = s.generateSortLabel(label)
 
-                    rdg_str = ''
-                    for ref in bz_lat_short[i]:
-                        if bz_lat_sh_maps[i].has_key(ref) and bz_lat_sh_maps[i][ref] > 1:
-                            ref = ref + ' (' + str(bz_lat_sh_maps[i][ref]) + 'x)'
+                    parallels_against = ''
+                    parallels_for = ''
+                    r_type = ''
+                    class_description = ''
+                    if importLayer.has_key(label):
+                        i_rdg = importLayer[label]
+                        if i_rdg.has_key('parallelsAgainst'):
+                            parallels_against = i_rdg['parallelsAgainst']
+                        if i_rdg.has_key('parallelsFor'):
+                            parallels_for = i_rdg['parallelsFor']
+                        if i_rdg.has_key('type'):
+                            r_type = i_rdg['type']
+                        if i_rdg.has_key('desc'):
+                            class_description = i_rdg['desc']
+                    else:
+                        class_description = 'NEW'
 
-                        if rdg_str:
-                            rdg_str = rdg_str + '; '
-                        rdg_str = rdg_str + ref
-                    csv_file.write(rdg_str + '\t\t')
+                    g_list = r_data['groupCounts'].keys()
+                    g_str = groupMapToString(r_data['groupCounts'], g_list)
 
-                    rdg_str = ''
-                    for ref in bz_lat_long[i]:
-                        if rdg_str:
-                            rdg_str = rdg_str + '; '
-                        rdg_str = rdg_str + ref
-                    csv_file.write(rdg_str + '\n')
+                    is_bilingual = 'b' if r_data['isBilingual'] else ''
 
-                csv_file.write('\n')
-                csv_file.write('Manuscripts\tBase-Layer Count\tVerses\t\tVerses (long)\n')
-                for i in range(0, MAX_RANGE):
-                    csv_file.write(str(i) + '\t')
-                    csv_file.write(str(bz_bas_counts[i]) + '\t')
+                    csv_file.write((sort_label + u'\t' + r_data['layer'] + u'\t' + parallels_against + u'\t' + parallels_for + u'\t' + r_type + u'\t' + class_description + u'\t' + label + u'\t' + r_data['readingsDisplay'] + u'\t' + r_data['groupMSS'] + u'\t' + r_data['mss'] + u'\t' + str(r_data['latinCount']) + u'\t' + str(r_data['greekCountUngrouped']) + u'\t' + str(r_data['greekCountGrouped']) + u'\t' + str(r_data['readingCount']) + u'\t' + is_bilingual + u'\t' + g_str + u'\t' + r_data['apparatusStr'] + u'\n').encode('UTF-8'))
 
-                    rdg_str = ''
-                    for ref in bz_bas_short[i]:
-                        if bz_bas_sh_maps[i].has_key(ref) and bz_bas_sh_maps[i][ref] > 1:
-                            ref = ref + ' (' + str(bz_bas_sh_maps[i][ref]) + 'x)'
+            csv_file.close()
 
-                        if rdg_str:
-                            rdg_str = rdg_str + '; '
-                        rdg_str = rdg_str + ref
-                    csv_file.write(rdg_str + '\t\t')
+        csvFile = c.get('finderFolder') + '/bezan-singular-agreements-' + s.range_id + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            csv_file.write('Manuscript\tSingular Agreements\tVerses\n')
+            for sg_ms in greekMSS:
+                if bz_sing_agreemts.has_key(sg_ms):
+                    v_list = bz_sing_agreemts[sg_ms]
+                    csv_file.write(sg_ms + '\t' + str(len(v_list)) + '\t')
 
-                    rdg_str = ''
-                    for ref in bz_bas_long[i]:
-                        if rdg_str:
-                            rdg_str = rdg_str + '; '
-                        rdg_str = rdg_str + ref
-                    csv_file.write(rdg_str + '\n')
+                    # refListToString
+                    v_str = s.refListToString(v_list)
+                    csv_file.write(v_str + '\n')
 
-                csv_file.close()
+            csv_file.write('\n')
+            csv_file.write('Group\tSingular Agreements\tVerses\n')
+            for sg_grp in greekGroups:
+                if bz_sing_group_agreemts.has_key(sg_grp):
+                    v_list = bz_sing_group_agreemts[sg_grp]
+                    csv_file.write(sg_grp + '\t' + str(len(v_list)) + '\t')
 
-        csvFile = c.get('finderFolder') + '/latin-layer-counts-' + s.range_id + file_sfx + '.csv'
+                    # refListToString
+                    v_str = s.refListToString(v_list)
+                    csv_file.write(v_str + '\n')
+
+            csv_file.close()
+
+        csvFile = c.get('finderFolder') + '/bezan-layers-' + s.range_id + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            csv_file.write('Manuscripts\tLatin-Layer Count\tVerses\t\tVerses (long)\n')
+            for i in range(0, MAX_RANGE):
+                csv_file.write(str(i) + '\t')
+                csv_file.write(str(bz_lat_counts[i]) + '\t')
+
+                rdg_str = ''
+                for ref in bz_lat_short[i]:
+                    if bz_lat_sh_maps[i].has_key(ref) and bz_lat_sh_maps[i][ref] > 1:
+                        ref = ref + ' (' + str(bz_lat_sh_maps[i][ref]) + 'x)'
+
+                    if rdg_str:
+                        rdg_str = rdg_str + '; '
+                    rdg_str = rdg_str + ref
+                csv_file.write(rdg_str + '\t\t')
+
+                rdg_str = ''
+                for ref in bz_lat_long[i]:
+                    if rdg_str:
+                        rdg_str = rdg_str + '; '
+                    rdg_str = rdg_str + ref
+                csv_file.write(rdg_str + '\n')
+
+            csv_file.write('\n')
+            csv_file.write('Manuscripts\tBase-Layer Count\tVerses\t\tVerses (long)\n')
+            for i in range(0, MAX_RANGE):
+                csv_file.write(str(i) + '\t')
+                csv_file.write(str(bz_bas_counts[i]) + '\t')
+
+                rdg_str = ''
+                for ref in bz_bas_short[i]:
+                    if bz_bas_sh_maps[i].has_key(ref) and bz_bas_sh_maps[i][ref] > 1:
+                        ref = ref + ' (' + str(bz_bas_sh_maps[i][ref]) + 'x)'
+
+                    if rdg_str:
+                        rdg_str = rdg_str + '; '
+                    rdg_str = rdg_str + ref
+                csv_file.write(rdg_str + '\t\t')
+
+                rdg_str = ''
+                for ref in bz_bas_long[i]:
+                    if rdg_str:
+                        rdg_str = rdg_str + '; '
+                    rdg_str = rdg_str + ref
+                csv_file.write(rdg_str + '\n')
+
+            csv_file.close()
+
+        csvFile = c.get('finderFolder') + '/latin-layer-counts-' + s.range_id + '.csv'
         with open(csvFile, 'w+') as csv_file:
             for i in range(0, MAX_RANGE):
                 csv_file.write(str(i) + ' Manuscripts\n')
@@ -549,7 +696,7 @@ class VariantFinder:
 
             csv_file.close()
 
-        csvFile = c.get('finderFolder') + '/latin-layer-all-counts-' + s.range_id + file_sfx + '.csv'
+        csvFile = c.get('finderFolder') + '/latin-layer-all-counts-' + s.range_id + '.csv'
         with open(csvFile, 'w+') as csv_file:
             csv_file.write('Counts per Manuscript\n')
             csv_file.write('Manuscript')
@@ -562,6 +709,9 @@ class VariantFinder:
                     csv_file.write('\t' + str(ref_map[ref_ms]['l_layer_counts'][i]))
                 csv_file.write('\n')
 
+            csv_file.write('\n')
+            csv_file.write('VU Count\t' + str(vu_count) + '\n')
+            csv_file.write('Retro Count\t' + str(retro_count) + '\n')
             csv_file.close()
 
     def generateHarmonizationTemplate(s, range_id):
@@ -856,8 +1006,7 @@ class VariantFinder:
         elif o.varheader:
             s.generateVariationHeader()
         elif o.latinlayer:
-            s.countLatinLayerReadings(True)
-            s.countLatinLayerReadings(False)
+            s.buildLatinLayer()
         else:
             s.findMultiwayVariants()
             s.saveMultiwayVariants()
