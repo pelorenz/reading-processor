@@ -45,7 +45,7 @@ class  Reading(object):
                 return True
         return False
 
-    def countNonRefGreekManuscripts(s, refMS):
+    def countNonRefGreekManuscripts(s, refMS, indiv_mss):
         counter = 0
         for ms in s.manuscripts:
             if refMS == ms:
@@ -53,6 +53,7 @@ class  Reading(object):
             if ms in Util.MS_OVERLAYS:
                 continue
             if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
+                indiv_mss.append(ms)
                 counter = counter + 1
         return counter
 
@@ -65,16 +66,17 @@ class  Reading(object):
                 continue
             if ms in Util.MS_OVERLAYS:
                 continue
-            if ms == '79': # bilingual
+            if ms == '05' or ms == '79': # bilingual
                 continue
             if msGroups[ms] != 'Iso' and msGroups[ms] != 'C28':
                 group = msGroups[ms]
                 # did we count group already?
                 if not g_counts.has_key(group):
                     counter = counter + 1
-                    g_counts[group] = 1
+                    g_counts[group] = []
+                    g_counts[group].append(ms)
                 else:
-                    g_counts[group] = g_counts[group] + 1
+                    g_counts[group].append(ms)
             else:
                 counter = counter + 1
         return counter

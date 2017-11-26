@@ -65,6 +65,101 @@ def mssListToString(mss_list):
 
     return mss_str
 
+def groupMapToString(g_map, g_list):
+    g_str = ''
+
+    if g_list:
+        g_list = sorted(g_list, cmp=sortGroups)
+
+    for group in g_list:
+        group_list = g_map[group]
+        if g_str:
+            g_str = g_str + ' '
+        g_str = g_str + group + '('
+        ms_str = ''
+        for ms in group_list:
+            if ms_str:
+                ms_str = ms_str + ' '
+            ms_str = ms_str + ms
+        g_str = g_str + ms_str + ')'
+    return g_str
+
+def mssGroupListToString(mss_list, msGroups, g_map):
+    mss_list = sorted(mss_list, cmp=sortMSS)
+
+    g_list = []
+    l_list = []
+    group_list = []
+    group_map = {}
+    has_19A = False
+    has_vg = False
+    for ms in mss_list:
+        if ms[:2] == 'VL':
+            l_list.append(ms[2:])
+            continue
+        if ms == '19A':
+            has_19A = True
+            continue
+        if ms == 'vg':
+            has_vg = True
+            continue
+        if msGroups[ms] == 'Iso' and msGroups[ms] == 'C28':
+            g_list.append(ms)
+            continue
+        grp = msGroups[ms]
+        if not g_map.has_key(grp) or not g_map[grp] or len(g_map[grp]) == 1:
+            g_list.append(ms)
+            continue
+        group_map[grp] = g_map[grp]
+        if not grp in group_list:
+            group_list.append(grp)
+
+    if has_19A:
+        l_list.append('19A')
+
+    mss_str = ''
+    if g_list:
+        mss_str = ' '.join(g_list)
+
+    if group_list:
+        if mss_str:
+            mss_str = mss_str + ' '
+        mss_str = mss_str + groupMapToString(group_map, group_list)
+
+    if l_list:
+        if mss_str:
+            mss_str = mss_str + ' '
+        mss_str = mss_str + 'VL(' + ' '.join(l_list) + ')'
+
+    if has_vg:
+        if len(mss_str) > 0:
+            mss_str = mss_str + ' '
+        mss_str = mss_str + 'vg'
+
+    return mss_str
+
+def sortGroups(g1, g2):
+    if g1 == 'Byz' and g2 != 'Byz':
+        return 1
+    elif g1 != 'Byz' and g2 == 'Byz':
+        return -1
+
+    if g1 == 'Iso' and g2 != 'Iso':
+        return 1
+    elif g1 != 'Iso' and g2 == 'Iso':
+        return -1
+
+    c1 = g1[:1]
+    c2 = g2[:1]
+    if c1 == 'C' and c2 == 'F':
+        return -1
+    elif c1 == 'F' and c2 == 'C':
+        return 1
+
+    m1 = re.sub(r'^[CF]', '', g1)
+    m2 = re.sub(r'^[CF]', '', g2)
+    return sortMSS(m1, m2)
+
 def sortMSS(ms1, ms2):
     if ms1 == ms2:
         raise ValueError('Duplicate witness in list %s' % ms1)
