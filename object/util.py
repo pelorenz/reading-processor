@@ -295,6 +295,42 @@ def sortVariations(v1, v2):
 
     return 0
 
+def isSubSingular(subsingularVariants, vu, ms):
+    reading = vu.getReadingForManuscript(ms)
+    if not reading:
+        return False
+
+    if ms == '05':
+        ss_list = subsingularVariants.split('|')
+        if vu.label in ss_list:
+            return True
+    else:
+        if len(reading.manuscripts) == 2:
+            return True
+
+    return False
+
+def computeLayer(latinCore, latinMulti, ref_ms, vu_label, reading):
+    if reading.hasManuscript('35'):
+        return 'M'
+    if ref_ms == '05':
+        if vu_label in latinCore or vu_label in latinMulti:
+            return 'L'
+        else:
+            return 'G'
+    else:
+        for ms in reading.manuscripts:
+            if ms == s.refMS:
+                continue
+
+            if ms[:1] == 'v' or ms[:1] == 'V' or ms == '19A':
+                if ms[:2] == 'VL': ms = ms[2:]
+                latin_mss.append(ms)
+            else:
+                greek_mss.append(ms)
+
+    return 'L' if isLatinLayer(len(greek_mss), len(latin_mss)) else 'G'
+
 def isLatinLayer(greek_counter, latin_counter):
     is_latin = False
     #if latin_counter >= 10 and greek_counter == 5:

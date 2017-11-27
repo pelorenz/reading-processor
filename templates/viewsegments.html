@@ -400,3 +400,192 @@ $def with (jdata)
         }
       });
     </script>
+    <div class="segment-heading">Layer Distribution in $jdata['ref_ms'] per Segment</div>
+    <table class='segment-table'><tr>
+      <td class='segment-chart'>
+        <canvas id='LayerDistribCanvasS' class='hbar-canvas' width='300' height='5000'></canvas>
+      </td>
+      <td class='segment-chart'>
+        <canvas id='LayerDistribCanvasL' class='hbar-canvas' width='300' height='5000'></canvas>
+      </td>
+      <td class='segment-chart'>
+        <canvas id='LayerDistribCanvasG' class='hbar-canvas' width='300' height='5000'></canvas>
+      </td>
+      <td class='segment-chart'>
+        <canvas id='LayerDistribCanvasM' class='hbar-canvas' width='300' height='5000'></canvas>
+      </td>
+    </tr></table>
+    <script type='text/javascript'>
+      var ctxLayerDistribCanvasS = document.getElementById('LayerDistribCanvasS').getContext('2d');
+      chartLayerFreqCanvas = new Chart(ctxLayerDistribCanvasS, {
+        type: 'horizontalBar',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+            {
+              label: "S",
+              backgroundColor: "$jdata['lchart_ref_layer_colors_bw']['L']",
+              borderColor: "$jdata['lchart_ref_layer_colors_bw']['L']",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_layer_counts']['S']):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_layer_counts']['S']) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true,
+                fontSize: 24
+              }
+            }]
+          }
+        }
+      });
+      var ctxLayerDistribCanvasL = document.getElementById('LayerDistribCanvasL').getContext('2d');
+      chartLayerFreqCanvas = new Chart(ctxLayerDistribCanvasL, {
+        type: 'horizontalBar',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+            {
+              label: "L",
+              backgroundColor: "$jdata['lchart_ref_layer_colors_bw']['L']",
+              borderColor: "$jdata['lchart_ref_layer_colors_bw']['L']",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_layer_counts']['L']):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_layer_counts']['L']) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true,
+                fontSize: 24
+              }
+            }]
+          }
+        }
+      });
+      var ctxLayerDistribCanvasG = document.getElementById('LayerDistribCanvasG').getContext('2d');
+      chartLayerFreqCanvas = new Chart(ctxLayerDistribCanvasG, {
+        type: 'horizontalBar',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+            {
+              label: "D",
+              backgroundColor: "$jdata['lchart_ref_layer_colors_bw']['D']",
+              borderColor: "$jdata['lchart_ref_layer_colors_bw']['D']",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_layer_counts']['D']):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_layer_counts']['D']) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true,
+                fontSize: 24
+              }
+            }]
+          }
+        }
+      });
+      var ctxLayerDistribCanvasM = document.getElementById('LayerDistribCanvasM').getContext('2d');
+      chartLayerFreqCanvas = new Chart(ctxLayerDistribCanvasM, {
+        type: 'horizontalBar',
+        data: {
+          labels: [
+            $for idx, label in enumerate(jdata['lchart_segment_labels']):
+              $code:
+                comma = ''
+                if idx != len(jdata['lchart_segment_labels']) - 1:
+                  comma = ','
+              "$label"$comma
+          ],
+          datasets: [
+            {
+              label: "M",
+              backgroundColor: "$jdata['lchart_ref_layer_colors_bw']['M']",
+              borderColor: "$jdata['lchart_ref_layer_colors_bw']['M']",
+              data: [
+                $for idx, val in enumerate(jdata['lchart_layer_counts']['M']):
+                  $code:
+                    comma = ''
+                    if idx != len(jdata['lchart_layer_counts']['M']) - 1:
+                      comma = ','
+                  $val$comma
+                ],
+              fill: false
+            },
+          ]
+        },
+        options: {
+          legend: {
+            display: true
+          },
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero:true,
+                fontSize: 24
+              }
+            }]
+          }
+        }
+      });
+    </script>

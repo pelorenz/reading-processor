@@ -22,7 +22,8 @@ class VariantFinder:
         s.refMS_IDs = []
         s.refMS = None # choose first ID
 
-        s.latinLayerVariants = []
+        s.latinLayerCore = []
+        s.latinLayerMulti = []
 
         s.addrLookup = {}
         s.layer = 'L'
@@ -65,35 +66,22 @@ class VariantFinder:
         for addr in s.variantModel['addresses']:
             s.addrLookup[s.getAddrKey(addr)] = addr
 
-    def isSubSingular(s, vu, ms):
-        reading = vu.getReadingForManuscript(ms)
-        if not reading:
-            return False
-
-        if ms == '05':
-            subsingularVariants = s.config.get('subsingularVariants').split('|')
-            if vu.label in subsingularVariants:
-                return True
-        else:
-            if len(reading.manuscripts) == 2:
-                return True
-
-        return False
-
     def computeLayer(s, var_label, reading, NEW_LAYER_CODES):
         if s.refMS == '05':
             if not NEW_LAYER_CODES:
                 if reading.hasManuscript('35'):
                     return 'M'
-                elif var_label in s.latinLayerVariants:
+                elif var_label in s.latinLayerCore or var_label in s.latinLayerMulti:
                     return 'L'
 
                 return 'D'
             else:
                 if reading.hasManuscript('35'):
                     return 'M'
-                if var_label in s.latinLayerVariants:
+                if var_label in s.latinLayerCore:
                     return 'L'
+                if var_label in s.latinLayerMulti:
+                    return 'LI'
                 if reading.hasManuscript('565') or reading.hasManuscript('038') or reading.hasManuscript('700'):
                     return 'C'
                 if reading.hasManuscript('03'):
@@ -746,7 +734,7 @@ class VariantFinder:
                     r_layer = ''
                     if vu.isReferenceSingular(s.refMS):
                         r_layer = 'S'
-                    elif s.isSubSingular(vu, s.refMS):
+                    elif s.refMS == '05' and isSubSingular(s.config.get('subsingularVariants'), vu, s.refMS):
                         r_layer = 'SS'
 
                     r_reading = vu.getReadingForManuscript(s.refMS)
@@ -855,7 +843,7 @@ class VariantFinder:
                 elif vu.isSingular():
                     is_singular = True
 
-                if s.isSubSingular(vu, s.refMS):
+                if s.refMS == '05' and isSubSingular(s.config.get('subsingularVariants'), vu, s.refMS):
                     is_singular = True
                     r_layer = 'SS'
 
@@ -953,7 +941,10 @@ class VariantFinder:
         csvFile = c.get('finderFolder') + '/' + s.refMS + '-missing-L.csv'
         with open(csvFile, 'w+') as csv_file:
             csv_file.write('Reference\n')
-            for label in s.latinLayerVariants:
+            for label in s.latinLayerCore:
+                if not all_labels.has_key(label):
+                    csv_file.write((label + u'\n').encode('UTF-8'))
+            for label in s.latinLayerMulti:
                 if not all_labels.has_key(label):
                     csv_file.write((label + u'\n').encode('UTF-8'))
 
@@ -983,7 +974,8 @@ class VariantFinder:
             s.info('If specified, layer must be one of \'L\', \'D\', or \'M\'')
             return
 
-        s.latinLayerVariants = c.get('latinLayerVariants').split(u'|')
+        s.latinLayerCore = c.get('latinLayerCoreVariants').split(u'|')
+        s.latinLayerMulti = c.get('latinLayerMultiVariants').split(u'|')
 
         is_refresh = False
         if o.refreshCache:
