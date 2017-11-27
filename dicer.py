@@ -29,6 +29,21 @@ class Dicer:
         s.doOffsets = False # include offsets in results
         s.segmentConfig = None
 
+        s.latinLayerCore = []
+        s.latinLayerMulti = []
+        s.subsingular = []
+
+        s.vu_count = 0
+        s.no_retro_count = 0
+        s.m_readings = []
+        s.m_sg_readings = []
+        s.na_readings = []
+        s.d_readings = []
+        s.l_readings = []
+        s.s_readings = []
+        s.s_05_retro_readings = []
+        s.s_05VL5_readings = []
+
     def info(s, *args):
         info = ''
         for i, arg in enumerate(args):
@@ -476,27 +491,40 @@ class Dicer:
 
             for addr in segment['addresses']:
                 for vu in addr.variation_units:
+                    s.vu_count = s.vu_count + 1
+                    if not vu.hasRetroversion:
+                        s.no_retro_count = s.no_retro_count + 1
+
                     if not vu.startingAddress:
                         vu.startingAddress = addr
 
                     reading_info = {}
                     reading_info['variant_label'] = vu.label
 
-                    if vu.isReferenceSingular(refMS):
-                        ref_data['S_readings'].append(reading_info)
+                    r_reading = vu.getReadingForManuscript(refMS)
+                    if not r_reading:
+                        s.na_readings.append(vu.label)
                         continue
 
-                    if vu.isSingular():
+                    if vu.isReferenceSingular(refMS):
+                        ref_data['S_readings'].append(reading_info)
+                        s.s_readings.append(vu.label)
+                        if len(r_reading.manuscripts) == 1 and vu.hasRetroversion:
+                            s.s_05_retro_readings.append(vu.label)
+                        elif len(r_reading.manuscripts) == 2 and vu.hasRetroversion:
+                            s.s_05VL5_readings.append(vu.label)
+                        continue
+                    elif refMS == '05' and isSubSingular(s.subsingular, vu, refMS):
+                        ref_data['S_readings'].append(reading_info)
+                        s.s_readings.append(vu.label)
                         continue
 
                     m_reading = vu.getReadingForManuscript('35')
-                    r_reading = vu.getReadingForManuscript(refMS)
-
-                    if not r_reading:
-                        continue
-
-                    if r_reading == m_reading:
+                    if '35' in r_reading.manuscripts:
                         ref_data['majority_count'] = ref_data['majority_count'] + 1
+                        s.m_readings.append(vu.label)
+                        if vu.isSingular():
+                            s.m_sg_readings.append(vu.label)
                         continue
 
                     reading_info['mss'] = []
@@ -524,12 +552,15 @@ class Dicer:
                     reading_info['grouped_apparatus'] = s.groupApparatus(greek_mss, latin_mss)
 
                     # Layer
-                    if isLatinLayer(len(greek_mss), len(latin_mss)):
+                    layer = computeLayer(s.latinLayerCore, s.latinLayerMulti, refMS, vu.label, r_reading)
+                    if layer == 'L':
                         reading_info['L_layer'] = True
                         reading_info['D_layer'] = False
+                        s.l_readings.append(vu.label)
                     else:
                         reading_info['L_layer'] = False
                         reading_info['D_layer'] = True
+                        s.d_readings.append(vu.label)
 
                     if reading_info['L_layer']:
                         ref_data['L_readings'].append(reading_info)
@@ -616,6 +647,7 @@ class Dicer:
         line_ms_delta_values = {} # for MS line charts (deltas)
         line_la_freq_values = {} # for layer line charts
         line_la_delta_values = {} # for layer line charts (deltas)
+        line_la_counts = {} # for layer horizontal bar chart
         segment_labels = [] # for line charts
 
         # list of rows for HL CSV
@@ -644,6 +676,11 @@ class Dicer:
         seg_prev = {}
         hauptliste_matrix_row = []
         hauptliste_delta_matrix_row = []
+
+        cfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-segment-L-counts.csv'
+        with open(cfile, 'w+') as file:
+            file.write('Segment\tL readings\n')
+            file.close()
         for segment in s.dicer_segments:
             ref_data = segment['ref_data'][refMS]
 
@@ -692,6 +729,9 @@ class Dicer:
             j_segment['D_freq'] = D_freq
             j_segment['D_freq_delta'] = dfreq_delta
             j_segment['L_count'] = len(ref_data['L_readings'])
+            with open(cfile, 'a+') as file:
+                file.write(segment['label'] + '\t' + str(len(ref_data['L_readings'])) + '\n')
+                file.close()
             j_segment['L_freq'] = L_freq
             j_segment['L_freq_delta'] = lfreq_delta
             j_segment['S_count'] = len(ref_data['S_readings'])
@@ -712,6 +752,20 @@ class Dicer:
             j_profiles['f13_readings'] = []
             j_profiles['c565_readings'] = []
             j_profiles['032_readings'] = []
+
+            # Layer count horizontal bar chart
+            if not line_la_counts.has_key('M'):
+                line_la_counts['M'] = []
+            line_la_counts['M'].append(ref_data['majority_count'])
+            if not line_la_counts.has_key('D'):
+                line_la_counts['D'] = []
+            line_la_counts['D'].append(len(ref_data['D_readings']))
+            if not line_la_counts.has_key('L'):
+                line_la_counts['L'] = []
+            line_la_counts['L'].append(len(ref_data['L_readings']))
+            if not line_la_counts.has_key('S'):
+                line_la_counts['S'] = []
+            line_la_counts['S'].append(len(ref_data['S_readings']))
 
             # Layer frequency line charts
             if not line_la_freq_values.has_key('M'):
@@ -871,6 +925,7 @@ class Dicer:
 
         hauptliste['lchart_ms_percent_vals'] = line_ms_pc_values
         hauptliste['lchart_ms_delta_vals'] = line_ms_delta_values
+        hauptliste['lchart_layer_counts'] = line_la_counts
         hauptliste['lchart_layer_freq_vals'] = line_la_freq_values
         hauptliste['lchart_layer_delta_vals'] = line_la_delta_values
         hauptliste['lchart_segment_labels'] = segment_labels
@@ -886,6 +941,22 @@ class Dicer:
             'D': '#fc0',
             'L': '#28a428'
         }
+        hauptliste['lchart_ref_layer_colors_bw'] = {
+            'M': '#eee',
+            'D': '#ccc',
+            'L': '#aaa'
+        }
+
+        hauptliste['vu_count'] = s.vu_count
+        hauptliste['vu_no_retro_count'] = s.no_retro_count
+        hauptliste['m_layer_count'] = len(s.m_readings)
+        hauptliste['m_sg_layer_count'] = len(s.m_sg_readings)
+        hauptliste['na_layer_count'] = len(s.na_readings)
+        hauptliste['d_layer_count'] = len(s.d_readings)
+        hauptliste['l_layer_count'] = len(s.l_readings)
+        hauptliste['s_layer_count'] = len(s.s_readings)
+        hauptliste['s_05_retro_layer_count'] = len(s.s_05_retro_readings)
+        hauptliste['s_05VL5_layer_count'] = len(s.s_05VL5_readings)
 
         s.info('Saving Hauptlisten for', refMS)
 
@@ -915,6 +986,10 @@ class Dicer:
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
+
+        s.subsingular = c.get('subsingularVariants')
+        s.latinLayerCore = c.get('latinLayerCoreVariants')
+        s.latinLayerMulti = c.get('latinLayerMultiVariants')
 
         if o.range:
             s.range_id = o.range
@@ -968,6 +1043,14 @@ class Dicer:
 
             if s.doHauptliste:
                 s.runHauptliste(rms)
+
+            # Segment list
+            csvfile = s.dicerFolder + rms + '-' + s.segmentConfig['label'] + '-segment-list.csv'
+            with open(csvfile, 'w+') as file:
+                file.write('Segment Label\t' + rms + ' words\n')
+                for segment in s.dicer_segments:
+                    file.write(segment['label'] + '\t' + str(segment['word_count']) + '\n')
+                file.close()
 
         s.info('Done')
 

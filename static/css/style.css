@@ -382,6 +382,12 @@ div.segment-area {
   vertical-align:top;
   display: inline-block;
 }
+table.distrib-table {
+  width: 100%;
+}
+td.distrib-cell {
+  border: none;
+}
 table.segment-table {
   width: 100%;
 }
@@ -425,6 +431,11 @@ td.hauptliste-ms {
 canvas.line-canvas {
   height: 400px !important;
   width: 100% !important;
+  display: inline-block;
+}
+canvas.hbar-canvas {
+  height: 5000px !important;
+  width: 300px !important;
   display: inline-block;
 }
 div.variant-heading {
