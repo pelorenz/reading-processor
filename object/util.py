@@ -87,6 +87,20 @@ def groupMapToString(g_map, g_list):
 def mssGroupListToString(mss_list, msGroups, g_map):
     mss_list = sorted(mss_list, cmp=sortMSS)
 
+    # make g_map if null
+    if not g_map:
+        g_map = {}
+        for ms in mss_list:
+            if not msGroups.has_key(ms): # Latins and non-config'ed Greeks excluded
+                continue
+            if msGroups[ms] != 'Iso' and msGroups[ms] != 'C28':
+                group = msGroups[ms]
+                if not g_map.has_key(group):
+                    g_map[group] = []
+                    g_map[group].append(ms)
+                else:
+                    g_map[group].append(ms)
+
     g_list = []
     l_list = []
     group_list = []
@@ -313,8 +327,10 @@ def isSubSingular(subsingularVariants, vu, ms):
 def computeLayer(latinCore, latinMulti, ref_ms, vu_label, reading):
     if reading.hasManuscript('35'):
         return 'M'
+    core_list = latinCore.split('|')
+    multi_list = latinMulti.split('|')
     if ref_ms == '05':
-        if vu_label in latinCore or vu_label in latinMulti:
+        if vu_label in core_list or vu_label in multi_list:
             return 'L'
         else:
             return 'G'

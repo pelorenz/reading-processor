@@ -33,6 +33,7 @@ class  CommandLine:
         self.parser.add_argument('-V', '--varheader', help='Generate header with variation units for collations (variantFinder).', action='store_true')
         self.parser.add_argument('-Z', '--harmonization', help='Generate CSV template to record harmonization data (variantFinder).', action='store_true')
         self.parser.add_argument('-Y', '--latinlayer', help='Count Latin-layer readings (variantFinder).', action='store_true')
+        self.parser.add_argument('-X', '--extra', help='Generic command for temporary scripting (variantFinder).', action='store_true')
 
     def getOptions(self):
         dict = vars(self.parser.parse_args())

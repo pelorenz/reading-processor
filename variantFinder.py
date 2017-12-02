@@ -515,7 +515,7 @@ class VariantFinder:
                             readings_str = ''
                             readings_str = readings_str + reading.getDisplayValue()
                             for rdg in vu.readings:
-                                if rdg == reading:
+                                if rdg == reading or not rdg.manuscripts:
                                     continue
 
                                 if len(readings_str) > 0:
@@ -718,11 +718,12 @@ class VariantFinder:
 
         csvFile = c.get('finderFolder') + '/' + s.refMS + '-harmonization-template-' + range_id + '.csv'
         with open(csvFile, 'w+') as csv_file:
-            csv_file.write('reading_id\tsort_id\treading_text\tis_singular\tis_latin\tparallels\tsynoptic_rdgs\tlayer')
-            for ms in msOverlays:
-                csv_file.write('\t' + ms)
+            csv_file.write('sort_id\treading_id\treading_text\tparallels\tVogels Ref\tVogels Page\tParker Page\tna28\t05\t35\tlayer_new\tlayer\tis_singular\tis_latin\tsynoptic_rdgs')
+            #for ms in msOverlays: # na28
+            #    csv_file.write('\t' + ms)
             for ms in greekMSS:
-                csv_file.write('\t' + ms)
+                if ms != '05' and ms != '35':
+                    csv_file.write('\t' + ms)
             for ms in latinMSS:
                 csv_file.write('\t' + ms)
             csv_file.write('\n')
@@ -774,11 +775,12 @@ class VariantFinder:
                             parallels = reading.getParallels()
                         p_readings = reading.getSynopticReadings()
 
-                        csv_file.write((reading_id + u'\t' + sort_id + u'\t' + reading_text + u'\t' + is_singular + u'\t' + is_latin + u'\t' + parallels + u'\t' + p_readings + u'\t' + r_layer).encode('UTF-8'))
-                        for ms in msOverlays:
-                            csv_file.write('\t' + s.getMSValue(vu, reading, ms))
+                        csv_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t' + parallels + u'\t\t\t\t\t' + s.getMSValue(vu, reading, '05') + u'\t' + s.getMSValue(vu, reading, '35') + u'\t' + r_layer + u'\t\t' + is_singular + u'\t' + is_latin + u'\t' + p_readings).encode('UTF-8'))
+                        #for ms in msOverlays: # na28
+                        #    csv_file.write('\t' + s.getMSValue(vu, reading, ms))
                         for ms in greekMSS:
-                            csv_file.write('\t' + s.getMSValue(vu, reading, ms))
+                            if ms != '05' and ms != '35':
+                                csv_file.write('\t' + s.getMSValue(vu, reading, ms))
                         for ms in latinMSS:
                             csv_file.write('\t' + s.getMSValue(vu, reading, ms))
                         csv_file.write((u'\n').encode('UTF-8'))
@@ -886,9 +888,14 @@ class VariantFinder:
         c = s.config
         s.info('Generating layer apparatus')
 
+        msGroupAssignments = c.get('msGroupAssignments')
+        apparatusLabels = c.get('apparatusLabels')
+        if apparatusLabels:
+            apparatusLabels = apparatusLabels.split('|')
+
         csvFile = c.get('finderFolder') + '/' + s.refMS + '-apparatus-' + layer + '.csv'
         with open(csvFile, 'w+') as csv_file:
-            csv_file.write('Reference\tReadings\tReading Count\tGreek Count\tLatin Count\tMSS\tLayer\tApparatus\n')
+            csv_file.write('Reference\tReadings\tReading Count\tMSS\tLayer\tApparatus\n')
             for addr in s.variantModel['addresses']:
                 for vu in addr.variation_units:
                     if not vu.startingAddress:
@@ -910,10 +917,17 @@ class VariantFinder:
 
                     if r_layer != 'S':
                         r_layer = s.computeLayer(vu.label, r_reading, False)
-                        if r_layer != layer:
-                            continue
 
-                    r_mss = mssListToString(r_reading.manuscripts)
+                    if apparatusLabels and not vu.label in apparatusLabels:
+                        continue
+                    elif not apparatusLabels and r_layer != layer:
+                        continue
+
+                    r_mss = ''
+                    if apparatusLabels:
+                        r_mss = mssGroupListToString(r_reading.manuscripts, msGroupAssignments, None)
+                    else:
+                        r_mss = mssListToString(r_reading.manuscripts)
 
                     all_readings = ''
                     all_readings = all_readings + r_reading.getDisplayValue()
@@ -925,7 +939,7 @@ class VariantFinder:
                             all_readings = all_readings + ' | '
                         all_readings = all_readings + reading.getDisplayValue()
 
-                    csv_file.write((vu.label + u'\t' + all_readings + u'\t' + str(len(vu.readings)) + u'\t' + str(len(greek_mss)) + u'\t' + str(len(latin_mss)) + u'\t' + r_mss + u'\t' + r_layer + u'\t' + vu.toApparatusString() + u'\n').encode('UTF-8'))
+                    csv_file.write((vu.label + u'\t' + all_readings + u'\t' + str(len(vu.readings)) + u'\t' + r_mss + u'\t' + r_layer + u'\t' + vu.toApparatusString() + u'\n').encode('UTF-8'))
 
             csv_file.close()
 
@@ -949,6 +963,63 @@ class VariantFinder:
                     csv_file.write((label + u'\n').encode('UTF-8'))
 
             csv_file.close()
+
+    def fixHarmLayers(s):
+        c = s.config
+
+        layer_map = {}
+        for addr in s.variantModel['addresses']:
+            for vu in addr.variation_units:
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                r_layer = ''
+                is_singular = False
+                if vu.isReferenceSingular(s.refMS):
+                    is_singular = True
+                    r_layer = 'S'
+                elif vu.isSingular():
+                    is_singular = True
+                    r_layer = '*'
+
+                if s.refMS == '05' and isSubSingular(s.config.get('subsingularVariants'), vu, s.refMS):
+                    is_singular = True
+                    r_layer = 'SS'
+
+                r_reading = vu.getReadingForManuscript(s.refMS)
+                if not r_reading:
+                    r_layer = 'N'
+
+                if not r_layer:
+                    r_layer = s.computeLayer(vu.label, r_reading, True)
+
+                layer_map[vu.label] = r_layer
+
+        harm_file = c.get('inputFolder') + 'harm-fix.csv'
+        csvdata = ''
+        with open(harm_file, 'r') as file:
+            s.info('reading', harm_file)
+            csvdata = file.read().decode('utf-8')
+            file.close()
+
+        result_file = c.get('outputFolder') + 'harm-fix-results.csv'
+        with open(result_file, 'w+') as file:
+            rows = csvdata.split('\n')
+            for rdx, row in enumerate(rows):
+                parts = row.split('\t')
+                if len(parts) != 2:
+                    continue
+
+                label = parts[0]
+                lookup = re.sub(r'[a-z]$', '', label)
+
+                layer = ''
+                if layer_map.has_key(lookup):
+                    layer = layer_map[lookup]
+
+                file.write(label + '\t' + layer + '\n')
+
+            file.close()
 
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
@@ -999,6 +1070,8 @@ class VariantFinder:
             s.generateVariationHeader()
         elif o.latinlayer:
             s.buildLatinLayer()
+        elif o.extra:
+            s.fixHarmLayers()
         else:
             s.findMultiwayVariants()
             s.saveMultiwayVariants()
@@ -1014,7 +1087,7 @@ class VariantFinder:
 # variantFinder.py -v -a c01-16 -R 05 -K my-criteria
 #
 # Generate layer apparatus
-# variantFinder.py -v -a c01-16 -R 05 -L
+# variantFinder.py -v -a c01-16 -R 05 -L L
 #
 # Generate harmonization template
 # variantFinder.py -v -a c13 -R 05 -Z
@@ -1022,6 +1095,6 @@ class VariantFinder:
 # Generate variation header for collation
 # variantFinder.py -v -a c13 -R 05 -V
 #
-# Latin-layer counter
+# Latin-layer builder
 # variantFinder.py -v -a c01-16 -R 05 -Y
 VariantFinder().main(sys.argv[1:])
