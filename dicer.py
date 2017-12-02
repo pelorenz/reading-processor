@@ -679,9 +679,9 @@ class Dicer:
 
         cfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-segment-L-counts.csv'
         with open(cfile, 'w+') as file:
-            file.write('Segment\tL readings\n')
+            file.write('Position\tSegment\tWords\tS Readings\tL Readings\tG Readings\tM Readings\n')
             file.close()
-        for segment in s.dicer_segments:
+        for sidx, segment in enumerate(s.dicer_segments):
             ref_data = segment['ref_data'][refMS]
 
             segment_labels.append(segment['label'])
@@ -718,6 +718,10 @@ class Dicer:
             sfreq_delta = round(sfreq_delta, 3)
             sfreq_prev = S_freq
 
+            with open(cfile, 'a+') as file:
+                file.write(str(sidx + 1) + '\t' + segment['label'] + '\t' + str(segment['word_count']) + '\t' + str(len(ref_data['S_readings'])) + '\t' + str(len(ref_data['L_readings'])) + '\t' + str(len(ref_data['D_readings'])) + '\t' + str(ref_data['majority_count']) + '\n')
+                file.close()
+
             j_segment = {}
             j_segment['majority_count'] = ref_data['majority_count']
             j_segment['majority_freq'] = majority_freq
@@ -729,9 +733,6 @@ class Dicer:
             j_segment['D_freq'] = D_freq
             j_segment['D_freq_delta'] = dfreq_delta
             j_segment['L_count'] = len(ref_data['L_readings'])
-            with open(cfile, 'a+') as file:
-                file.write(segment['label'] + '\t' + str(len(ref_data['L_readings'])) + '\n')
-                file.close()
             j_segment['L_freq'] = L_freq
             j_segment['L_freq_delta'] = lfreq_delta
             j_segment['S_count'] = len(ref_data['S_readings'])
@@ -953,8 +954,11 @@ class Dicer:
         hauptliste['m_sg_layer_count'] = len(s.m_sg_readings)
         hauptliste['na_layer_count'] = len(s.na_readings)
         hauptliste['d_layer_count'] = len(s.d_readings)
+        hauptliste['d_layer_readings'] = s.d_readings
         hauptliste['l_layer_count'] = len(s.l_readings)
+        hauptliste['l_layer_readings'] = s.l_readings
         hauptliste['s_layer_count'] = len(s.s_readings)
+        hauptliste['s_layer_readings'] = s.s_readings
         hauptliste['s_05_retro_layer_count'] = len(s.s_05_retro_readings)
         hauptliste['s_05VL5_layer_count'] = len(s.s_05VL5_readings)
 

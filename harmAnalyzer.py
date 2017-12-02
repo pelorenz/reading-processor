@@ -73,16 +73,16 @@ class HarmAnalyzer:
         with open(csvFile, 'w+') as csv_file:
             for ms_results in s.results['reference_mss']:
                 csv_file.write(ms_results['ms'] + '\n')
-                csv_file.write('Layer\tVariation Units\tPossible Parallels\t' + ms_results['ms'] + ' Parallels\t' + ms_results['ms'] + ' Ratio\n')
+                csv_file.write('Layer\tVariation Units\tPossible Parallels\t' + ms_results['ms'] + ' Parallels\t' + ms_results['ms'] + ' Ratio\tPossible Non-initial Parallels\t' + ms_results['ms'] + ' Non-initial Parallels\t' + ms_results['ms'] + ' Non-initial Ratio\n')
 
                 if not HarmAnalyzer.NO_MAJ:
                     csv_file.write('Majority Greek\t' + str(ms_results['rdg_count_byz']) + '\t' + str(ms_results['rdg_count_byz_possible']) + '\t' + str(ms_results['rdg_count_byz_parallel']) + '\t' + str(ms_results['pc_byz_parallels']) + '\n')
 
-                csv_file.write('Non-majority Greek\t' + str(ms_results['rdg_count_nonbyz_greek']) + '\t' + str(ms_results['rdg_count_nonbyz_greek_possible']) + '\t' + str(ms_results['rdg_count_nonbyz_greek_parallel']) + '\t' + str(ms_results['pc_nonbyz_parallels']) + '\n')
+                csv_file.write('Non-majority Greek\t' + str(ms_results['rdg_count_nonbyz_greek']) + '\t' + str(ms_results['rdg_count_nonbyz_greek_possible']) + '\t' + str(ms_results['rdg_count_nonbyz_greek_parallel']) + '\t' + str(ms_results['pc_nonbyz_parallels']) + '\t' + str(len(ms_results['greek_noninit_p'])) + '\t' + str(len(ms_results['greek_noninit_p_for'])) + '\t' + str(ms_results['pc_greek_noninit_p_for']) + '\n')
 
-                csv_file.write('Latin\t' + str(ms_results['rdg_count_latin_layer']) + '\t' + str(ms_results['rdg_count_latin_layer_possible']) + '\t' + str(ms_results['rdg_count_latin_parallel']) + '\t' + str(ms_results['pc_latin_parallels']) + '\n')
+                csv_file.write('Latin\t' + str(ms_results['rdg_count_latin_layer']) + '\t' + str(ms_results['rdg_count_latin_layer_possible']) + '\t' + str(ms_results['rdg_count_latin_parallel']) + '\t' + str(ms_results['pc_latin_parallels']) + '\t' + str(len(ms_results['latin_noninit_p'])) + '\t' + str(len(ms_results['latin_noninit_p_for'])) + '\t' + str(ms_results['pc_latin_noninit_p_for']) + '\n')
 
-                csv_file.write('Singular\t' + str(ms_results['rdg_count_singular']) + '\t' + str(ms_results['rdg_count_singular_possible']) + '\t' + str(ms_results['rdg_count_singular_parallel']) + '\t' + str(ms_results['pc_singular_parallels']) + '\n')
+                csv_file.write('Singular\t' + str(ms_results['rdg_count_singular']) + '\t' + str(ms_results['rdg_count_singular_possible']) + '\t' + str(ms_results['rdg_count_singular_parallel']) + '\t' + str(ms_results['pc_singular_parallels']) + '\t' + str(len(ms_results['sing_noninit_p'])) + '\t' + str(len(ms_results['sing_noninit_p_for'])) + '\t' + str(ms_results['pc_sing_noninit_p_for']) + '\n')
 
                 if not HarmAnalyzer.NO_MAJ:
                     csv_file.write('Total\t' + str(ms_results['vu_count']) + '\t' + str(ms_results['vu_count_w_parallel']) + '\t' + str(ms_results['rdg_count_w_parallel']) + '\t' + str(ms_results['pc_parallels']) + '\n')
@@ -103,13 +103,28 @@ class HarmAnalyzer:
             
             csv_file.close()
 
+    def isSubSingular(s, v_label, reading, refMS):
+        c = s.config
+        if refMS == '05':
+            subsingular = c.get('subsingularVariants').split(u'|')
+            if v_label in subsingular:
+                return True
+            else:
+                return False
+        else:
+            return False
+
     def computeLayer(s, v_label, reading, refMS):
         c = s.config
         if '35' in reading['mss']:
             return 'M'
         if refMS == '05':
-            latinLayerVariants = c.get('latinLayerVariants').split(u'|')
-            return 'L' if v_label in latinLayerVariants else 'G'
+            latinCore = c.get('latinLayerCoreVariants').split(u'|')
+            latinMulti = c.get('latinLayerMultiVariants').split(u'|')
+            if v_label in latinCore or v_label in latinMulti:
+                return 'L'
+            else:
+                return 'G'
         else:
             latin_mss = []
             greek_mss = []
@@ -293,12 +308,30 @@ class HarmAnalyzer:
         greek_layer = []
         byz_layer = []
 
+        sing_initial_p = []
         latin_initial_p = []
         greek_initial_p = []
 
+        sing_noninit_p = []
+        latin_noninit_p = []
+        greek_noninit_p = []
+
+        latin_initial_p_for = []
+        greek_initial_p_for = []
+
+        sing_noninit_p_for = []
+        latin_noninit_p_for = []
+        greek_noninit_p_for = []
+
+        sing_initial_p_against = []
         latin_initial_p_against = []
         greek_initial_p_against = []
 
+        sing_noninit_p_against = []
+        latin_noninit_p_against = []
+        greek_noninit_p_against = []
+
+        noparl_sing_initial_p_against = []
         noparl_latin_initial_p_against = []
         noparl_greek_initial_p_against = []
 
@@ -322,6 +355,7 @@ class HarmAnalyzer:
 
                 init_rdg = s.vuGetInitialReading(vu)
                 init_parallel = init_rdg['parallels'] if init_rdg else ''
+                init_reading = init_rdg['reading_text'] if init_rdg else ''
                 if init_parallel:
                     initial_parallels.append(vu['label'])
 
@@ -338,12 +372,23 @@ class HarmAnalyzer:
                     if not ms_parallel:
                         noparl_rdgs_against_init_parallel.append(vu['label'])
 
-                if len(ms_rdg['mss']) == 1 or (ms == '05' and len(ms_rdg['mss']) == 2 and 'VL5' in ms_rdg['mss']):
+                if len(ms_rdg['mss']) == 1 or (ms == '05' and len(ms_rdg['mss']) == 2 and 'VL5' in ms_rdg['mss']) or s.isSubSingular(vu['label'], ms_rdg, ms):
                     singular_layer.append(vu['label'])
                     if s.vuHasParallel(vu):
                         singular_layer_possible.append(vu['label'])
                     if ms_parallel:
                         singular_layer_hm.append(ms_rdg['reading_id'])
+                    if init_parallel:
+                        sing_initial_p.append(vu['label'])
+                        sing_initial_p_against = sing_initial_p # same list!
+                        if not ms_parallel:
+                            noparl_sing_initial_p_against.append((vu['label'], init_parallel, init_reading))
+                    if s.vuHasNonInitialParallel(vu):
+                        sing_noninit_p.append(vu['label'])
+                        if ms_parallel:
+                            sing_noninit_p_for.append(vu['label'])
+                        else:
+                            sing_noninit_p_against.append(vu['label'])
                 elif not s.isLatinMS(ms):
                     layer = s.computeLayer(vu['label'], ms_rdg, ms)
                     if layer == 'L':
@@ -354,10 +399,19 @@ class HarmAnalyzer:
                             latin_layer_hm.append(ms_rdg['reading_id'])
                         if init_parallel:
                             latin_initial_p.append(vu['label'])
-                            if init_rdg['reading_id'] != ms_rdg['reading_id']:
+                            if init_rdg['reading_id'] == ms_rdg['reading_id']:
+                                latin_initial_p_for.append(vu['label'])
+                            elif init_rdg['reading_id'] != ms_rdg['reading_id']:
                                 latin_initial_p_against.append(vu['label'])
                                 if not ms_parallel:
-                                    noparl_latin_initial_p_against.append(vu['label'])
+                                    noparl_latin_initial_p_against.append((vu['label'], init_parallel, init_reading))
+                        if s.vuHasNonInitialParallel(vu):
+                            latin_noninit_p.append(vu['label'])
+                            if (not init_rdg or init_rdg['reading_id'] != ms_rdg['reading_id']):
+                                if ms_parallel:
+                                    latin_noninit_p_for.append(vu['label'])
+                                else:
+                                    latin_noninit_p_against.append(vu['label'])
                     elif layer == 'G':
                         greek_layer.append(vu['label'])
                         if s.vuHasParallel(vu):
@@ -366,10 +420,19 @@ class HarmAnalyzer:
                             greek_layer_hm.append(ms_rdg['reading_id'])
                         if init_parallel:
                             greek_initial_p.append(vu['label'])
-                            if init_rdg['reading_id'] != ms_rdg['reading_id']:
+                            if init_rdg['reading_id'] == ms_rdg['reading_id']:
+                                greek_initial_p_for.append(vu['label'])
+                            elif init_rdg['reading_id'] != ms_rdg['reading_id']:
                                 greek_initial_p_against.append(vu['label'])
                                 if not ms_parallel:
-                                    noparl_greek_initial_p_against.append(vu['label'])
+                                    noparl_greek_initial_p_against.append((vu['label'], init_parallel, init_reading))
+                        if s.vuHasNonInitialParallel(vu):
+                            greek_noninit_p.append(vu['label'])
+                            if (not init_rdg or init_rdg['reading_id'] != ms_rdg['reading_id']):
+                                if ms_parallel:
+                                    greek_noninit_p_for.append(vu['label'])
+                                else:
+                                    greek_noninit_p_against.append(vu['label'])
                     else:
                         byz_layer.append(vu['label'])
                         if s.vuHasParallel(vu):
@@ -430,9 +493,22 @@ class HarmAnalyzer:
         ms_results['rdg_count_singular_parallel'] = len(singular_layer_hm)
         ms_results['pc_singular_parallels'] = round(ms_results['rdg_count_singular_parallel'] * 1.0 /  ms_results['rdg_count_singular_possible'], 3) if ms_results['rdg_count_singular_possible'] != 0 else 0
 
+        ms_results['sing_initial_p'] = sing_initial_p
+        ms_results['sing_noninit_p'] = sing_noninit_p
+        ms_results['sing_noninit_p_for'] = sing_noninit_p_for
+        ms_results['sing_initial_p_against'] = sing_initial_p_against
+        ms_results['sing_noninit_p_against'] = sing_noninit_p_against
+        ms_results['pc_sing_noninit_p_for'] = round(len(ms_results['sing_noninit_p_for']) * 1.0 /  len(ms_results['sing_noninit_p']), 3) if len(ms_results['sing_noninit_p']) != 0 else 0
+        ms_results['noparl_sing_initial_p_against'] = noparl_sing_initial_p_against
+
         ms_results['latin_layer'] = latin_layer
         ms_results['latin_initial_p'] = latin_initial_p
+        ms_results['latin_noninit_p'] = latin_noninit_p
+        ms_results['latin_initial_p_for'] = latin_initial_p_for
+        ms_results['latin_noninit_p_for'] = latin_noninit_p_for
         ms_results['latin_initial_p_against'] = latin_initial_p_against
+        ms_results['latin_noninit_p_against'] = latin_noninit_p_against
+        ms_results['pc_latin_noninit_p_for'] = round(len(ms_results['latin_noninit_p_for']) * 1.0 /  len(ms_results['latin_noninit_p']), 3) if len(ms_results['latin_noninit_p']) != 0 else 0
         ms_results['noparl_latin_initial_p_against'] = noparl_latin_initial_p_against
         ms_results['rdg_count_latin_layer'] = len(latin_layer)
         ms_results['rdg_count_latin_layer_possible'] = len(latin_layer_possible)
@@ -442,7 +518,12 @@ class HarmAnalyzer:
 
         ms_results['greek_layer'] = greek_layer
         ms_results['greek_initial_p'] = greek_initial_p
+        ms_results['greek_noninit_p'] = greek_noninit_p
+        ms_results['greek_initial_p_for'] = greek_initial_p_for
+        ms_results['greek_noninit_p_for'] = greek_noninit_p_for
         ms_results['greek_initial_p_against'] = greek_initial_p_against
+        ms_results['greek_noninit_p_against'] = greek_noninit_p_against
+        ms_results['pc_greek_noninit_p_for'] = round(len(ms_results['greek_noninit_p_for']) * 1.0 / len(ms_results['greek_noninit_p']), 3) if len(ms_results['greek_noninit_p']) != 0 else 0
         ms_results['noparl_greek_initial_p_against'] = noparl_greek_initial_p_against
         ms_results['rdg_count_nonbyz_greek'] = len(greek_layer)
         ms_results['rdg_count_nonbyz_greek_possible'] = len(greek_layer_possible)
@@ -602,6 +683,35 @@ class HarmAnalyzer:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
+        result_file = c.get('outputFolder') + h_label + '-init-readings.csv'
+        with open(result_file, 'w+') as file:
+            for ms in s.results['reference_mss']:
+                lyr = ''
+                file.write((u'All Singular Against Initial Parallel without Alternative (Initial Readings)\t\t').encode('UTF-8'))
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_sing_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + init_r
+                file.write((lyr + u'\n\n').encode('UTF-8'))
+
+                lyr = ''
+                file.write((u'All Latin Against Initial Parallel without Alternative (Initial Readings)\t\t').encode('UTF-8'))
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_latin_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + init_r
+                file.write((lyr + u'\n\n').encode('UTF-8'))
+
+                lyr = ''
+                file.write((u'All Greek Against Initial Parallel without Alternative (Initial Readings)\t\t').encode('UTF-8'))
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_greek_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + init_r
+                file.write((lyr + u'\n\n').encode('UTF-8'))
+
+            file.close()
+
         result_file = c.get('outputFolder') + h_label + '-results.csv'
         with open(result_file, 'w+') as file:
             file.write('VUs\t\t' + str(s.results['variation_units']) + '\n')
@@ -643,6 +753,13 @@ class HarmAnalyzer:
                 file.write('Singular Rs with Possible ||\t\t' + str(ms['rdg_count_singular_possible']) + '\n')
                 file.write('Singular Rs with Attested ||\t\t' + str(ms['rdg_count_singular_parallel']) + '\n')
                 file.write('% Singular ||s\t' + str(ms['rdg_count_singular_parallel']) + '/' +  str(ms['rdg_count_singular_possible']) + '\t' + str(ms['pc_singular_parallels']) + '\n')
+                file.write('Singular VUs with Initial ||\t\t' + str(len(ms['sing_initial_p'])) + '\n')
+                file.write('Singular Rs for Initial ||\t\t0\n')
+                file.write('Singular Rs against Initial ||\t\t' + str(len(ms['sing_initial_p_against'])) + '\n')
+                file.write('Singular Rs against Initial || (without ||)\t\t' + str(len(ms['noparl_sing_initial_p_against'])) + '\n')
+                file.write('Singular VUs with Non-Initial ||\t\t' + str(len(ms['sing_noninit_p'])) + '\n')
+                file.write('Singular Rs for Non-Initial ||\t\t' + str(len(ms['sing_noninit_p_for'])) + '\n')
+                file.write('Singular Rs against Non-Initial ||\t\t' + str(len(ms['sing_noninit_p_against'])) + '\n')
                 file.write('\n')
 
                 file.write('Latin Rs\t\t' + str(ms['rdg_count_latin_layer']) + '\n')
@@ -650,8 +767,12 @@ class HarmAnalyzer:
                 file.write('Latin Rs with Attested ||\t\t' + str(ms['rdg_count_latin_parallel']) + '\n')
                 file.write('% Latin ||s\t' + str(ms['rdg_count_latin_parallel']) + '/' +  str(ms['rdg_count_latin_layer_possible']) + '\t' + str(ms['pc_latin_parallels']) + '\n')
                 file.write('Latin VUs with Initial ||\t\t' + str(len(ms['latin_initial_p'])) + '\n')
-                file.write('Latin VUs against Initial ||\t\t' + str(len(ms['latin_initial_p_against'])) + '\n')
-                file.write('Latin VUs against Initial || (without ||)\t\t' + str(len(ms['noparl_latin_initial_p_against'])) + '\n')
+                file.write('Latin Rs for Initial ||\t\t' + str(len(ms['latin_initial_p_for'])) + '\n')
+                file.write('Latin Rs against Initial ||\t\t' + str(len(ms['latin_initial_p_against'])) + '\n')
+                file.write('Latin Rs against Initial || (without ||)\t\t' + str(len(ms['noparl_latin_initial_p_against'])) + '\n')
+                file.write('Latin VUs with Non-Initial ||\t\t' + str(len(ms['latin_noninit_p'])) + '\n')
+                file.write('Latin Rs for Non-Initial ||\t\t' + str(len(ms['latin_noninit_p_for'])) + '\n')
+                file.write('Latin Rs against Non-Initial ||\t\t' + str(len(ms['latin_noninit_p_against'])) + '\n')
                 file.write('\n')
 
                 file.write('Non-Byzantine Greek Rs\t\t' + str(ms['rdg_count_nonbyz_greek']) + '\n')
@@ -659,8 +780,93 @@ class HarmAnalyzer:
                 file.write('Non-Byzantine Greek Rs with Attested ||\t\t' + str(ms['rdg_count_nonbyz_greek_parallel']) + '\n')
                 file.write('% Non-Byzantine Greek ||s\t' + str(ms['rdg_count_nonbyz_greek_parallel']) + '/' +  str(ms['rdg_count_nonbyz_greek_possible']) + '\t' + str(ms['pc_nonbyz_parallels']) + '\n')
                 file.write('Non-Byzantine VUs with Initial ||\t\t' + str(len(ms['greek_initial_p'])) + '\n')
-                file.write('Non-Byzantine VUs against Initial ||\t\t' + str(len(ms['greek_initial_p_against'])) + '\n')
-                file.write('Non-Byzantine VUs against Initial || (without ||)\t\t' + str(len(ms['noparl_greek_initial_p_against'])) + '\n')
+                file.write('Non-Byzantine Rs for Initial ||\t\t' + str(len(ms['greek_initial_p_for'])) + '\n')
+                file.write('Non-Byzantine Rs against Initial ||\t\t' + str(len(ms['greek_initial_p_against'])) + '\n')
+                file.write('Non-Byzantine Rs against Initial || (without ||)\t\t' + str(len(ms['noparl_greek_initial_p_against'])) + '\n')
+                file.write('Non-Byzantine VUs with Non-Initial ||\t\t' + str(len(ms['greek_noninit_p'])) + '\n')
+                file.write('Non-Byzantine Rs for Non-Initial ||\t\t' + str(len(ms['greek_noninit_p_for'])) + '\n')
+                file.write('Non-Byzantine Rs against Non-Initial ||\t\t' + str(len(ms['greek_noninit_p_against'])) + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Singular Non-initial Parallels\t\t')
+                for label in ms['sing_noninit_p_for']:
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Latin Non-initial Parallels\t\t')
+                for label in ms['latin_noninit_p_for']:
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Greek Non-initial Parallels\t\t')
+                for label in ms['greek_noninit_p_for']:
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Singular Against Initial Parallel without Alternative (Labels)\t\t')
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_sing_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Singular Against Initial Parallel without Alternative (Initial Parallels)\t\t')
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_sing_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + init_p
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Latin Against Initial Parallel without Alternative (Labels)\t\t')
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_latin_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Latin Against Initial Parallel without Alternative (Initial Parallels)\t\t')
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_latin_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + init_p
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Greek Against Initial Parallel without Alternative (Labels)\t\t')
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_greek_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + label
+                file.write(lyr + '\n')
+                file.write('\n')
+
+                lyr = ''
+                file.write('All Greek Against Initial Parallel without Alternative (Initial Parallels)\t\t')
+                for idx, (label, init_p, init_r) in enumerate(ms['noparl_greek_initial_p_against']):
+                    if lyr:
+                        lyr = lyr + '|'
+                    lyr = lyr + init_p
+                file.write(lyr + '\n')
                 file.write('\n')
 
                 lyr = ''
