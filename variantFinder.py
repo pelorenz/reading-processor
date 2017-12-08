@@ -11,6 +11,7 @@ from utility.options import *
 
 class VariantFinder:
 
+    MAX_RANGE = 9
     def __init__(s):
         s.range_id = ''
         s.rangeMgr = None
@@ -65,6 +66,86 @@ class VariantFinder:
         s.info('Initializing address map')
         for addr in s.variantModel['addresses']:
             s.addrLookup[s.getAddrKey(addr)] = addr
+
+    def checkConfig(s, ref_ms, label, layer):
+        if ref_ms != '05':
+            return layer
+
+        if layer == 'L':
+            if not label in s.latinLayerCore:
+                s.info('Latin core reading not in config', label)
+        elif layer == 'LI':
+            if not label in s.latinLayerMulti:
+                s.info('Latin multi reading not in config', label)
+        else:
+            if label in s.latinLayerCore:
+                s.info('Non-core reading in latinLayerCoreVariants', label)
+            elif label in s.latinLayerMulti:
+                s.info('Non-multi reading in latinLayerMultiVariants', label)
+        return layer
+
+    def computeLayer2(s, ref_ms, vu, reading):
+        c = s.config
+
+        if not reading:
+            return s.checkConfig(ref_ms, vu.label, 'N') # unattested
+
+        if vu.isReferenceSingular(ref_ms):
+            return s.checkConfig(ref_ms, vu.label, 'S') # singular
+
+        if reading.hasManuscript('35'):
+            return s.checkConfig(ref_ms, vu.label, 'M') # mainstream
+
+        g_counts = {}
+        msGroupAssignments = c.get('msGroupAssignments')
+        latin_count = reading.countNonRefLatinManuscripts(ref_ms)
+        nonref_count = reading.countNonRefGreekManuscriptsByGroup(ref_ms, msGroupAssignments, g_counts)
+
+        if ref_ms == '05':
+            if nonref_count < VariantFinder.MAX_RANGE and latin_count >= nonref_count and latin_count != 0:
+                if nonref_count == 0:
+                    return s.checkConfig(ref_ms, vu.label, 'L') # Latin
+
+                base_mss = []
+                base_mss.append('28')
+                base_mss.append('2542')
+                for ms, group in msGroupAssignments.iteritems():
+                    if group == 'F03' or group == 'C565' or group == 'F1' or group == 'F13':
+                        base_mss.append(ms)
+                if set(base_mss) & set(reading.manuscripts):
+                    if reading.hasManuscript('565') or reading.hasManuscript('038') or reading.hasManuscript('700'):
+                        return s.checkConfig(ref_ms, vu.label, 'CC') # Latin base + Cluster 565
+                    if reading.hasManuscript('03'):
+                        return s.checkConfig(ref_ms, vu.label, 'BB') # Latin base + 03
+                    if reading.hasManuscript('032'):
+                        return s.checkConfig(ref_ms, vu.label, 'WW') # Latin base + 032
+                    return s.checkConfig(ref_ms, vu.label, 'GG') # Latin base + other
+                else:
+                    return s.checkConfig(ref_ms, vu.label, 'LI') # Latin + independent
+
+            if reading.hasManuscript('565') or reading.hasManuscript('038') or reading.hasManuscript('700'):
+                return s.checkConfig(ref_ms, vu.label, 'C') # Base + Cluster 565
+            if reading.hasManuscript('03'):
+                return s.checkConfig(ref_ms, vu.label, 'B') # Base + 03
+            if reading.hasManuscript('032'):
+                return s.checkConfig(ref_ms, vu.label, 'W') # 032
+
+            indiv_mss = []
+            nonref_count_indiv = reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
+            if nonref_count_indiv == 1:
+                return s.checkConfig(ref_ms, vu.label, 'SS') # subsingular individual
+            if nonref_count == 1:
+                for grp, g_mss in g_counts.iteritems():
+                    if grp == 'Byz' or grp == 'Iso':
+                        break;
+                    return s.checkConfig(ref_ms, vu.label, 'SF') # subsingular family
+
+            return s.checkConfig(ref_ms, vu.label, 'G') # Base
+        else:
+            if nonref_count < VariantFinder.MAX_RANGE and latin_count >= nonref_count and latin_count != 0:
+                return 'L'
+            else:
+                return 'G'
 
     def computeLayer(s, var_label, reading, NEW_LAYER_CODES):
         if s.refMS == '05':
@@ -381,7 +462,6 @@ class VariantFinder:
 
             importLayer = json.loads(jsondata)
 
-        MAX_RANGE = 9
         ref_mss = c.get('latinLayerCountMSS')
         msGroupAssignments = c.get('msGroupAssignments')
         greekMSS = c.get('greekMSS')
@@ -403,7 +483,7 @@ class VariantFinder:
                 'sh_maps': {}
             }
 
-            for i in range(0, MAX_RANGE):
+            for i in range(0, VariantFinder.MAX_RANGE):
                 dat['l_layer_counts'][i] = 0
                 dat['l_layer'][i] = []
                 dat['l_short'][i] = []
@@ -425,7 +505,7 @@ class VariantFinder:
         bz_sing_agreemts = {}
         bz_sing_group_agreemts = {}
 
-        for i in range(0, MAX_RANGE):
+        for i in range(0, VariantFinder.MAX_RANGE):
             bz_bas_counts[i] = 0
             bz_bas_long[i] = []
             bz_bas_short[i] = []
@@ -459,7 +539,10 @@ class VariantFinder:
                     nonref_count = 0
                     latin_count = reading.countNonRefLatinManuscripts(ref_ms)
                     nonref_count = reading.countNonRefGreekManuscriptsByGroup(ref_ms, msGroupAssignments, g_counts)
-                    nonref_count_indiv = reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
+
+                    nonref_count_indiv = 0
+                    if ref_ms == '05':
+                        nonref_count_indiv = reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
 
                     # individual singular agreements
                     if ref_ms == '05' and nonref_count_indiv == 1:
@@ -482,7 +565,7 @@ class VariantFinder:
                             bz_sing_group_agreemts[grp].append(ref)
                             break
 
-                    if nonref_count >= MAX_RANGE or latin_count < nonref_count or latin_count == 0:
+                    if nonref_count >= VariantFinder.MAX_RANGE or latin_count < nonref_count or latin_count == 0:
                         continue
 
                     ref_map[ref_ms]['l_layer_counts'][nonref_count] = ref_map[ref_ms]['l_layer_counts'][nonref_count] + 1
@@ -512,15 +595,7 @@ class VariantFinder:
                         else:
                             bz_lat_counts[nonref_count] = bz_lat_counts[nonref_count] + 1
 
-                            readings_str = ''
-                            readings_str = readings_str + reading.getDisplayValue()
-                            for rdg in vu.readings:
-                                if rdg == reading or not rdg.manuscripts:
-                                    continue
-
-                                if len(readings_str) > 0:
-                                    readings_str = readings_str + ' | '
-                                readings_str = readings_str + rdg.getDisplayValue()
+                            readings_str = readingsToString(vu, reading)
 
                             bz_lat_long[nonref_count].append(vu.label)
                             is_bilingual = True if '79' in reading.manuscripts else False
@@ -549,7 +624,7 @@ class VariantFinder:
         with open(csvFile, 'w+') as csv_file:
             csv_file.write('Sort Ref\tLayer\tParallels Against\tParallels For\tType\tClass Description\tReference\tReadings\tMSS\tMSS (Indiv)\tLatin Count\tGreek Count (ungrouped)\tGreek Count (grouped)\tReading Count\tBilingual\tGroups\tApparatus\n')
 
-            for i in range(0, MAX_RANGE):
+            for i in range(0, VariantFinder.MAX_RANGE):
                 for label in bz_lat_long[i]:
                     r_data = bz_lat_data[label]
                     sort_label = s.generateSortLabel(label)
@@ -608,7 +683,7 @@ class VariantFinder:
         csvFile = c.get('finderFolder') + '/bezan-layers-' + s.range_id + '.csv'
         with open(csvFile, 'w+') as csv_file:
             csv_file.write('Manuscripts\tLatin-Layer Count\tVerses\t\tVerses (long)\n')
-            for i in range(0, MAX_RANGE):
+            for i in range(0, VariantFinder.MAX_RANGE):
                 csv_file.write(str(i) + '\t')
                 csv_file.write(str(bz_lat_counts[i]) + '\t')
 
@@ -631,7 +706,7 @@ class VariantFinder:
 
             csv_file.write('\n')
             csv_file.write('Manuscripts\tBase-Layer Count\tVerses\t\tVerses (long)\n')
-            for i in range(0, MAX_RANGE):
+            for i in range(0, VariantFinder.MAX_RANGE):
                 csv_file.write(str(i) + '\t')
                 csv_file.write(str(bz_bas_counts[i]) + '\t')
 
@@ -656,7 +731,7 @@ class VariantFinder:
 
         csvFile = c.get('finderFolder') + '/latin-layer-counts-' + s.range_id + '.csv'
         with open(csvFile, 'w+') as csv_file:
-            for i in range(0, MAX_RANGE):
+            for i in range(0, VariantFinder.MAX_RANGE):
                 csv_file.write(str(i) + ' Manuscripts\n')
                 csv_file.write('Manuscript\tLatin-Layer Count\tVerses\t\tVerses (long)\n')
                 for ref_ms in ref_mss:
@@ -688,12 +763,12 @@ class VariantFinder:
         with open(csvFile, 'w+') as csv_file:
             csv_file.write('Counts per Manuscript\n')
             csv_file.write('Manuscript')
-            for i in range(0, MAX_RANGE):
+            for i in range(0, VariantFinder.MAX_RANGE):
                 csv_file.write('\tCount ' + str(i))
             csv_file.write('\n')
             for ref_ms in ref_mss:
                 csv_file.write(ref_ms)
-                for i in range(0, MAX_RANGE):
+                for i in range(0, VariantFinder.MAX_RANGE):
                     csv_file.write('\t' + str(ref_map[ref_ms]['l_layer_counts'][i]))
                 csv_file.write('\n')
 
@@ -837,40 +912,16 @@ class VariantFinder:
                 if not vu.startingAddress:
                     vu.startingAddress = addr
 
-                r_layer = ''
-                is_singular = False
-                if vu.isReferenceSingular(s.refMS):
-                    is_singular = True
-                    r_layer = 'S'
-                elif vu.isSingular():
-                    is_singular = True
-
-                if s.refMS == '05' and isSubSingular(s.config.get('subsingularVariants'), vu, s.refMS):
-                    is_singular = True
-                    r_layer = 'SS'
-
                 r_reading = vu.getReadingForManuscript(s.refMS)
-                if not r_reading:
-                    r_layer = 'N'
-
-                if not r_layer:
-                    r_layer = s.computeLayer(vu.label, r_reading, True)
+                r_layer = s.computeLayer2(s.refMS, vu, r_reading)
 
                 output = r_layer + vu.label
-                if is_singular:
+                if r_layer[:1] == 'S' or vu.isSingular():
                     output = '*' + output
                 if r_reading:
-                    output = output + ' ' + r_reading.getDisplayValue()
+                    output = output + ' ' + readingsToString(vu, r_reading)
                 else:
                     output = output + ' '
-                for reading in vu.readings:
-                    if reading == r_reading:
-                        continue
-                    if not reading.manuscripts:
-                        continue
-                    if len(output) > 0 and output[-1] != ' ':
-                        output = output + ' | '
-                    output = output + reading.getDisplayValue()
 
                 lines[vidx] = lines[vidx] + output + SEP
 

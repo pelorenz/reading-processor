@@ -28,6 +28,18 @@ def makeParts(v):
         parts.append(lastpart)
     return parts
 
+def readingsToString(vu, reading):
+    readings_str = ''
+    readings_str = readings_str + reading.getDisplayValue()
+    for rdg in vu.readings:
+        if rdg == reading or not rdg.manuscripts:
+            continue
+
+        if len(readings_str) > 0:
+            readings_str = readings_str + ' | '
+        readings_str = readings_str + rdg.getDisplayValue()
+    return readings_str
+
 def mssListToString(mss_list):
     mss_list = sorted(mss_list, cmp=sortMSS)
 
