@@ -91,7 +91,10 @@ class VariantFinder:
             return s.checkConfig(ref_ms, vu.label, 'N') # unattested
 
         if vu.isReferenceSingular(ref_ms):
-            return s.checkConfig(ref_ms, vu.label, 'S') # singular
+            if not vu.hasRetroversion:
+                return s.checkConfig(ref_ms, vu.label, 'SNR') # singular
+            else:
+                return s.checkConfig(ref_ms, vu.label, 'S') # singular
 
         if reading.hasManuscript('35'):
             return s.checkConfig(ref_ms, vu.label, 'M') # mainstream
