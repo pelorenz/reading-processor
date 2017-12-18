@@ -67,10 +67,11 @@ class VariantFinder:
         for addr in s.variantModel['addresses']:
             s.addrLookup[s.getAddrKey(addr)] = addr
 
-    def checkConfig(s, ref_ms, label, layer):
+    def checkConfig(s, ref_ms, vu, layer):
         if ref_ms != '05':
             return layer
 
+        label = vu.label
         if layer == 'L':
             if not label in s.latinLayerCore:
                 s.info('Latin core reading not in config', label)
@@ -82,22 +83,21 @@ class VariantFinder:
                 s.info('Non-core reading in latinLayerCoreVariants', label)
             elif label in s.latinLayerMulti:
                 s.info('Non-multi reading in latinLayerMultiVariants', label)
+        if not vu.hasRetroversion:
+            layer = layer + 'NR'
         return layer
 
     def computeLayer2(s, ref_ms, vu, reading):
         c = s.config
 
         if not reading:
-            return s.checkConfig(ref_ms, vu.label, 'N') # unattested
+            return s.checkConfig(ref_ms, vu, 'N') # unattested
 
         if vu.isReferenceSingular(ref_ms):
-            if not vu.hasRetroversion:
-                return s.checkConfig(ref_ms, vu.label, 'SNR') # singular
-            else:
-                return s.checkConfig(ref_ms, vu.label, 'S') # singular
+            return s.checkConfig(ref_ms, vu, 'S') # singular
 
         if reading.hasManuscript('35'):
-            return s.checkConfig(ref_ms, vu.label, 'M') # mainstream
+            return s.checkConfig(ref_ms, vu, 'M') # mainstream
 
         g_counts = {}
         msGroupAssignments = c.get('msGroupAssignments')
@@ -107,7 +107,7 @@ class VariantFinder:
         if ref_ms == '05':
             if nonref_count < VariantFinder.MAX_RANGE and latin_count >= nonref_count and latin_count != 0:
                 if nonref_count == 0:
-                    return s.checkConfig(ref_ms, vu.label, 'L') # Latin
+                    return s.checkConfig(ref_ms, vu, 'L') # Latin
 
                 base_mss = []
                 base_mss.append('28')
@@ -117,33 +117,33 @@ class VariantFinder:
                         base_mss.append(ms)
                 if set(base_mss) & set(reading.manuscripts):
                     if reading.hasManuscript('565') or reading.hasManuscript('038') or reading.hasManuscript('700'):
-                        return s.checkConfig(ref_ms, vu.label, 'CC') # Latin base + Cluster 565
+                        return s.checkConfig(ref_ms, vu, 'CC') # Latin base + Cluster 565
                     if reading.hasManuscript('03'):
-                        return s.checkConfig(ref_ms, vu.label, 'BB') # Latin base + 03
+                        return s.checkConfig(ref_ms, vu, 'BB') # Latin base + 03
                     if reading.hasManuscript('032'):
-                        return s.checkConfig(ref_ms, vu.label, 'WW') # Latin base + 032
-                    return s.checkConfig(ref_ms, vu.label, 'GG') # Latin base + other
+                        return s.checkConfig(ref_ms, vu, 'WW') # Latin base + 032
+                    return s.checkConfig(ref_ms, vu, 'GG') # Latin base + other
                 else:
-                    return s.checkConfig(ref_ms, vu.label, 'LI') # Latin + independent
+                    return s.checkConfig(ref_ms, vu, 'LI') # Latin + independent
 
             if reading.hasManuscript('565') or reading.hasManuscript('038') or reading.hasManuscript('700'):
-                return s.checkConfig(ref_ms, vu.label, 'C') # Base + Cluster 565
+                return s.checkConfig(ref_ms, vu, 'C') # Base + Cluster 565
             if reading.hasManuscript('03'):
-                return s.checkConfig(ref_ms, vu.label, 'B') # Base + 03
+                return s.checkConfig(ref_ms, vu, 'B') # Base + 03
             if reading.hasManuscript('032'):
-                return s.checkConfig(ref_ms, vu.label, 'W') # 032
+                return s.checkConfig(ref_ms, vu, 'W') # 032
 
             indiv_mss = []
             nonref_count_indiv = reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
             if nonref_count_indiv == 1:
-                return s.checkConfig(ref_ms, vu.label, 'SS') # subsingular individual
+                return s.checkConfig(ref_ms, vu, 'SS') # subsingular individual
             if nonref_count == 1:
                 for grp, g_mss in g_counts.iteritems():
                     if grp == 'Byz' or grp == 'Iso':
                         break;
-                    return s.checkConfig(ref_ms, vu.label, 'SF') # subsingular family
+                    return s.checkConfig(ref_ms, vu, 'SF') # subsingular family
 
-            return s.checkConfig(ref_ms, vu.label, 'G') # Base
+            return s.checkConfig(ref_ms, vu, 'G') # Base
         else:
             if nonref_count < VariantFinder.MAX_RANGE and latin_count >= nonref_count and latin_count != 0:
                 return 'L'
