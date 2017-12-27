@@ -110,3 +110,9 @@ class  VariationUnit(object):
             if reading.hasManuscript(ms):
                 return reading
         return None
+
+    def getExtantManuscripts(s):
+        extant_mss = []
+        for reading in s.readings:
+            extant_mss.extend(reading.manuscripts)
+        return extant_mss

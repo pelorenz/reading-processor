@@ -5,6 +5,7 @@ import sys, os, string, re
 
 from object.jsonEncoder import *
 from object.rangeManager import *
+from object.grouper import *
 
 from utility.config import *
 from utility.options import *
@@ -508,6 +509,14 @@ class VariantFinder:
         bz_sing_agreemts = {}
         bz_sing_group_agreemts = {}
 
+        bz_lyr_map = {}
+        bz_lyr_map['NONMAJORITY'] = []
+        bz_lyr_map['BASE'] = []
+        bz_lyr_map['LATIN'] = []
+        bz_lyr_map['SINGULAR'] = []
+
+        bz_lyr_codes = ['BASE', 'LATIN', 'SINGULAR', 'CC', 'CCNR', 'C', 'CNR', 'L', 'LI', 'S', 'SNR', 'SS', 'SSNR', 'SF', 'SFNR', 'B', 'BNR', 'BB', 'BBNR', 'W', 'WNR', 'WW', 'WWNR', 'G', 'GNR', 'GG', 'GGNR', 'NONMAJORITY']
+
         for i in range(0, VariantFinder.MAX_RANGE):
             bz_bas_counts[i] = 0
             bz_bas_long[i] = []
@@ -568,6 +577,21 @@ class VariantFinder:
                             bz_sing_group_agreemts[grp].append(ref)
                             break
 
+                    if ref_ms == '05':
+                        lyr_cod = s.computeLayer2(ref_ms, vu, reading)
+                        if not bz_lyr_map.has_key(lyr_cod):
+                            bz_lyr_map[lyr_cod] = []
+                        bz_lyr_map[lyr_cod].append(vu.label)
+                        if lyr_cod[:1] == 'B' or lyr_cod[:1] == 'C' or lyr_cod[:1] == 'G' or lyr_cod[:1] == 'W':
+                            bz_lyr_map['BASE'].append(vu.label)
+                            bz_lyr_map['NONMAJORITY'].append(vu.label)
+                        if lyr_cod[:1] == 'L':
+                            bz_lyr_map['LATIN'].append(vu.label)
+                            bz_lyr_map['NONMAJORITY'].append(vu.label)
+                        if lyr_cod[:1] == 'S':
+                            bz_lyr_map['SINGULAR'].append(vu.label)
+                            bz_lyr_map['NONMAJORITY'].append(vu.label)
+
                     if nonref_count >= VariantFinder.MAX_RANGE or latin_count < nonref_count or latin_count == 0:
                         continue
 
@@ -622,6 +646,26 @@ class VariantFinder:
                                 bz_lat_short[nonref_count].append(ref)
                             else:
                                 bz_lat_sh_maps[nonref_count][ref] = bz_lat_sh_maps[nonref_count][ref] + 1
+
+        csvFile = c.get('finderFolder') + '/bezae-layer-codes-' + s.range_id + '.csv'
+        with open(csvFile, 'w+') as csv_file:
+            for lyr_cod in bz_lyr_codes:
+                csv_file.write(lyr_cod)
+                if not bz_lyr_map.has_key(lyr_cod):
+                    csv_file.write(' (0)\n\n')
+                    continue
+                csv_file.write(' (' + str(len(bz_lyr_map[lyr_cod])) + ')\n')
+            csv_file.write('\n')
+            for lyr_cod in bz_lyr_codes:
+                csv_file.write(lyr_cod)
+                if not bz_lyr_map.has_key(lyr_cod):
+                    csv_file.write(' (0)\n')
+                    continue
+                csv_file.write(' (' + str(len(bz_lyr_map[lyr_cod])) + ')\n')
+                for label in bz_lyr_map[lyr_cod]:
+                    csv_file.write(label + '\n')
+                csv_file.write('\n')
+            csv_file.close()
 
         csvFile = c.get('finderFolder') + '/bezae-latin-layer-' + s.range_id + '.csv'
         with open(csvFile, 'w+') as csv_file:
@@ -1079,38 +1123,44 @@ class VariantFinder:
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
 
-        if o.refMSS:
-            s.refMS_IDs = o.refMSS.split(',')
-        else:
-            s.refMS_IDs = c.get('referenceMSS')
+        delegate = None
+        if o.group:
+            delegate = Grouper()
+            delegate.initialize()
 
-        if s.refMS_IDs and len(s.refMS_IDs) > 0:
-            s.refMS = s.refMS_IDs[0]
+        if not delegate or not delegate.isInitialized():
+            if o.refMSS:
+                s.refMS_IDs = o.refMSS.split(',')
+            else:
+                s.refMS_IDs = c.get('referenceMSS')
 
-        if o.range:
-            s.range_id = o.range
-        else:
-            s.range_id = c.get('defaultRange')
+            if s.refMS_IDs and len(s.refMS_IDs) > 0:
+                s.refMS = s.refMS_IDs[0]
 
-        if o.criteria:
-            s.queryCriteria = c.get('queryCriteria')[o.criteria]
+            if o.range:
+                s.range_id = o.range
+            else:
+                s.range_id = c.get('defaultRange')
 
-        if o.layer and o.layer not in ['L', 'D', 'M']:
-            s.info('If specified, layer must be one of \'L\', \'D\', or \'M\'')
-            return
+            if o.criteria:
+                s.queryCriteria = c.get('queryCriteria')[o.criteria]
 
-        s.latinLayerCore = c.get('latinLayerCoreVariants').split(u'|')
-        s.latinLayerMulti = c.get('latinLayerMultiVariants').split(u'|')
+            if o.layer and o.layer not in ['L', 'D', 'M']:
+                s.info('If specified, layer must be one of \'L\', \'D\', or \'M\'')
+                return
 
-        is_refresh = False
-        if o.refreshCache:
-            is_refresh = True
+            s.latinLayerCore = c.get('latinLayerCoreVariants').split(u'|')
+            s.latinLayerMulti = c.get('latinLayerMultiVariants').split(u'|')
 
-        # load variant data
-        s.rangeMgr = RangeManager()
-        s.rangeMgr.load(is_refresh)
+            is_refresh = False
+            if o.refreshCache:
+                is_refresh = True
 
-        s.variantModel = s.rangeMgr.getModel(s.range_id)
+            # load variant data
+            s.rangeMgr = RangeManager()
+            s.rangeMgr.load(is_refresh)
+
+            s.variantModel = s.rangeMgr.getModel(s.range_id)
 
         if s.queryCriteria:
             s.initAddrLookup()
@@ -1118,6 +1168,9 @@ class VariantFinder:
         elif o.layer:
             s.generateLayerApparatus(o.layer)
             #s.findMissingLatinVariants()
+        elif o.group:
+            delegate.variantModel = s.variantModel
+            delegate.group()
         elif o.harmonization:
             s.generateHarmonizationTemplate(s.range_id)
         elif o.varheader:
@@ -1151,4 +1204,7 @@ class VariantFinder:
 #
 # Latin-layer builder
 # variantFinder.py -v -a c01-16 -R 05 -Y
+#
+# Group MSS
+# variantFinder.py -v -a c01-16 -P
 VariantFinder().main(sys.argv[1:])

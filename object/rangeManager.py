@@ -115,11 +115,4 @@ class RangeManager:
 
                 variantModel['manuscripts'] = sorted(list(set(variantModel['manuscripts']).union(set(c_data['manuscripts']))), cmp=sortMSS)
 
-            # Is this used?
-            #rcachefile = c.get('variantFolder') + '/_cache/' + range_id + '.json'
-            #jdata = json.dumps(variantModel, cls=ComplexEncoder, ensure_ascii=False)
-            #with open(rcachefile, 'w+') as file:
-            #    file.write(jdata.encode('UTF-8'))
-            #    file.close()
-
         return variantModel
