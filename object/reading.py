@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os, collections, json
+import sys, os, collections, json, re
 from util import *
 
 class  Reading(object):
@@ -59,6 +59,7 @@ class  Reading(object):
 
     def countNonRefGreekManuscriptsByGroup(s, refMS, msGroups, g_counts):
         counter = 0
+        multi_mss = []
         for ms in s.manuscripts:
             if not msGroups.has_key(ms): # Latins and non-config'ed Greeks excluded
                 continue
@@ -68,17 +69,41 @@ class  Reading(object):
                 continue
             if ms == '05' or ms == '79': # bilingual
                 continue
-            if msGroups[ms] != 'Iso' and msGroups[ms] != 'C28':
-                group = msGroups[ms]
+
+            group_parts = msGroups[ms].split(',')
+            if len(group_parts) > 1:
+                multi_mss.append((ms, msGroups[ms]))
+                continue
+
+            group = getGroupBase(msGroups[ms])
+            if group == 'Iso' or group == 'CP45':
+                counter = counter + 1
+            else:
                 # did we count group already?
-                if not g_counts.has_key(group):
+                if g_counts.has_key(group):
+                    g_counts[group].append(ms)
+                else:
                     counter = counter + 1
                     g_counts[group] = []
                     g_counts[group].append(ms)
-                else:
+
+        for multi in multi_mss:
+            ms = multi[0]
+            group_parts = multi[1].split(',')
+            has_group = False
+            for group in group_parts:
+                group = getGroupBase(group)
+                if g_counts.has_key(group):
                     g_counts[group].append(ms)
-            else:
+                    has_group = True
+                    break
+
+            if not has_group:
                 counter = counter + 1
+                group = getGroupBase(group_parts[0])
+                g_counts[group] = []
+                g_counts[group].append(ms)
+
         return counter
 
     def hasLatinManuscript(s):

@@ -3,6 +3,12 @@ import sys, os, re
 class Util:
     MS_OVERLAYS = [ 'na28' ]
 
+def getGroupBase(group):
+    s_res = re.search(r'^(Iso|[ByzCFP0-9]+)([s]{0,1})$', group)
+    if s_res:
+        group = s_res.group(1)
+    return group
+
 def makePart(tok, lpart):
     part = {}
     vtoks = tok.split('.') if '.' in tok else [ tok ]
@@ -102,16 +108,39 @@ def mssGroupListToString(mss_list, msGroups, g_map):
     # make g_map if null
     if not g_map:
         g_map = {}
+        multi_mss = []
         for ms in mss_list:
             if not msGroups.has_key(ms): # Latins and non-config'ed Greeks excluded
                 continue
-            if msGroups[ms] != 'Iso' and msGroups[ms] != 'C28':
-                group = msGroups[ms]
+
+            group_parts = msGroups[ms].split(',')
+            if len(group_parts) > 1:
+                multi_mss.append((ms, msGroups[ms]))
+                continue
+
+            group = getGroupBase(msGroups[ms])
+            if group != 'Iso' and group != 'CP45':
                 if not g_map.has_key(group):
                     g_map[group] = []
                     g_map[group].append(ms)
                 else:
                     g_map[group].append(ms)
+
+        for multi in multi_mss:
+            ms = multi[0]
+            group_parts = multi[1].split(',')
+            has_group = False
+            for group in group_parts:
+                group = getGroupBase(group)
+                if g_map.has_key(group):
+                    g_map[group].append(ms)
+                    has_group = True
+                    break
+
+            if not has_group:
+                group = getGroupBase(group_parts[0])
+                g_map[group] = []
+                g_map[group].append(ms)
 
     g_list = []
     l_list = []
@@ -129,7 +158,7 @@ def mssGroupListToString(mss_list, msGroups, g_map):
         if ms == 'vg':
             has_vg = True
             continue
-        if msGroups[ms] == 'Iso' and msGroups[ms] == 'C28':
+        if msGroups[ms] == 'Iso' and msGroups[ms] == 'CP45':
             g_list.append(ms)
             continue
         grp = msGroups[ms]
