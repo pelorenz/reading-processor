@@ -29,7 +29,7 @@ class  CommandLine:
         self.parser.add_argument('-H', '--hauptliste', help='Generate Hauptliste results for segments (dicer).', action='store_true')
         self.parser.add_argument('-L', '--layer', help='Generate apparatus for selected layer, one of \'L\', \'D\', or \'M\' (variantFinder).')
         self.parser.add_argument('-O', '--offsets', help='Generate offsets for segments (dicer).', action='store_true')
-        self.parser.add_argument('-P', '--group', help='Compute MS groupings (variantFinder).', action='store_true')
+        self.parser.add_argument('-P', '--group', help='Compute MS groupings, either \'all\' or \'greek\' (variantFinder).')
         self.parser.add_argument('-Q', '--qca', help='Generate QCA results for segments (dicer).', action='store_true')
         self.parser.add_argument('-V', '--varheader', help='Generate header with variation units for collations (variantFinder).', action='store_true')
         self.parser.add_argument('-X', '--extra', help='Generic command for temporary scripting (variantFinder).', action='store_true')

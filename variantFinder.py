@@ -81,9 +81,9 @@ class VariantFinder:
                 s.info('Latin multi reading not in config', label)
         else:
             if label in s.latinLayerCore:
-                s.info('Non-core reading in latinLayerCoreVariants', label)
+                s.info('Non-core reading in latinLayerCoreVariants', label, ', layer:', layer)
             elif label in s.latinLayerMulti:
-                s.info('Non-multi reading in latinLayerMultiVariants', label)
+                s.info('Non-multi reading in latinLayerMultiVariants', label, ', layer:', layer)
         if not vu.hasRetroversion:
             layer = layer + 'NR'
         return layer
@@ -1125,7 +1125,7 @@ class VariantFinder:
 
         delegate = None
         if o.group:
-            delegate = Grouper()
+            delegate = Grouper(o.group)
             delegate.initialize()
 
         if not delegate or not delegate.isInitialized():
@@ -1207,4 +1207,5 @@ class VariantFinder:
 #
 # Group MSS
 # variantFinder.py -v -a c01-16 -P
+# variantFinder.py -v -a c01-16 -P greek
 VariantFinder().main(sys.argv[1:])

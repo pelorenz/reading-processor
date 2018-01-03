@@ -116,3 +116,12 @@ class  VariationUnit(object):
         for reading in s.readings:
             extant_mss.extend(reading.manuscripts)
         return extant_mss
+
+    def isLatinOnly(s):
+        counter = 0
+        for reading in s.readings:
+            if reading.hasGreekManuscript():
+                counter = counter + 1
+            if counter > 1:
+                return False
+        return True

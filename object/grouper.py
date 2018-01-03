@@ -13,10 +13,15 @@ class Grouper:
     ALT_CUTOFF_1 = 0.40
     ALT_CUTOFF_2 = 0.33
 
-    def __init__(s):
+    MIN_READINGS = 20
+    MIN_READINGS_GR = 25
+    TOTAL_MAJORITY_RATIO = 0.78
+
+    def __init__(s, r_set):
         s.config = None
         s.variantModel = None
         s.mss = []
+        s.latin_mss = []
 
         s.maj = {}
         s.ext = {}
@@ -27,6 +32,14 @@ class Grouper:
         s.dst_ext = {}
 
         s.ms_results = []
+
+        s.latinLayerCore = None
+        s.latinLayerMulti = None
+
+        s.r_set = r_set
+        s.is_greek = False
+        if r_set == 'greek':
+            s.is_greek = True
 
     def initVMap(s, map):
         for ms in s.mss:
@@ -53,23 +66,24 @@ class Grouper:
         o_str = o_str + str(s_info['t_ratio'] * 100) + '% (' + str(s_info['t_agree']) + '/' + str(s_info['t_extant']) + ')' + '\t'
         o_str = o_str + str(p_info['m_ratio']) + '\t'
         o_str = o_str + str(p_info['m_agree']) + '\t'
-        o_str = o_str + str(p_info['extant']) + '\n'
+        o_str = o_str + str(p_info['extant']) + '\t'
+        o_str = o_str + str(p_info['m_ratio'] * 100) + '% (' + str(p_info['m_agree']) + '/' + str(p_info['extant']) + ')' + '\n'
         return o_str
 
     def writeHeader(s):
-        return 'Primary MS\tSecondary MS\tDs Ratio\tDs Agree\tDs Extant\tDs Display\tTtl Ratio\tTtl Agree\tTtl Extant\tTtl Display\tM Ratio\tM Agree\tExtant Readings\n'
+        return 'Primary MS\tSecondary MS\tDs Ratio\tDs Agree\tDs Extant\tDs Display\tTtl Ratio\tTtl Agree\tTtl Extant\tTtl Display\tM Ratio\tM Agree\tExtant Readings\tM Display\n'
 
     def writeOutput(s):
         s.info('Writing GDF')
         c = s.config
 
-        a_file = open(c.get('finderFolder') + '/grouping-all.csv', 'w+')
+        a_file = open(c.get('finderFolder') + '/grouping-all-' + s.r_set + '.csv', 'w+')
         a_file.write(s.writeHeader())
 
-        r_file = open(c.get('finderFolder') + '/grouping-related.csv', 'w+')
+        r_file = open(c.get('finderFolder') + '/grouping-related-' + s.r_set + '.csv', 'w+')
         r_file.write(s.writeHeader())
 
-        u_file = open(c.get('finderFolder') + '/grouping-unrelated.csv', 'w+')
+        u_file = open(c.get('finderFolder') + '/grouping-unrelated-' + s.r_set + '.csv', 'w+')
         u_file.write(s.writeHeader())
 
         nodes = set()
@@ -86,7 +100,8 @@ class Grouper:
             for s_info in p_info['s_mss']:
                 a_file.write(s.writeString(p_info, s_info))
 
-                basic_test = s_info['d_extant'] >= 10 and s_info['t_ratio'] > p_info['m_ratio'] * 0.8
+                min_readings = Grouper.MIN_READINGS_GR if s.is_greek else Grouper.MIN_READINGS
+                basic_test = s_info['d_extant'] >= Grouper.MIN_READINGS and s_info['t_ratio'] > p_info['m_ratio'] * Grouper.TOTAL_MAJORITY_RATIO
                 p_tup = (p_info['p_ms'], p_info['m_ratio'])
                 s_tup = (s_info['s_ms'], s_info['m_ratio'])
 
@@ -122,7 +137,7 @@ class Grouper:
                 u_file.write(alt1_csv)
                 u_file.write(alt2_csv)
 
-        gFile = c.get('finderFolder') + '/grouping.gdf'
+        gFile = c.get('finderFolder') + '/grouping-' + s.r_set + '.gdf'
         with open(gFile, 'w+') as g_file:
             g_file.write('nodedef>name VARCHAR,mt DOUBLE\n')
             for node in nodes:
@@ -168,7 +183,7 @@ class Grouper:
 
             s.ms_results.append(p_info)
 
-        jsonFile = c.get('finderFolder') + '/grouping-output.json'
+        jsonFile = c.get('finderFolder') + '/grouping-output-' + s.r_set + '.json'
         jdata = json.dumps(s.ms_results)
         with open(jsonFile, 'w+') as j_file:
             j_file.write(jdata.encode('UTF-8'))
@@ -179,7 +194,9 @@ class Grouper:
         c = s.config
 
         s.mss = c.get('greekMSS')
-        s.mss.extend(c.get('latinMSS'))
+        s.latin_mss = c.get('latinMSS')
+        if not s.is_greek:
+            s.mss.extend(s.latin_mss)
 
         s.initVMap(s.maj)
         s.initVMap(s.ext)
@@ -190,12 +207,21 @@ class Grouper:
 
         for addr in s.variantModel['addresses']:
             for vu in addr.variation_units:
+                if vu.isSingular() or vu.isReferenceSingular('05'):
+                    s.info('Excluding', vu.label)
+                    continue
+                elif s.is_greek and (vu.label in s.latinLayerCore or vu.label in s.latinLayerMulti or vu.isLatinOnly):
+                    s.info('Excluding', vu.label)
+                    continue
+
                 s.info('Processing', vu.label)
 
                 if not vu.startingAddress:
                     vu.startingAddress = addr
 
                 extant_mss = vu.getExtantManuscripts()
+                if s.is_greek:
+                    extant_mss = list(set(extant_mss) - set(s.latin_mss))
                 for ms in extant_mss:
                     s.ext[ms] = s.ext[ms] + 1
 
@@ -212,8 +238,11 @@ class Grouper:
                     if reading.hasManuscript('35'):
                         is_maj = True
 
-                    elem_cmb = itertools.combinations(reading.manuscripts, 2)
-                    for p_ms in reading.manuscripts:
+                    reading_mss = reading.manuscripts
+                    if s.is_greek:
+                        reading_mss = list(set(reading_mss) - set(s.latin_mss))
+                    elem_cmb = itertools.combinations(reading_mss, 2)
+                    for p_ms in reading_mss:
                         if is_maj:
                             s.maj[p_ms] = s.maj[p_ms] + 1
                             for cmb in elem_cmb:
@@ -232,8 +261,12 @@ class Grouper:
         c = s.config = Config('processor-config.json')
         s.info('Initializing grouper')
 
+        if s.is_greek:
+            s.latinLayerCore = c.get('latinLayerCoreVariants').split(u'|')
+            s.latinLayerMulti = c.get('latinLayerMultiVariants').split(u'|')
+
         jsondata = ''
-        jsonfile = c.get('finderFolder') + 'grouping-output.json'
+        jsonfile = c.get('finderFolder') + 'grouping-output-' + s.r_set + '.json'
         if os.path.exists(jsonfile):
             with open(jsonfile, 'r') as file:
                 s.info('Loading saved grouper results from', jsonfile)
