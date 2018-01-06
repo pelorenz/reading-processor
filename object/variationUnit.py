@@ -3,6 +3,8 @@
 
 import sys, os, collections, json
 
+from object.readingGroup import *
+
 def r_compare(r1, r2):
     if len(r1.manuscripts) > len(r2.manuscripts):
         return -1
@@ -25,6 +27,10 @@ class  VariationUnit(object):
 
         # first address of variant
         s.startingAddress = None
+
+        # correctors
+        s.bezae_correctors = {}
+        s.sinai_correctors = {}
 
     def jsonSerialize(s):
         return { '_type': 'variationUnit', 'label': s.label, 'hasRetroversion': s.hasRetroversion, 'readings': s.readings }
@@ -109,6 +115,17 @@ class  VariationUnit(object):
         for reading in s.readings:
             if reading.hasManuscript(ms):
                 return reading
+        return None
+
+    def getSubReadingForManuscript(s, ms):
+        for reading in s.readings:
+            if type(reading) is ReadingGroup:
+                for sub_rdg in reading.readings:
+                    if sub_rdg.hasManuscript(ms):
+                        return sub_rdg
+            else:
+                if reading.hasManuscript(ms):
+                    return reading
         return None
 
     def getExtantManuscripts(s):

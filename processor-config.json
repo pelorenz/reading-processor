@@ -940,6 +940,8 @@
   "greekGroups": [ "Byz","F03","F1","F13","F02","F117","F377","F732","F827","F1216","F1302","F1424","F1515","CP45","C011","C022","C0233","C4","C179","C372","C565","C695","C697","C1506","Iso" ],
   "msOverlays": [ "na28" ],
   "synopticOverlays": [ "mk2", "mt1", "mt2", "lk1", "lk2", "jn1", "ex1" ],
+  "corrector01Overlays": [ "corrector-01A", "corrector-01C1", "corrector-01C2" ],
+  "corrector05Overlays": [ "correctors-05" ],
   "showSingulars": [
     "05","01","02","03","04","019","032","038","28","565","700","VL1","VL2","VL3","VL4","VL5","VL6","VL8","VL10","VL13","VL14","VL15","VL16","VL17","VL19","vg","19A","VL271","P45"
   ],

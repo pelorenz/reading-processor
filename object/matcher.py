@@ -3,6 +3,8 @@
 
 import web, sys, os, string, re
 
+from object.overlayManager import *
+from object.readingGroup import *
 from object.synopticParallel import *
 from object.util import *
 
@@ -10,6 +12,8 @@ class Matcher:
 
     TYPE_CONTINUOUS = 'continuous'
     TYPE_SYNOPTIC = 'synoptic'
+    TYPE_CORRECTOR_01 = 'corrector01'
+    TYPE_CORRECTOR_05 = 'corrector05'
 
     def __init__(s, model, base_addr, slot_idx, vu, v_lookup, o_id, o_type):
         s.model = model
@@ -33,8 +37,12 @@ class Matcher:
     def isMatch(s, r_match, r_container):
         if s.type == Matcher.TYPE_CONTINUOUS:
             return s.isContinuousMatch(r_match, r_container)
-        elif s.type == Matcher.TYPE_SYNOPTIC:
+        if s.type == Matcher.TYPE_SYNOPTIC:
             return s.isSynopticMatch(r_match, r_container)
+        if s.type == Matcher.TYPE_CORRECTOR_01:
+            return s.isC01Match(r_match, r_container)
+        if s.type == Matcher.TYPE_CORRECTOR_05:
+            return s.isC05Match(r_match, r_container)
         return False
 
     def handleKeyError(s, e, ru_addr):
@@ -51,6 +59,76 @@ class Matcher:
             ru_addr = s.model['addresses'][idx]
 
         return ru_addr
+
+    def isC01Match(s, r_match, r_container):
+        return False
+
+    def isC05Match(s, r_match, r_container):
+        return False
+
+    def addBezaeCorrector(s):
+        t_form = ''
+        reading = s.var_unit.readings[0]
+        if type(reading) is ReadingGroup:
+            reading = reading.readings[0]
+
+        c_id = s.overlay_id
+        has_corrector = False
+        for ru in reading.readingUnits:
+            ru_addr = s.getAddressForReadingUnit(ru)
+            c_text = s.v_lookup[ru_addr.verse_num][ru_addr.addr_idx]
+            if c_text and c_text == 'OMIT': # corrector erased text
+                has_corrector = True
+                continue
+            elif c_text: # corrector inserted text
+                rs = re.search(ur'([\u0391-\u03A9\u03B1-\u03C9om\. ]+) \{([A-Za-z\/]{1,3})(\?{0,1})\}', c_text)
+                if not rs:
+                    rs = re.search(ur'([\u0391-\u03A9\u03B1-\u03C9om\. ]+) \-\> \{(pm)\}', c_text)
+                if rs:
+                    has_corrector = True
+                    if t_form:
+                        t_form = t_form + ' '
+                    t_form = t_form + rs.group(1)
+                    c_id = rs.group(2)
+                else:
+                    s.info('Unrecognized Bezan corrector pattern at', s.var_unit.label)
+            else: # corrector left original text
+                orig_text = ru_addr.getTextFormForMS('05')
+                if orig_text and orig_text != 'om.':
+                    if t_form:
+                        t_form = t_form + ' '
+                    t_form = t_form + orig_text
+
+        if has_corrector and t_form:
+            s.var_unit.bezae_correctors[c_id] = t_form
+
+    def addSinaiCorrector(s):
+        t_form = ''
+        reading = s.var_unit.readings[0]
+        if type(reading) is ReadingGroup:
+            reading = reading.readings[0]
+
+        has_corrector = False
+        for ru in reading.readingUnits:
+            ru_addr = s.getAddressForReadingUnit(ru)
+            c_text = s.v_lookup[ru_addr.verse_num][ru_addr.addr_idx]
+            if c_text and c_text == 'OMIT': # corrector erased text
+                has_corrector = True
+                continue
+            elif c_text: # corrector inserted text
+                has_corrector = True
+                if t_form:
+                    t_form = t_form + ' '
+                t_form = t_form + c_text
+            else: # corrector left original text
+                orig_text = ru_addr.getTextFormForMS('01')
+                if orig_text and orig_text != 'om.':
+                    if t_form:
+                        t_form = t_form + ' '
+                    t_form = t_form + orig_text
+
+        if has_corrector and t_form:
+            s.var_unit.sinai_correctors[s.overlay_id] = t_form
 
     def isContinuousMatch(s, r_match, r_container):
         is_match = True

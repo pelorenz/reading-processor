@@ -909,6 +909,127 @@ class VariantFinder:
 
             csv_file.close()
 
+    def generateCorrectorTemplate(s, range_id):
+        c = s.config
+        s.info('Generating corrector templates')
+
+        greekMSS = c.get('greekMSS')
+        latinMSS = c.get('latinMSS')
+
+        # letters[3] == 'c'
+        letters = dict(enumerate(string.ascii_lowercase, 1))
+
+        csvFile = c.get('finderFolder') + '/bezae-correctors-' + range_id + '.csv'
+        bez_file = open(csvFile, 'w+')
+
+        csvFile = c.get('finderFolder') + '/sinai-correctors-' + range_id + '.csv'
+        sai_file = open(csvFile, 'w+')
+
+        for addr in s.variantModel['addresses']:
+            for vu in addr.variation_units:
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                if not vu.sinai_correctors and not vu.bezae_correctors:
+                    continue
+
+                if vu.sinai_correctors:
+                    # TODO: merge corrector text with 01 reading!
+                    sai_file.write(vu.label + u'\n')
+                    rdg = vu.getReadingForManuscript('01')
+                    if rdg:
+                        sai_file.write((u'\t01*\t' + rdg.getDisplayValue() + u'\n').encode('UTF-8'))
+                    else:
+                        sai_file.write((u'\t01*\t---\n').encode('UTF-8'))
+                    if vu.sinai_correctors.has_key('corrector-01A'):
+                        sai_file.write((u'\tA\t' + vu.sinai_correctors['corrector-01A'] + u'\n').encode('UTF-8'))
+                    if vu.sinai_correctors.has_key('corrector-01C1'):
+                        sai_file.write((u'\tC1\t' + vu.sinai_correctors['corrector-01C1'] + u'\n').encode('UTF-8'))
+                    if vu.sinai_correctors.has_key('corrector-01C2'):
+                        sai_file.write((u'\tC2\t' + vu.sinai_correctors['corrector-01C2'] + u'\n').encode('UTF-8'))
+                    sai_file.write(u'\n')
+
+                    sai_file.write(u'sort_id\treading_id\treading_text\tA\tC1\tC2\t01\t35')
+                    for ms in greekMSS:
+                        if ms != '01' and ms != '35':
+                            sai_file.write(u'\t' + ms)
+                    for ms in latinMSS:
+                        sai_file.write(u'\t' + ms)
+                    sai_file.write(u'\n')
+
+                    for idx, reading in enumerate(vu.readings):
+                        if not reading.manuscripts:
+                            continue
+
+                        reading_id = vu.label + letters[idx + 1]
+                        sort_id = s.generateSortLabel(vu.label) + letters[idx + 1]
+                        reading_text = reading.getDisplayValue()
+
+                        sai_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t\t\t\t' + s.getMSValue(vu, reading, '01') + u'\t' + s.getMSValue(vu, reading, '35')).encode('UTF-8'))
+
+                        for ms in greekMSS:
+                            if ms != '01' and ms != '35':
+                                sai_file.write(u'\t' + s.getMSValue(vu, reading, ms))
+                        for ms in latinMSS:
+                            sai_file.write(u'\t' + s.getMSValue(vu, reading, ms))
+                        sai_file.write(u'\n')
+
+                    sai_file.write(u'\n')
+
+                if vu.bezae_correctors:
+                    # TODO: merge corrector text with 05 reading!
+                    bez_file.write(vu.label + u'\n')
+                    rdg = vu.getReadingForManuscript('05')
+                    if rdg:
+                        bez_file.write((u'\t05*\t' + rdg.getDisplayValue() + u'\n').encode('UTF-8'))
+                    else:
+                        bez_file.write((u'\t05*\t---\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('sm'):
+                        bez_file.write((u'\tsm\t' + vu.bezae_correctors['sm'] + u'\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('A'):
+                        bez_file.write((u'\tA\t' + vu.bezae_correctors['A'] + u'\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('B'):
+                        bez_file.write((u'\tB\t' + vu.bezae_correctors['B'] + u'\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('C'):
+                        bez_file.write((u'\tC\t' + vu.bezae_correctors['C'] + u'\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('D'):
+                        bez_file.write((u'\tD\t' + vu.bezae_correctors['D'] + u'\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('E'):
+                        bez_file.write((u'\tE\t' + vu.bezae_correctors['E'] + u'\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('H'):
+                        bez_file.write((u'\tH\t' + vu.bezae_correctors['H'] + u'\n').encode('UTF-8'))
+                    bez_file.write(u'\n')
+
+                    bez_file.write(u'sort_id\treading_id\treading_text\tsm\tA\tB\tC\tD\tE\tH\t05\t35')
+                    for ms in greekMSS:
+                        if ms != '05' and ms != '35':
+                            bez_file.write(u'\t' + ms)
+                    for ms in latinMSS:
+                        bez_file.write(u'\t' + ms)
+                    bez_file.write(u'\n')
+
+                    for idx, reading in enumerate(vu.readings):
+                        if not reading.manuscripts:
+                            continue
+
+                        reading_id = vu.label + letters[idx + 1]
+                        sort_id = s.generateSortLabel(vu.label) + letters[idx + 1]
+                        reading_text = reading.getDisplayValue()
+
+                        bez_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t\t\t\t\t\t\t\t' + s.getMSValue(vu, reading, '05') + u'\t' + s.getMSValue(vu, reading, '35')).encode('UTF-8'))
+
+                        for ms in greekMSS:
+                            if ms != '05' and ms != '35':
+                                bez_file.write(u'\t' + s.getMSValue(vu, reading, ms))
+                        for ms in latinMSS:
+                            bez_file.write(u'\t' + s.getMSValue(vu, reading, ms))
+                        bez_file.write(u'\n')
+
+                    bez_file.write(u'\n')
+
+        bez_file.close()
+        sai_file.close()
+
     def getMSValue(s, vu, reading, ms):
         val = ''
         if not vu.getReadingForManuscript(ms):
@@ -1171,6 +1292,8 @@ class VariantFinder:
         elif o.group:
             delegate.variantModel = s.variantModel
             delegate.group()
+        elif o.corrector:
+            s.generateCorrectorTemplate(s.range_id)
         elif o.harmonization:
             s.generateHarmonizationTemplate(s.range_id)
         elif o.varheader:
@@ -1198,6 +1321,9 @@ class VariantFinder:
 #
 # Generate harmonization template
 # variantFinder.py -v -a c13 -R 05 -Z
+#
+# Generate corrector template
+# variantFinder.py -v -a c01 -R 05 -E
 #
 # Generate variation header for collation
 # variantFinder.py -v -a c13 -R 05 -V
