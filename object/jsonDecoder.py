@@ -76,6 +76,10 @@ class ComplexDecoder(json.JSONDecoder):
         if type == 'variationUnit':
             variation_unit = VariationUnit(obj['label'], obj['hasRetroversion'])
             variation_unit.readings = obj['readings']
+            if obj.has_key('bezaeCorrectors'):
+                variation_unit.bezae_correctors = obj['bezaeCorrectors']
+            if obj.has_key('sinaiCorrectors'):
+                variation_unit.sinai_correctors = obj['sinaiCorrectors']
             return variation_unit
         if type == 'verse':
             return VerseDelimiter(obj['tokenIndex'], '0', str(obj['verse']))

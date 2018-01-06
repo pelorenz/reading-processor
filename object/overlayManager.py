@@ -72,6 +72,8 @@ class OverlayManager:
                 for o_id, o_verses in o_lookup.iteritems():
                     matcher = Matcher(vmodel, start_addr, slot_idx, vu, o_verses, o_id, o_type)
                     if o_type == Matcher.TYPE_CORRECTOR_01:
+                        if vu.label == '5.27.5':
+                            i = 23
                         matcher.addSinaiCorrector()
                     elif o_type == Matcher.TYPE_CORRECTOR_05:
                         matcher.addBezaeCorrector()

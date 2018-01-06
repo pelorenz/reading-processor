@@ -33,7 +33,7 @@ class  VariationUnit(object):
         s.sinai_correctors = {}
 
     def jsonSerialize(s):
-        return { '_type': 'variationUnit', 'label': s.label, 'hasRetroversion': s.hasRetroversion, 'readings': s.readings }
+        return { '_type': 'variationUnit', 'label': s.label, 'hasRetroversion': s.hasRetroversion, 'readings': s.readings, 'bezaeCorrectors': s.bezae_correctors,'sinaiCorrectors': s.sinai_correctors }
 
     def isSingular(s):
         nonSing = 0

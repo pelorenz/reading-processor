@@ -934,7 +934,6 @@ class VariantFinder:
                     continue
 
                 if vu.sinai_correctors:
-                    # TODO: merge corrector text with 01 reading!
                     sai_file.write(vu.label + u'\n')
                     rdg = vu.getReadingForManuscript('01')
                     if rdg:
@@ -964,8 +963,27 @@ class VariantFinder:
                         reading_id = vu.label + letters[idx + 1]
                         sort_id = s.generateSortLabel(vu.label) + letters[idx + 1]
                         reading_text = reading.getDisplayValue()
+                        is01A = False
+                        if vu.sinai_correctors.has_key('corrector-01A') and reading_text == vu.sinai_correctors['corrector-01A']:
+                            is01A = True
+                        is01C1 = False
+                        if vu.sinai_correctors.has_key('corrector-01C1') and reading_text == vu.sinai_correctors['corrector-01C1']:
+                            is01C1 = True
+                        is01C2 = False
+                        if vu.sinai_correctors.has_key('corrector-01C2') and reading_text == vu.sinai_correctors['corrector-01C2']:
+                            is01C2 = True
 
-                        sai_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t\t\t\t' + s.getMSValue(vu, reading, '01') + u'\t' + s.getMSValue(vu, reading, '35')).encode('UTF-8'))
+                        sai_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t').encode('UTF-8'))
+                        if is01A:
+                            sai_file.write((u'1').encode('UTF-8'))
+                        sai_file.write((u'\t').encode('UTF-8'))
+                        if is01C1:
+                            sai_file.write((u'1').encode('UTF-8'))
+                        sai_file.write((u'\t').encode('UTF-8'))
+                        if is01C2:
+                            sai_file.write((u'1').encode('UTF-8'))
+                        sai_file.write((u'\t').encode('UTF-8'))
+                        sai_file.write((s.getMSValue(vu, reading, '01') + u'\t' + s.getMSValue(vu, reading, '35')).encode('UTF-8'))
 
                         for ms in greekMSS:
                             if ms != '01' and ms != '35':
@@ -977,13 +995,14 @@ class VariantFinder:
                     sai_file.write(u'\n')
 
                 if vu.bezae_correctors:
-                    # TODO: merge corrector text with 05 reading!
                     bez_file.write(vu.label + u'\n')
                     rdg = vu.getReadingForManuscript('05')
                     if rdg:
                         bez_file.write((u'\t05*\t' + rdg.getDisplayValue() + u'\n').encode('UTF-8'))
                     else:
                         bez_file.write((u'\t05*\t---\n').encode('UTF-8'))
+                    if vu.bezae_correctors.has_key('pm'):
+                        bez_file.write((u'\tpm\t' + vu.bezae_correctors['pm'] + u'\n').encode('UTF-8'))
                     if vu.bezae_correctors.has_key('sm'):
                         bez_file.write((u'\tsm\t' + vu.bezae_correctors['sm'] + u'\n').encode('UTF-8'))
                     if vu.bezae_correctors.has_key('A'):
@@ -1015,8 +1034,51 @@ class VariantFinder:
                         reading_id = vu.label + letters[idx + 1]
                         sort_id = s.generateSortLabel(vu.label) + letters[idx + 1]
                         reading_text = reading.getDisplayValue()
+                        is05sm = False
+                        if vu.bezae_correctors.has_key('sm') and reading_text == vu.bezae_correctors['sm']:
+                            is05sm = True
+                        is05A = False
+                        if vu.bezae_correctors.has_key('A') and reading_text == vu.bezae_correctors['A']:
+                            is05A = True
+                        is05B = False
+                        if vu.bezae_correctors.has_key('B') and reading_text == vu.bezae_correctors['B']:
+                            is05B = True
+                        is05C = False
+                        if vu.bezae_correctors.has_key('C') and reading_text == vu.bezae_correctors['C']:
+                            is05C = True
+                        is05D = False
+                        if vu.bezae_correctors.has_key('D') and reading_text == vu.bezae_correctors['D']:
+                            is05D = True
+                        is05E = False
+                        if vu.bezae_correctors.has_key('E') and reading_text == vu.bezae_correctors['E']:
+                            is05E = True
+                        is05H = False
+                        if vu.bezae_correctors.has_key('H') and reading_text == vu.bezae_correctors['H']:
+                            is05H = True
 
-                        bez_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t\t\t\t\t\t\t\t' + s.getMSValue(vu, reading, '05') + u'\t' + s.getMSValue(vu, reading, '35')).encode('UTF-8'))
+                        bez_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t').encode('UTF-8'))
+                        if is05sm:
+                            bez_file.write((u'1').encode('UTF-8'))
+                        bez_file.write((u'\t').encode('UTF-8'))
+                        if is05A:
+                            bez_file.write((u'1').encode('UTF-8'))
+                        bez_file.write((u'\t').encode('UTF-8'))
+                        if is05B:
+                            bez_file.write((u'1').encode('UTF-8'))
+                        bez_file.write((u'\t').encode('UTF-8'))
+                        if is05C:
+                            bez_file.write((u'1').encode('UTF-8'))
+                        bez_file.write((u'\t').encode('UTF-8'))
+                        if is05D:
+                            bez_file.write((u'1').encode('UTF-8'))
+                        bez_file.write((u'\t').encode('UTF-8'))
+                        if is05E:
+                            bez_file.write((u'1').encode('UTF-8'))
+                        bez_file.write((u'\t').encode('UTF-8'))
+                        if is05H:
+                            bez_file.write((u'1').encode('UTF-8'))
+                        bez_file.write((u'\t').encode('UTF-8'))
+                        bez_file.write((s.getMSValue(vu, reading, '05') + u'\t' + s.getMSValue(vu, reading, '35')).encode('UTF-8'))
 
                         for ms in greekMSS:
                             if ms != '05' and ms != '35':

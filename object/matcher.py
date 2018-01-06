@@ -74,11 +74,14 @@ class Matcher:
 
         c_id = s.overlay_id
         has_corrector = False
+        has_omit = False
+        has_text = False
         for ru in reading.readingUnits:
             ru_addr = s.getAddressForReadingUnit(ru)
             c_text = s.v_lookup[ru_addr.verse_num][ru_addr.addr_idx]
-            if c_text and c_text == 'OMIT': # corrector erased text
+            if c_text == 'OMIT': # corrector erased text
                 has_corrector = True
+                has_omit = True
                 continue
             elif c_text: # corrector inserted text
                 rs = re.search(ur'([\u0391-\u03A9\u03B1-\u03C9om\. ]+) \{([A-Za-z\/]{1,3})(\?{0,1})\}', c_text)
@@ -86,6 +89,7 @@ class Matcher:
                     rs = re.search(ur'([\u0391-\u03A9\u03B1-\u03C9om\. ]+) \-\> \{(pm)\}', c_text)
                 if rs:
                     has_corrector = True
+                    has_text = True
                     if t_form:
                         t_form = t_form + ' '
                     t_form = t_form + rs.group(1)
@@ -99,6 +103,9 @@ class Matcher:
                         t_form = t_form + ' '
                     t_form = t_form + orig_text
 
+        if has_omit and not has_text:
+            t_form = 'om.'
+
         if has_corrector and t_form:
             s.var_unit.bezae_correctors[c_id] = t_form
 
@@ -109,14 +116,18 @@ class Matcher:
             reading = reading.readings[0]
 
         has_corrector = False
+        has_omit = False
+        has_text = False
         for ru in reading.readingUnits:
             ru_addr = s.getAddressForReadingUnit(ru)
             c_text = s.v_lookup[ru_addr.verse_num][ru_addr.addr_idx]
-            if c_text and c_text == 'OMIT': # corrector erased text
+            if c_text == 'OMIT': # corrector erased text
                 has_corrector = True
+                has_omit = True
                 continue
             elif c_text: # corrector inserted text
                 has_corrector = True
+                has_text = True
                 if t_form:
                     t_form = t_form + ' '
                 t_form = t_form + c_text
@@ -126,6 +137,9 @@ class Matcher:
                     if t_form:
                         t_form = t_form + ' '
                     t_form = t_form + orig_text
+
+        if has_omit and not has_text:
+            t_form = 'om.'
 
         if has_corrector and t_form:
             s.var_unit.sinai_correctors[s.overlay_id] = t_form
