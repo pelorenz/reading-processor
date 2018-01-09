@@ -16,11 +16,6 @@ def sortAgrees(a1, a2):
 
 class CorAnalyzer:
 
-    CORRECTOR_MSS = ['01', '05']
-
-    BEZAE_HANDS = ['05*','sm','A','B','C','D','E','H','A/B']
-    SINAI_HANDS = ['01*','A','C1','C2']
-
     def __init__(s):
         s.config = None
         s.options = None
@@ -51,16 +46,16 @@ class CorAnalyzer:
             return False
 
         if s.isSinai():
-            return True if part in CorAnalyzer.SINAI_HANDS else False
+            return True if part in Util.SINAI_HANDS else False
         else: # Bezae
-            return True if part in CorAnalyzer.BEZAE_HANDS else False
+            return True if part in Util.BEZAE_HANDS else False
 
     def initHands(s):
         if s.isSinai():
-            for hand in CorAnalyzer.SINAI_HANDS:
+            for hand in Util.SINAI_HANDS:
                 s.hands[hand] = s.initHand(hand)
         else: # Bezae
-            for hand in CorAnalyzer.BEZAE_HANDS:
+            for hand in Util.BEZAE_HANDS:
                 s.hands[hand] = s.initHand(hand)
 
     def initHand(s, name):
@@ -162,11 +157,11 @@ class CorAnalyzer:
 
         file.write('Corrector\tCorrections\tPercent of Total\n')
         if s.isSinai():
-            for hand in CorAnalyzer.SINAI_HANDS:
+            for hand in Util.SINAI_HANDS:
                 if hand == '01*': continue
                 s.summarizeHand(file, s.hands[hand], c_total)
         else: # Bezae
-            for hand in CorAnalyzer.BEZAE_HANDS:
+            for hand in Util.BEZAE_HANDS:
                 if hand == '05*': continue
                 s.summarizeHand(file, s.hands[hand], c_total)
         file.write('Total\t' + str(c_total) + '\t100% (' + str(c_total) + '/' + str(c_total) + ')\n\n')
@@ -174,35 +169,35 @@ class CorAnalyzer:
         file.write('Combination\tCorrections\tPercent of Total\n')
         for cmb_set, cmb_total in s.hand_combos.iteritems():
             if s.isSinai():
-                s.summarizeCombo(file, CorAnalyzer.SINAI_HANDS, cmb_set, cmb_total, c_total)
+                s.summarizeCombo(file, Util.SINAI_HANDS, cmb_set, cmb_total, c_total)
             else: # Bezae
-                s.summarizeCombo(file, CorAnalyzer.BEZAE_HANDS, cmb_set, cmb_total, c_total)
+                s.summarizeCombo(file, Util.BEZAE_HANDS, cmb_set, cmb_total, c_total)
                 
         file.write('\n')
 
         file.write('Corrector\tMajority Readings\tCorrector Readings\tPercentage\n')
         if s.isSinai():
-            for hand in CorAnalyzer.SINAI_HANDS:
+            for hand in Util.SINAI_HANDS:
                 s.majorityStats(file, s.hands[hand], c_total)
         else: # Bezae
-            for hand in CorAnalyzer.BEZAE_HANDS:
+            for hand in Util.BEZAE_HANDS:
                 s.majorityStats(file, s.hands[hand], c_total)
         file.write('\n')
 
         file.write('Corrector\tSingular Readings\tCorrector Readings\tPercentage\n')
         if s.isSinai():
-            for hand in CorAnalyzer.SINAI_HANDS:
+            for hand in Util.SINAI_HANDS:
                 s.singularStats(file, s.hands[hand], c_total)
         else: # Bezae
-            for hand in CorAnalyzer.BEZAE_HANDS:
+            for hand in Util.BEZAE_HANDS:
                 s.singularStats(file, s.hands[hand], c_total)
         file.write('\n')
 
         if s.isSinai():
-            for hand in CorAnalyzer.SINAI_HANDS:
+            for hand in Util.SINAI_HANDS:
                 s.nonmajorityStats(file, s.hands[hand], c_total)
         else: # Bezae
-            for hand in CorAnalyzer.BEZAE_HANDS:
+            for hand in Util.BEZAE_HANDS:
                 s.nonmajorityStats(file, s.hands[hand], c_total)
         file.write('\n')
 
@@ -229,7 +224,7 @@ class CorAnalyzer:
             s.info('Please specify reference MS with -R [GA]')
             return
 
-        if s.refMS not in CorAnalyzer.CORRECTOR_MSS:
+        if s.refMS not in Util.CORRECTOR_MSS:
             s.info('01 and 05 are currently the only supported reference MSS')
             return
 
@@ -346,7 +341,7 @@ class CorAnalyzer:
                         reading['mss'][ms_key] = 1
                         is_singular_corrector = False
 
-                cor_list = CorAnalyzer.SINAI_HANDS if s.isSinai() else CorAnalyzer.BEZAE_HANDS
+                cor_list = Util.SINAI_HANDS if s.isSinai() else Util.BEZAE_HANDS
                 for i in range(start, len(ms_headers)):
                     ms_key = ms_headers[i]
                     for hand in cor_list:
@@ -397,7 +392,7 @@ class CorAnalyzer:
 
         c_total = 0
         if s.isSinai():
-            for hand in CorAnalyzer.SINAI_HANDS:
+            for hand in Util.SINAI_HANDS:
                 h_map = s.hands[hand]
                 for ms in s.greekMSS:
                     if ms != '01':
@@ -406,7 +401,7 @@ class CorAnalyzer:
                     continue
                 c_total = c_total + len(h_map['vus'])
         else: # Bezae
-            for hand in CorAnalyzer.BEZAE_HANDS:
+            for hand in Util.BEZAE_HANDS:
                 h_map = s.hands[hand]
                 for ms in s.greekMSS:
                     if ms != '05':

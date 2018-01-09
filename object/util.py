@@ -3,6 +3,11 @@ import sys, os, re
 class Util:
     MS_OVERLAYS = [ 'na28' ]
 
+    CORRECTOR_MSS = ['01', '05']
+
+    BEZAE_HANDS = ['05*','sm','A','B','C','D','E','H','A/B']
+    SINAI_HANDS = ['01*','A','C1','C2']
+
 def getGroupBase(group):
     s_res = re.search(r'^(Iso|[ByzCFP0-9]+)([s]{0,1})$', group)
     if s_res:

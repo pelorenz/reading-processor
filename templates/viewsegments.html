@@ -42,6 +42,12 @@ $def with (jdata)
               elif segment['S_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
             <tr><td class='segment-property'>Singular readings:</td><td class='segment-figure'>$segment['S_count']</td><td class='segment-figure'>$segment['S_freq']</td><td class='segment-figure $emphasis_class'>$segment['S_freq_delta']</td></tr>
+            <tr><td class='segment-property'>01A:</td><td class='segment-figure'>$segment['correctors']['01A']['count']</td><td class='segment-figure'>$segment['correctors']['01A']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01A']['freq_delta']</td></tr>
+            <tr><td class='segment-property'>01C1:</td><td class='segment-figure'>$segment['correctors']['01C1']['count']</td><td class='segment-figure'>$segment['correctors']['01C1']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01C1']['freq_delta']</td></tr>
+            <tr><td class='segment-property'>01C2:</td><td class='segment-figure'>$segment['correctors']['01C2']['count']</td><td class='segment-figure'>$segment['correctors']['01C2']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01C2']['freq_delta']</td></tr>
+            <tr><td class='segment-property'>05A:</td><td class='segment-figure'>$segment['correctors']['05A']['count']</td><td class='segment-figure'>$segment['correctors']['05A']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05A']['freq_delta']</td></tr>
+            <tr><td class='segment-property'>05B:</td><td class='segment-figure'>$segment['correctors']['05B']['count']</td><td class='segment-figure'>$segment['correctors']['05B']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05B']['freq_delta']</td></tr>
+            <tr><td class='segment-property'>05sm:</td><td class='segment-figure'>$segment['correctors']['05sm']['count']</td><td class='segment-figure'>$segment['correctors']['05sm']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05sm']['freq_delta']</td></tr>
           </table>
           <canvas id='canvas$segment['index']' class='seg-canvas'></canvas>
           <script type='text/javascript'>

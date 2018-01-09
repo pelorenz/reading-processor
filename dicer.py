@@ -466,6 +466,9 @@ class Dicer:
 
         return apparatus
 
+    def initCorrector(s):
+        return { 'readings': [], 'count': 0, 'freq': 0, 'freq_delta': 0 }
+
     def prepareHauptlisten(s, refMS):
         for segment in s.dicer_segments:
             s.info('Generating Hauptliste for', segment['label'])
@@ -488,6 +491,16 @@ class Dicer:
             ref_data['D_readings'] = []
             ref_data['L_readings'] = []
             ref_data['S_readings'] = []
+
+            ref_data['correctors'] = {}
+            for corrector in Util.SINAI_HANDS:
+                if corrector == '01*':
+                    continue
+                ref_data['correctors']['01' + corrector] = s.initCorrector()
+            for corrector in Util.BEZAE_HANDS:
+                if corrector == '05*':
+                    continue
+                ref_data['correctors']['05' + corrector] = s.initCorrector()
 
             for addr in segment['addresses']:
                 for vu in addr.variation_units:
@@ -567,6 +580,13 @@ class Dicer:
                     elif reading_info['D_layer']:
                         ref_data['D_readings'].append(reading_info)
                     ref_data['nonM_readings'].append(reading_info)
+
+                    # Correctors
+                    for reading in vu.readings:
+                        for corrector in reading.sinai_correctors:
+                            ref_data['correctors']['01' + corrector]['readings'].append(reading.getDisplayValue())
+                        for corrector in reading.bezae_correctors:
+                            ref_data['correctors']['05' + corrector]['readings'].append(reading.getDisplayValue())
 
                     # Family profile scores
                     reading_info['c565_scores'] = s.isCluster565(greek_mss)
@@ -677,6 +697,16 @@ class Dicer:
         hauptliste_matrix_row = []
         hauptliste_delta_matrix_row = []
 
+        c_prev = {}
+        for corrector in Util.SINAI_HANDS:
+            if corrector == '01*':
+                continue
+            c_prev['01' + corrector] = 0.0
+        for corrector in Util.BEZAE_HANDS:
+            if corrector == '05*':
+                continue
+            c_prev['05' + corrector] = 0.0
+
         cfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-segment-L-counts.csv'
         with open(cfile, 'w+') as file:
             file.write('Position\tSegment\tWords\tS Readings\tL Readings\tG Readings\tM Readings\n')
@@ -718,6 +748,14 @@ class Dicer:
             sfreq_delta = round(sfreq_delta, 3)
             sfreq_prev = S_freq
 
+            for name, cor_info in ref_data['correctors'].iteritems():
+                cor_info['count'] = len(cor_info['readings'])
+                c_freq = round(segment['word_count'] * 1.0 / cor_info['count'] if cor_info['count'] > 0 else segment['word_count'], 1)
+                cor_info['freq'] = c_freq
+                c_delta = round(c_prev[name] / c_freq if c_freq > 0 else 0.0, 3)  
+                cor_info['freq_delta'] = c_delta
+                c_prev[name] = c_freq
+
             with open(cfile, 'a+') as file:
                 file.write(str(sidx + 1) + '\t' + segment['label'] + '\t' + str(segment['word_count']) + '\t' + str(len(ref_data['S_readings'])) + '\t' + str(len(ref_data['L_readings'])) + '\t' + str(len(ref_data['D_readings'])) + '\t' + str(ref_data['majority_count']) + '\n')
                 file.close()
@@ -746,6 +784,7 @@ class Dicer:
             j_segment['latin_mss'] = []
             j_segment['D_readings'] = []
             j_segment['L_readings'] = []
+            j_segment['correctors'] = ref_data['correctors']
 
             j_profiles = {}
             j_profiles['f03_readings'] = []
