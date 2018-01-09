@@ -142,7 +142,8 @@ class Matcher:
             t_form = 'om.'
 
         if has_corrector and t_form:
-            s.var_unit.sinai_correctors[s.overlay_id] = t_form
+            c_id = re.search(r'([A-C][1-2]{0,1})$', s.overlay_id).group(1)
+            s.var_unit.sinai_correctors[c_id] = t_form
 
     def isContinuousMatch(s, r_match, r_container):
         is_match = True

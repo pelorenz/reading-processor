@@ -76,6 +76,11 @@ class CorAnalyzer:
             hand['mainstream_agrees'][ms] = 0
             hand['nonmainstream_agrees'][ms] = 0
             hand['nonms_extant'][ms] = 0
+        for ms in s.latinMSS:
+            hand['total_agrees'][ms] = 0
+            hand['mainstream_agrees'][ms] = 0
+            hand['nonmainstream_agrees'][ms] = 0
+            hand['nonms_extant'][ms] = 0
         hand['mainstream_readings'] = []
         hand['nonmainstream_readings'] = []
         hand['sorted_nonms_agrees'] = []
@@ -323,7 +328,7 @@ class CorAnalyzer:
                 orig = '0'
                 is_majority = False
                 is_singular_corrector = True
-                for i in range(start, len(ms_headers) - len(s.latinMSS)):
+                for i in range(start, len(ms_headers)):
                     if parts[i] == '-':
                         ms_key = ms_headers[i]
                         if s.isSinai() and ms_key == '01':
@@ -342,7 +347,7 @@ class CorAnalyzer:
                         is_singular_corrector = False
 
                 cor_list = CorAnalyzer.SINAI_HANDS if s.isSinai() else CorAnalyzer.BEZAE_HANDS
-                for i in range(start, len(ms_headers) - len(s.latinMSS)):
+                for i in range(start, len(ms_headers)):
                     ms_key = ms_headers[i]
                     for hand in cor_list:
                         if not hand in reading['correctors'] and hand != '01*' and hand != '05*':
@@ -425,7 +430,6 @@ class CorAnalyzer:
         with open(result_file, 'w+') as file:
             file.write(jdata.encode('UTF-8'))
             file.close()
-
 
 # Produce harmonization analysis for reference MSS
 # corAnalyzer.py -v -R 05 -f bezaecor-01

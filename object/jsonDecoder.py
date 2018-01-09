@@ -43,11 +43,19 @@ class ComplexDecoder(json.JSONDecoder):
                 reading.synopticParallels = obj['synopticParallels']
             except KeyError as e:
                 action = None
+            if obj.has_key('bezaeCorrectors'):
+                reading.bezae_correctors = obj['bezaeCorrectors']
+            if obj.has_key('sinaiCorrectors'):
+                reading.sinai_correctors = obj['sinaiCorrectors']
             return reading
         if type == 'readingGroup':
             reading_group = ReadingGroup(obj['displayValue'])
             reading_group.readings = obj['readings']
             reading_group.manuscripts = obj['manuscripts']
+            if obj.has_key('bezaeCorrectors'):
+                reading_group.bezae_correctors = obj['bezaeCorrectors']
+            if obj.has_key('sinaiCorrectors'):
+                reading_group.sinai_correctors = obj['sinaiCorrectors']
             try:
                 reading_group.synopticParallels = obj['synopticParallels']
             except KeyError as e:
@@ -76,10 +84,6 @@ class ComplexDecoder(json.JSONDecoder):
         if type == 'variationUnit':
             variation_unit = VariationUnit(obj['label'], obj['hasRetroversion'])
             variation_unit.readings = obj['readings']
-            if obj.has_key('bezaeCorrectors'):
-                variation_unit.bezae_correctors = obj['bezaeCorrectors']
-            if obj.has_key('sinaiCorrectors'):
-                variation_unit.sinai_correctors = obj['sinaiCorrectors']
             return variation_unit
         if type == 'verse':
             return VerseDelimiter(obj['tokenIndex'], '0', str(obj['verse']))

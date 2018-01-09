@@ -940,12 +940,12 @@ class VariantFinder:
                         sai_file.write((u'\t01*\t' + rdg.getDisplayValue() + u'\n').encode('UTF-8'))
                     else:
                         sai_file.write((u'\t01*\t---\n').encode('UTF-8'))
-                    if vu.sinai_correctors.has_key('corrector-01A'):
-                        sai_file.write((u'\tA\t' + vu.sinai_correctors['corrector-01A'] + u'\n').encode('UTF-8'))
-                    if vu.sinai_correctors.has_key('corrector-01C1'):
-                        sai_file.write((u'\tC1\t' + vu.sinai_correctors['corrector-01C1'] + u'\n').encode('UTF-8'))
-                    if vu.sinai_correctors.has_key('corrector-01C2'):
-                        sai_file.write((u'\tC2\t' + vu.sinai_correctors['corrector-01C2'] + u'\n').encode('UTF-8'))
+                    if vu.sinai_correctors.has_key('A'):
+                        sai_file.write((u'\tA\t' + vu.sinai_correctors['A'] + u'\n').encode('UTF-8'))
+                    if vu.sinai_correctors.has_key('C1'):
+                        sai_file.write((u'\tC1\t' + vu.sinai_correctors['C1'] + u'\n').encode('UTF-8'))
+                    if vu.sinai_correctors.has_key('C2'):
+                        sai_file.write((u'\tC2\t' + vu.sinai_correctors['C2'] + u'\n').encode('UTF-8'))
                     sai_file.write(u'\n')
 
                     sai_file.write(u'sort_id\treading_id\treading_text\tA\tC1\tC2\t01\t35')
@@ -964,13 +964,13 @@ class VariantFinder:
                         sort_id = s.generateSortLabel(vu.label) + letters[idx + 1]
                         reading_text = reading.getDisplayValue()
                         is01A = False
-                        if vu.sinai_correctors.has_key('corrector-01A') and reading_text == vu.sinai_correctors['corrector-01A']:
+                        if vu.sinai_correctors.has_key('A') and reading_text == vu.sinai_correctors['A']:
                             is01A = True
                         is01C1 = False
-                        if vu.sinai_correctors.has_key('corrector-01C1') and reading_text == vu.sinai_correctors['corrector-01C1']:
+                        if vu.sinai_correctors.has_key('C1') and reading_text == vu.sinai_correctors['C1']:
                             is01C1 = True
                         is01C2 = False
-                        if vu.sinai_correctors.has_key('corrector-01C2') and reading_text == vu.sinai_correctors['corrector-01C2']:
+                        if vu.sinai_correctors.has_key('C2') and reading_text == vu.sinai_correctors['C2']:
                             is01C2 = True
 
                         sai_file.write((sort_id + u'\t' + reading_id + u'\t' + reading_text + u'\t').encode('UTF-8'))
