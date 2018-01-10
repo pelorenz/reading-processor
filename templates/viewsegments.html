@@ -5,49 +5,49 @@ $def with (jdata)
       <table class='segment-table'><tr>
         <td class='segment-chart'>
           <table class='segment-table'>
-            <tr><td class='segment-property'></td><th class='segment-figure'>Count</th><th class='segment-figure'>Freq</th><th class='segment-figure'>Δ</th></tr>
-            <tr><td class='segment-property'>Word count:</td><td class='segment-figure'>$segment['word_count']</td><td class='segment-figure'></td></tr>
+            <tr><td class='segment-property'></td><th class='segment-figure'>Count</th><th class='segment-figure'>Last</th><th class='segment-figure'>Δ</th><th class='segment-figure'>Δ%</th><th class='segment-figure'>Freq</th><th class='segment-figure'>Δ</th></tr>
+            <tr><td class='segment-property'>Word count:</td><td class='segment-figure'>$segment['word_count']</td><td class='segment-figure'></td><td class='segment-figure'></td><td class='segment-figure'></td><td class='segment-figure'></td></tr>
             $code:
               emphasis_class = ''
               if segment['majority_freq_delta'] >= 2.0:
                   emphasis_class = 'hi-positive'
               elif segment['majority_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
-            <tr><td class='segment-property'>Majority readings:</td><td class='segment-figure'>$segment['majority_count']</td><td class='segment-figure'>$segment['majority_freq']</td><td class='segment-figure $emphasis_class'>$segment['majority_freq_delta']</td></tr>
+            <tr><td class='segment-property'>Majority readings:</td><td class='segment-figure'>$segment['majority_count']</td><td class='segment-figure'>$segment['majority_count_prev']</td><td class='segment-figure'>$segment['majority_count_delta']</td><td class='segment-figure'>$segment['majority_count_delta_pc']</td><td class='segment-figure'>$segment['majority_freq']</td><td class='segment-figure $emphasis_class'>$segment['majority_freq_delta']</td></tr>
             $code:
               emphasis_class = ''
               if segment['nonM_freq_delta'] >= 2.0:
                   emphasis_class = 'hi-positive'
               elif segment['nonM_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
-            <tr><td class='segment-property'>Non-majority readings:</td><td class='segment-figure'>$segment['nonM_count']</td><td class='segment-figure'>$segment['nonM_freq']</td><td class='segment-figure $emphasis_class'>$segment['nonM_freq_delta']</td></tr>
+            <tr><td class='segment-property'>Non-majority readings:</td><td class='segment-figure'>$segment['nonM_count']</td><td class='segment-figure'>$segment['nonM_count_prev']</td><td class='segment-figure'>$segment['nonM_count_delta']</td><td class='segment-figure'>$segment['nonM_count_delta_pc']</td><td class='segment-figure'>$segment['nonM_freq']</td><td class='segment-figure $emphasis_class'>$segment['nonM_freq_delta']</td></tr>
             $code:
               emphasis_class = ''
               if segment['D_freq_delta'] >= 2.0:
                   emphasis_class = 'hi-positive'
               elif segment['D_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
-            <tr><td class='segment-property'>D-layer readings:</td><td class='segment-figure'>$segment['D_count']</td><td class='segment-figure'>$segment['D_freq']</td><td class='segment-figure $emphasis_class'>$segment['D_freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['D_labels']'>D-layer readings:</td><td class='segment-figure'>$segment['D_count']</td><td class='segment-figure'>$segment['D_count_prev']</td><td class='segment-figure'>$segment['D_count_delta']</td><td class='segment-figure'>$segment['D_count_delta_pc']</td><td class='segment-figure'>$segment['D_freq']</td><td class='segment-figure $emphasis_class'>$segment['D_freq_delta']</td></tr>
             $code:
               emphasis_class = ''
               if segment['L_freq_delta'] >= 2.0:
                   emphasis_class = 'hi-positive'
               elif segment['L_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
-            <tr><td class='segment-property'>L-layer readings:</td><td class='segment-figure'>$segment['L_count']</td><td class='segment-figure'>$segment['L_freq']</td><td class='segment-figure $emphasis_class'>$segment['L_freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['L_labels']'>L-layer readings:</td><td class='segment-figure'>$segment['L_count']</td><td class='segment-figure'>$segment['L_count_prev']</td><td class='segment-figure'>$segment['L_count_delta']</td><td class='segment-figure'>$segment['L_count_delta_pc']</td><td class='segment-figure'>$segment['L_freq']</td><td class='segment-figure $emphasis_class'>$segment['L_freq_delta']</td></tr>
             $code:
               emphasis_class = ''
               if segment['S_freq_delta'] >= 2.0:
                   emphasis_class = 'hi-positive'
               elif segment['S_freq_delta'] < 0.5:
                   emphasis_class = 'hi-negative'
-            <tr><td class='segment-property'>Singular readings:</td><td class='segment-figure'>$segment['S_count']</td><td class='segment-figure'>$segment['S_freq']</td><td class='segment-figure $emphasis_class'>$segment['S_freq_delta']</td></tr>
-            <tr><td class='segment-property'>01A:</td><td class='segment-figure'>$segment['correctors']['01A']['count']</td><td class='segment-figure'>$segment['correctors']['01A']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01A']['freq_delta']</td></tr>
-            <tr><td class='segment-property'>01C1:</td><td class='segment-figure'>$segment['correctors']['01C1']['count']</td><td class='segment-figure'>$segment['correctors']['01C1']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01C1']['freq_delta']</td></tr>
-            <tr><td class='segment-property'>01C2:</td><td class='segment-figure'>$segment['correctors']['01C2']['count']</td><td class='segment-figure'>$segment['correctors']['01C2']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01C2']['freq_delta']</td></tr>
-            <tr><td class='segment-property'>05A:</td><td class='segment-figure'>$segment['correctors']['05A']['count']</td><td class='segment-figure'>$segment['correctors']['05A']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05A']['freq_delta']</td></tr>
-            <tr><td class='segment-property'>05B:</td><td class='segment-figure'>$segment['correctors']['05B']['count']</td><td class='segment-figure'>$segment['correctors']['05B']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05B']['freq_delta']</td></tr>
-            <tr><td class='segment-property'>05sm:</td><td class='segment-figure'>$segment['correctors']['05sm']['count']</td><td class='segment-figure'>$segment['correctors']['05sm']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05sm']['freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['S_labels']'>Singular readings:</td><td class='segment-figure'>$segment['S_count']</td><td class='segment-figure'>$segment['S_count_prev']</td><td class='segment-figure'>$segment['S_count_delta']</td><td class='segment-figure'>$segment['S_count_delta_pc']</td><td class='segment-figure'>$segment['S_freq']</td><td class='segment-figure $emphasis_class'>$segment['S_freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['correctors']['01A']['labels']'>01A:</td><td class='segment-figure'>$segment['correctors']['01A']['count']</td><td class='segment-figure'>$segment['correctors']['01A']['prev_count']</td><td class='segment-figure'>$segment['correctors']['01A']['count_delta']</td><td class='segment-figure'>$segment['correctors']['01A']['count_delta_pc']</td><td class='segment-figure'>$segment['correctors']['01A']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01A']['freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['correctors']['01C1']['labels']'>01C1:</td><td class='segment-figure'>$segment['correctors']['01C1']['count']</td><td class='segment-figure'>$segment['correctors']['01C1']['prev_count']</td><td class='segment-figure'>$segment['correctors']['01C1']['count_delta']</td><td class='segment-figure'>$segment['correctors']['01C1']['count_delta_pc']</td><td class='segment-figure'>$segment['correctors']['01C1']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01C1']['freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['correctors']['01C2']['labels']'>01C2:</td><td class='segment-figure'>$segment['correctors']['01C2']['count']</td><td class='segment-figure'>$segment['correctors']['01C2']['prev_count']</td><td class='segment-figure'>$segment['correctors']['01C2']['count_delta']</td><td class='segment-figure'>$segment['correctors']['01C2']['count_delta_pc']</td><td class='segment-figure'>$segment['correctors']['01C2']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['01C2']['freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['correctors']['05A']['labels']'>05A:</td><td class='segment-figure'>$segment['correctors']['05A']['count']</td><td class='segment-figure'>$segment['correctors']['05A']['prev_count']</td><td class='segment-figure'>$segment['correctors']['05A']['count_delta']</td><td class='segment-figure'>$segment['correctors']['05A']['count_delta_pc']</td><td class='segment-figure'>$segment['correctors']['05A']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05A']['freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['correctors']['05B']['labels']'>05B:</td><td class='segment-figure'>$segment['correctors']['05B']['count']</td><td class='segment-figure'>$segment['correctors']['05B']['prev_count']</td><td class='segment-figure'>$segment['correctors']['05B']['count_delta']</td><td class='segment-figure'>$segment['correctors']['05B']['count_delta_pc']</td><td class='segment-figure'>$segment['correctors']['05B']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05B']['freq_delta']</td></tr>
+            <tr><td class='segment-property' title='$segment['correctors']['05sm']['labels']'>05sm:</td><td class='segment-figure'>$segment['correctors']['05sm']['count']</td><td class='segment-figure'>$segment['correctors']['05sm']['prev_count']</td><td class='segment-figure'>$segment['correctors']['05sm']['count_delta']</td><td class='segment-figure'>$segment['correctors']['05sm']['count_delta_pc']</td><td class='segment-figure'>$segment['correctors']['05sm']['freq']</td><td class='segment-figure $emphasis_class'>$segment['correctors']['05sm']['freq_delta']</td></tr>
           </table>
           <canvas id='canvas$segment['index']' class='seg-canvas'></canvas>
           <script type='text/javascript'>

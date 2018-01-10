@@ -45,24 +45,6 @@ class VariantFinder:
     def lookupAddr(s, slot):
         return s.addrLookup[s.getAddrKey(slot)]
 
-    def refListToString(s, ref_list):
-        r_str = ''
-        r_map = {}
-        r_list = []
-        for ref in ref_list:
-            if not r_map.has_key(ref):
-                r_map[ref] = 1
-                r_list.append(ref)
-            else:
-                r_map[ref] = r_map[ref] + 1
-        for ref in r_list:
-            if r_map.has_key(ref) and r_map[ref] > 1:
-                ref = ref + ' (' + str(r_map[ref]) + 'x)'
-            if r_str:
-                r_str = r_str + '; '
-            r_str = r_str + ref
-        return r_str
-
     def initAddrLookup(s):
         s.info('Initializing address map')
         for addr in s.variantModel['addresses']:
@@ -711,7 +693,7 @@ class VariantFinder:
                     csv_file.write(sg_ms + '\t' + str(len(v_list)) + '\t')
 
                     # refListToString
-                    v_str = s.refListToString(v_list)
+                    v_str = refListToString(v_list)
                     csv_file.write(v_str + '\n')
 
             csv_file.write('\n')
@@ -722,7 +704,7 @@ class VariantFinder:
                     csv_file.write(sg_grp + '\t' + str(len(v_list)) + '\t')
 
                     # refListToString
-                    v_str = s.refListToString(v_list)
+                    v_str = refListToString(v_list)
                     csv_file.write(v_str + '\n')
 
             csv_file.close()

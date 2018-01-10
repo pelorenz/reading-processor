@@ -39,6 +39,24 @@ def makeParts(v):
         parts.append(lastpart)
     return parts
 
+def refListToString(ref_list):
+    r_str = ''
+    r_map = {}
+    r_list = []
+    for ref in ref_list:
+        if not r_map.has_key(ref):
+            r_map[ref] = 1
+            r_list.append(ref)
+        else:
+            r_map[ref] = r_map[ref] + 1
+    for ref in r_list:
+        if r_map.has_key(ref) and r_map[ref] > 1:
+            ref = ref + ' (' + str(r_map[ref]) + 'x)'
+        if r_str:
+            r_str = r_str + '; '
+        r_str = r_str + ref
+    return r_str
+
 def readingsToString(vu, reading):
     readings_str = ''
     readings_str = readings_str + reading.getDisplayValue()

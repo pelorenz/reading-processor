@@ -13,6 +13,8 @@ from utility.options import *
 
 class Dicer:
 
+    CORE_GROUPS = ['F03', 'C565', 'F1', 'F13', 'CP45']
+
     def __init__(s):
         s.dicerFolder = 'dicer-results'
         s.statsFolder = 'static/stats/dicer/'
@@ -467,9 +469,42 @@ class Dicer:
         return apparatus
 
     def initCorrector(s):
-        return { 'readings': [], 'count': 0, 'freq': 0, 'freq_delta': 0 }
+        return { 'readings': [], 'count': 0, 'prev_count': 0, 'count_delta': 0, 'count_delta_pc': 0.0, 'freq': 0, 'freq_delta': 0 }
+
+    def isDistinctive(s, refMS, vu, reading, group):
+        c = s.config
+        if not reading or vu.isReferenceSingular(refMS) or reading.hasManuscript('35'):
+            return False
+
+        g_counts = {}
+        msGroupAssignments = c.get('msGroupAssignments')
+        nonref_count = reading.countNonRefGreekManuscriptsByGroup(refMS, msGroupAssignments, g_counts)
+
+        if nonref_count == 0:
+            return False
+
+        base_mss = []
+        base_mss.append('28')
+        base_mss.append('2542')
+        for ms, gp in msGroupAssignments.iteritems():
+            if gp in Dicer.CORE_GROUPS and gp != group['name']:
+                base_mss.append(ms)
+
+        if set(base_mss) & set(reading.manuscripts):
+            return False
+
+        member_count = 0
+        for ms in group['members']:
+            if reading.hasManuscript(ms):
+                member_count = member_count + 1
+
+        if member_count < group['minOccurs']:
+            return False
+
+        return True
 
     def prepareHauptlisten(s, refMS):
+        c = s.config
         for segment in s.dicer_segments:
             s.info('Generating Hauptliste for', segment['label'])
 
@@ -513,6 +548,22 @@ class Dicer:
 
                     reading_info = {}
                     reading_info['variant_label'] = vu.label
+                    reading_info['verse_reference'] = str(addr.chapter_num) + ':' + str(addr.verse_num)
+
+                    # Correctors
+                    for reading in vu.readings:
+                        for corrector in reading.sinai_correctors:
+                            r_info = {}
+                            r_info['display_value'] = reading.getDisplayValue()
+                            r_info['variant_label'] = vu.label
+                            r_info['verse_reference'] = str(addr.chapter_num) + ':' + str(addr.verse_num)
+                            ref_data['correctors']['01' + corrector]['readings'].append(r_info)
+                        for corrector in reading.bezae_correctors:
+                            r_info = {}
+                            r_info['display_value'] = reading.getDisplayValue()
+                            r_info['variant_label'] = vu.label
+                            r_info['verse_reference'] = str(addr.chapter_num) + ':' + str(addr.verse_num)
+                            ref_data['correctors']['05' + corrector]['readings'].append(r_info)
 
                     r_reading = vu.getReadingForManuscript(refMS)
                     if not r_reading:
@@ -581,18 +632,36 @@ class Dicer:
                         ref_data['D_readings'].append(reading_info)
                     ref_data['nonM_readings'].append(reading_info)
 
-                    # Correctors
-                    for reading in vu.readings:
-                        for corrector in reading.sinai_correctors:
-                            ref_data['correctors']['01' + corrector]['readings'].append(reading.getDisplayValue())
-                        for corrector in reading.bezae_correctors:
-                            ref_data['correctors']['05' + corrector]['readings'].append(reading.getDisplayValue())
-
                     # Family profile scores
                     reading_info['c565_scores'] = s.isCluster565(greek_mss)
                     reading_info['f03_scores'] = s.isFamily03(greek_mss)
                     reading_info['f1_scores'] = s.isFamily1(greek_mss)
                     reading_info['f13_scores'] = s.isFamily13(greek_mss)
+
+                    # Process core groups
+                    core_groups = c.get('coreGroups')
+                    for gp in core_groups:
+                        if not gp['name'] in Dicer.CORE_GROUPS:
+                            continue
+
+                        if not s.isDistinctive(refMS, vu, r_reading, gp):
+                            continue
+
+                        if not reading_info.has_key('core_groups'):
+                            reading_info['core_groups'] = []
+                        reading_info['core_groups'].append(gp['name'])
+
+                        gp_instance = {}
+                        gp_instance['variant_label'] = vu.label
+                        gp_instance['reading_value'] = r_reading.getDisplayValue()
+                        gp_instance['verse_reference'] = str(addr.chapter_num) + ':' + str(addr.verse_num)
+
+                        if reading_info['D_layer']:
+                            if not ref_data.has_key('D_group_instances'):
+                                ref_data['D_group_instances'] = {}
+                            if not ref_data['D_group_instances'].has_key(gp['name']):
+                                ref_data['D_group_instances'][gp['name']] = []
+                            ref_data['D_group_instances'][gp['name']].append(gp_instance)
 
                     # Process MSS
                     for ms in s.variantModel['manuscripts']:
@@ -654,6 +723,20 @@ class Dicer:
 
         return None
 
+    def vuReferenceList(s, infos):
+        labels = []
+        for info in infos:
+            labels.append(info['verse_reference'])
+        return labels
+
+    def vuLabelString(s, infos):
+        labels = ''
+        for info in infos:
+            if labels:
+                labels = labels + ', '
+            labels = labels + info['variant_label']
+        return labels
+
     def computeHauptlisten(s, refMS):
         c = s.config
 
@@ -688,6 +771,11 @@ class Dicer:
         hauptliste = {}
         hauptliste['segments'] = []
         hauptliste['ref_ms'] = refMS
+        mcount_prev = 0
+        nmcount_prev = 0
+        dcount_prev = 0
+        lcount_prev = 0
+        scount_prev = 0
         mfreq_prev = 0.0
         nmfreq_prev = 0.0
         dfreq_prev = 0.0
@@ -696,16 +784,27 @@ class Dicer:
         seg_prev = {}
         hauptliste_matrix_row = []
         hauptliste_delta_matrix_row = []
+        last_word_count_multiplier = 0.0
 
-        c_prev = {}
+        c_prev_count = {}
         for corrector in Util.SINAI_HANDS:
             if corrector == '01*':
                 continue
-            c_prev['01' + corrector] = 0.0
+            c_prev_count['01' + corrector] = 0
         for corrector in Util.BEZAE_HANDS:
             if corrector == '05*':
                 continue
-            c_prev['05' + corrector] = 0.0
+            c_prev_count['05' + corrector] = 0
+
+        c_prev_freq = {}
+        for corrector in Util.SINAI_HANDS:
+            if corrector == '01*':
+                continue
+            c_prev_freq['01' + corrector] = 0.0
+        for corrector in Util.BEZAE_HANDS:
+            if corrector == '05*':
+                continue
+            c_prev_freq['05' + corrector] = 0.0
 
         cfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-segment-L-counts.csv'
         with open(cfile, 'w+') as file:
@@ -718,73 +817,124 @@ class Dicer:
             hauptliste_matrix_row.append(segment['label'])
             hauptliste_delta_matrix_row.append(segment['label'])
 
+            majority_count = ref_data['majority_count']
+            majority_count_prev = mcount_prev
+            majority_count_delta = majority_count - mcount_prev
+            majority_count_delta_pc = round(majority_count * 1.0 / majority_count_prev if majority_count_prev != 0 else 0.0, 3)
             majority_freq = segment['word_count'] * 1.0 / ref_data['majority_count']
             majority_freq = round(majority_freq, 1)
             mfreq_delta = mfreq_prev / majority_freq if majority_freq > 0 else 0.0
             mfreq_delta = round(mfreq_delta, 3)
+            mcount_prev = majority_count
             mfreq_prev = majority_freq
 
+            nonM_count = len(ref_data['nonM_readings'])
+            nonM_count_prev = nmcount_prev
+            nonM_count_delta = nonM_count - nmcount_prev
+            nonM_count_delta_pc = round(nonM_count * 1.0 / nonM_count_prev if nonM_count_prev != 0 else 0.0, 3)
             nonmajority_freq = segment['word_count'] * 1.0 / len(ref_data['nonM_readings']) if len(ref_data['nonM_readings']) > 0 else 0.0
             nonmajority_freq = round(nonmajority_freq, 1)
             nmfreq_delta = nmfreq_prev / nonmajority_freq if nonmajority_freq > 0 else 0.0
             nmfreq_delta = round(nmfreq_delta, 3)
+            nmcount_prev = nonM_count
             nmfreq_prev = nonmajority_freq
 
-            D_freq = segment['word_count'] * 1.0 / len(ref_data['D_readings']) if len(ref_data['D_readings']) > 0 else segment['word_count']
+            D_count = len(ref_data['D_readings'])
+            D_count_prev = dcount_prev
+            D_count_delta = D_count - dcount_prev
+            D_count_delta_pc = round(D_count * 1.0 / D_count_prev if D_count_prev != 0 else 0.0, 3)
+            D_freq = segment['word_count'] * 1.0 / len(ref_data['D_readings']) if len(ref_data['D_readings']) > 0 else 0.0
             D_freq = round(D_freq, 1)
             dfreq_delta = dfreq_prev / D_freq if D_freq > 0 else 0.0
             dfreq_delta = round(dfreq_delta, 3)
+            dcount_prev = D_count
             dfreq_prev = D_freq
 
-            L_freq = segment['word_count'] * 1.0 / len(ref_data['L_readings']) if len(ref_data['L_readings']) > 0 else segment['word_count']
+            L_count = len(ref_data['L_readings'])
+            L_count_prev = lcount_prev
+            L_count_delta = L_count - lcount_prev
+            L_count_delta_pc = round(L_count * 1.0 / L_count_prev if L_count_prev != 0 else 0.0, 3)
+            L_freq = segment['word_count'] * 1.0 / len(ref_data['L_readings']) if len(ref_data['L_readings']) > 0 else 0.0
             L_freq = round(L_freq, 1)
             lfreq_delta = lfreq_prev / L_freq if L_freq > 0 else 0.0
             lfreq_delta = round(lfreq_delta, 3)
+            lcount_prev = L_count
             lfreq_prev = L_freq
 
-            S_freq = segment['word_count'] * 1.0 / len(ref_data['S_readings']) if len(ref_data['S_readings']) > 0 else segment['word_count']
+            S_count = len(ref_data['S_readings'])
+            S_count_prev = scount_prev
+            S_count_delta = S_count - scount_prev
+            S_count_delta_pc = round(S_count * 1.0 / S_count_prev if S_count_prev != 0 else 0.0, 3)
+            S_freq = segment['word_count'] * 1.0 / len(ref_data['S_readings']) if len(ref_data['S_readings']) > 0 else 0.0
             S_freq = round(S_freq, 1)
             sfreq_delta = sfreq_prev / S_freq if S_freq > 0 else 0.0
             sfreq_delta = round(sfreq_delta, 3)
+            scount_prev = S_count
             sfreq_prev = S_freq
 
             for name, cor_info in ref_data['correctors'].iteritems():
                 cor_info['count'] = len(cor_info['readings'])
-                c_freq = round(segment['word_count'] * 1.0 / cor_info['count'] if cor_info['count'] > 0 else segment['word_count'], 1)
+                cor_info['prev_count'] = c_prev_count[name]
+                cor_info['count_delta'] = cor_info['count'] - cor_info['prev_count']
+                cor_info['count_delta_pc'] = round(cor_info['count'] * 1.0 / cor_info['prev_count'] if cor_info['prev_count'] != 0 else 0.0, 3)
+                c_freq = round(segment['word_count'] * 1.0 / cor_info['count'] if cor_info['count'] > 0 else 0.0, 1)
                 cor_info['freq'] = c_freq
-                c_delta = round(c_prev[name] / c_freq if c_freq > 0 else 0.0, 3)  
+                c_delta = round(c_prev_freq[name] / c_freq if c_freq > 0 else 0.0, 3)  
                 cor_info['freq_delta'] = c_delta
-                c_prev[name] = c_freq
+                cor_info['labels'] = refListToString(s.vuReferenceList(cor_info['readings']))
+                c_prev_freq[name] = c_freq
+                c_prev_count[name] = cor_info['count']
 
             with open(cfile, 'a+') as file:
                 file.write(str(sidx + 1) + '\t' + segment['label'] + '\t' + str(segment['word_count']) + '\t' + str(len(ref_data['S_readings'])) + '\t' + str(len(ref_data['L_readings'])) + '\t' + str(len(ref_data['D_readings'])) + '\t' + str(ref_data['majority_count']) + '\n')
                 file.close()
 
             j_segment = {}
-            j_segment['majority_count'] = ref_data['majority_count']
+            j_segment['majority_count'] = majority_count
+            j_segment['majority_count_prev'] = majority_count_prev
+            j_segment['majority_count_delta'] = majority_count_delta
+            j_segment['majority_count_delta_pc'] = majority_count_delta_pc
             j_segment['majority_freq'] = majority_freq
             j_segment['majority_freq_delta'] = mfreq_delta
-            j_segment['nonM_count'] = len(ref_data['nonM_readings'])
+            j_segment['nonM_count'] = nonM_count
+            j_segment['nonM_count_prev'] = nonM_count_prev
+            j_segment['nonM_count_delta'] = nonM_count_delta
+            j_segment['nonM_count_delta_pc'] = nonM_count_delta_pc
             j_segment['nonM_freq'] = nonmajority_freq
             j_segment['nonM_freq_delta'] = nmfreq_delta
-            j_segment['D_count'] = len(ref_data['D_readings'])
+            j_segment['D_count'] = D_count
+            j_segment['D_count_prev'] = D_count_prev
+            j_segment['D_count_delta'] = D_count_delta
+            j_segment['D_count_delta_pc'] = D_count_delta_pc
             j_segment['D_freq'] = D_freq
             j_segment['D_freq_delta'] = dfreq_delta
-            j_segment['L_count'] = len(ref_data['L_readings'])
+            j_segment['D_labels'] = refListToString(s.vuReferenceList(ref_data['D_readings']))
+            j_segment['L_count'] = L_count
+            j_segment['L_count_prev'] = L_count_prev
+            j_segment['L_count_delta'] = L_count_delta
+            j_segment['L_count_delta_pc'] = L_count_delta_pc
             j_segment['L_freq'] = L_freq
             j_segment['L_freq_delta'] = lfreq_delta
-            j_segment['S_count'] = len(ref_data['S_readings'])
+            j_segment['L_labels'] = refListToString(s.vuReferenceList(ref_data['L_readings']))
+            j_segment['S_count'] = S_count
+            j_segment['S_count_prev'] = S_count_prev
+            j_segment['S_count_delta'] = S_count_delta
+            j_segment['S_count_delta_pc'] = S_count_delta_pc
             j_segment['S_freq'] = S_freq
             j_segment['S_freq_delta'] = sfreq_delta
+            j_segment['S_labels'] = refListToString(s.vuReferenceList(ref_data['S_readings']))
             j_segment['index'] = segment['index']
             j_segment['address_count'] = segment['address_count']
             j_segment['word_count'] = segment['word_count']
+            j_segment['word_count_multiplier'] = 375.0 / segment['word_count']
+            j_segment['last_word_count_multiplier'] = last_word_count_multiplier
             j_segment['label'] = segment['label']
             j_segment['greek_mss'] = []
             j_segment['latin_mss'] = []
             j_segment['D_readings'] = []
             j_segment['L_readings'] = []
             j_segment['correctors'] = ref_data['correctors']
+            last_word_count_multiplier = j_segment['word_count_multiplier']
 
             j_profiles = {}
             j_profiles['f03_readings'] = []
@@ -864,6 +1014,35 @@ class Dicer:
                     j_segment['L_readings'].append(j_reading)
 
             j_segment['profiles'] = j_profiles
+
+            # Process core groups
+            core_groups = c.get('coreGroups')
+            for gp in core_groups:
+                if not gp['name'] in Dicer.CORE_GROUPS:
+                    continue
+
+                g_name = gp['name']
+
+                gpdat = {}
+                gpdat['group'] = g_name
+
+                gpdat['D_group_count'] = len(ref_data['D_group_instances'][g_name]) if ref_data['D_group_instances'].has_key(g_name) else 0
+                gpdat['D_group_pc'] = round(gpdat['D_group_count'] * 1.0 / j_segment['D_count'] if j_segment['D_count'] != 0 else 0.0, 3)
+
+                gpdat_prev = None
+                if seg_prev:
+                    gpdat_prev = seg_prev['group_data'][g_name] if seg_prev['group_data'].has_key(g_name) else None
+                gpdat['D_group_count_prev'] = gpdat_prev['D_group_count'] if gpdat_prev else 0
+                gpdat['D_group_count_delta'] = gpdat['D_group_count'] - gpdat['D_group_count_prev']
+                gpdat['D_group_count_delta_pc'] = round(gpdat['D_group_count'] * 1.0 / gpdat['D_group_count_prev'] if gpdat['D_group_count_prev'] != 0 else 0.0, 3)
+
+                gpdat['labels'] = ''
+                if ref_data['D_group_instances'].has_key(g_name):
+                    gpdat['labels'] = refListToString(s.vuReferenceList(ref_data['D_group_instances'][g_name]))
+
+                if not j_segment.has_key('group_data'):
+                    j_segment['group_data'] = {}
+                j_segment['group_data'][g_name] = gpdat
 
             for ms in s.variantModel['manuscripts']:
                 if ms == refMS:
@@ -1021,6 +1200,88 @@ class Dicer:
             for row in hauptliste_delta_matrix:
                 file.write(('\t'.join(row) + '\n').encode('UTF-8'))
             file.close()
+
+        # Save layer-per-segment stats
+        s.outputPerSegment('M', hauptliste, 'majority_count', 'majority_count_prev', 'majority_count_delta', 'majority_count_delta_pc', None)
+        s.outputPerSegment('D', hauptliste, 'D_count', 'D_count_prev', 'D_count_delta', 'D_count_delta_pc', 'D_labels')
+        s.outputPerSegment('L', hauptliste, 'L_count', 'L_count_prev', 'L_count_delta', 'L_count_delta_pc', 'L_labels')
+        s.outputPerSegment('S', hauptliste, 'S_count', 'S_count_prev', 'S_count_delta', 'S_count_delta_pc', 'S_labels')
+
+        s.outputPerSegmentCorrector(hauptliste, '01A')
+        s.outputPerSegmentCorrector(hauptliste, '01C1')
+        s.outputPerSegmentCorrector(hauptliste, '05A')
+        s.outputPerSegmentCorrector(hauptliste, '05B')
+
+        s.outputPerSegmentGroup(hauptliste, 'F03')
+        s.outputPerSegmentGroup(hauptliste, 'F1')
+        s.outputPerSegmentGroup(hauptliste, 'F13')
+        s.outputPerSegmentGroup(hauptliste, 'C565')
+        s.outputPerSegmentGroup(hauptliste, 'CP45')
+
+    def outputPerSegmentGroup(s, hauptliste, group_key):
+        csvfile = s.dicerFolder + s.segmentConfig['label'] + '-' + group_key + '-segment-stats.csv'
+        file = open(csvfile, 'w+')
+        file.write('Segment\tRange\tWord Count\tMultiplier\tCount\tLast Count\tΔ Count\tPercent Δ\tCount (Calibrated)\tLast Count (Calibrated)\tΔ Count (Calibrated)\tPercent Δ (Calibrated)\tReadings\n')
+        for j_segment in hauptliste['segments']:
+            group = j_segment['group_data'][group_key]
+            count = group['D_group_count']
+            prev_count = group['D_group_count_prev']
+            count_delta = group['D_group_count_delta']
+            count_delta_pc = group['D_group_count_delta_pc']
+            labels = group['labels']
+            multiplier = j_segment['word_count_multiplier']
+            last_multiplier = j_segment['last_word_count_multiplier']
+            cal_count = round(multiplier * count, 1)
+            cal_prev_count = round(last_multiplier * prev_count, 1)
+            cal_count_delta = cal_count - cal_prev_count
+            cal_count_delta_pc = round(cal_count / cal_prev_count, 3) if cal_prev_count != 0 else 0.0
+
+            file.write(str(j_segment['index']) + '\t' + j_segment['label'] + '\t' + str(j_segment['word_count']) + '\t' + str(round(multiplier, 3)) + '\t' + str(count) + '\t' + str(prev_count) + '\t' + str(count_delta) + '\t' + str(count_delta_pc) + '\t' + str(cal_count) + '\t' + str(cal_prev_count) + '\t' + str(cal_count_delta) + '\t' + str(cal_count_delta_pc) + '\t' + labels + '\n')
+
+        file.close()
+
+    def outputPerSegment(s, file_key, hauptliste, count_key, prev_count_key, count_delta_key, count_delta_pc_key, verse_refs):
+        csvfile = s.dicerFolder + s.segmentConfig['label'] + '-' + file_key + '-segment-stats.csv'
+        file = open(csvfile, 'w+')
+        file.write('Segment\tRange\tWord Count\tMultiplier\tCount\tLast Count\tΔ Count\tPercent Δ\tCount (Calibrated)\tLast Count (Calibrated)\tΔ Count (Calibrated)\tPercent Δ (Calibrated)\tReadings\n')
+        for j_segment in hauptliste['segments']:
+            count = j_segment[count_key]
+            prev_count = j_segment[prev_count_key]
+            count_delta = j_segment[count_delta_key]
+            count_delta_pc = j_segment[count_delta_pc_key]
+            multiplier = j_segment['word_count_multiplier']
+            last_multiplier = j_segment['last_word_count_multiplier']
+            cal_count = round(multiplier * count, 1)
+            cal_prev_count = round(last_multiplier * prev_count, 1)
+            cal_count_delta = cal_count - cal_prev_count
+            cal_count_delta_pc = round(cal_count / cal_prev_count, 3) if cal_prev_count != 0 else 0.0
+            ref_str = ''
+            if verse_refs:
+                ref_str = j_segment[verse_refs]
+
+            file.write(str(j_segment['index']) + '\t' + j_segment['label'] + '\t' + str(j_segment['word_count']) + '\t' + str(round(multiplier, 3)) + '\t' + str(count) + '\t' + str(prev_count) + '\t' + str(count_delta) + '\t' + str(count_delta_pc) + '\t' + str(cal_count) + '\t' + str(cal_prev_count) + '\t' + str(cal_count_delta) + '\t' + str(cal_count_delta_pc) + '\t' + ref_str + '\n')
+
+        file.close()
+
+    def outputPerSegmentCorrector(s, hauptliste, corrector_key):
+        csvfile = s.dicerFolder + s.segmentConfig['label'] + '-' + corrector_key + '-segment-stats.csv'
+        file = open(csvfile, 'w+')
+        file.write('Segment\tRange\tWord Count\tMultiplier\tCount\tLast Count\tΔ Count\tPercent Δ\tCount (Calibrated)\tLast Count (Calibrated)\tΔ Count (Calibrated)\tPercent Δ (Calibrated)\tReadings\n')
+        for j_segment in hauptliste['segments']:
+            count = j_segment['correctors'][corrector_key]['count']
+            prev_count = j_segment['correctors'][corrector_key]['prev_count']
+            count_delta = j_segment['correctors'][corrector_key]['count_delta']
+            count_delta_pc = j_segment['correctors'][corrector_key]['count_delta_pc']
+            multiplier = j_segment['word_count_multiplier']
+            last_multiplier = j_segment['last_word_count_multiplier']
+            cal_count = round(multiplier * count, 1)
+            cal_prev_count = round(last_multiplier * prev_count, 1)
+            cal_count_delta = cal_count - cal_prev_count
+            cal_count_delta_pc = round(cal_count / cal_prev_count, 3) if cal_prev_count != 0 else 0.0
+
+            file.write(str(j_segment['index']) + '\t' + j_segment['label'] + '\t' + str(j_segment['word_count']) + '\t' + str(round(multiplier, 3)) + '\t' + str(count) + '\t' + str(prev_count) + '\t' + str(count_delta) + '\t' + str(count_delta_pc) + '\t' + str(cal_count) + '\t' + str(cal_prev_count) + '\t' + str(cal_count_delta) + '\t' + str(cal_count_delta_pc) + '\t' + j_segment['correctors'][corrector_key]['labels'] + '\n')
+
+        file.close()
 
     def runHauptliste(s, refMS):
         s.prepareHauptlisten(refMS)
