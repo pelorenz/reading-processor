@@ -1284,6 +1284,117 @@ class VariantFinder:
 
             file.close()
 
+    def initRadius(s):
+        r_dat = {}
+        r_dat['density_profile'] = []
+        r_dat['max'] = 0
+        r_dat['mean'] = 0
+        r_dat['min'] = 1000
+        r_dat['sum'] = 0
+        return r_dat
+
+    def initLayer(s):
+        l_dat = {}
+        l_dat['labels'] = []
+        l_dat['p_set'] = set()
+        l_dat['points'] = []
+        return l_dat
+
+    def generateVectors(s):
+        c = s.config
+        s.info('Generating vector')
+
+        LAYERS = [ 'L' ]
+        MAX_WORD_INDEX = 11562
+        RADII = [ 30, 60, 90, 120, 150, 180 ]
+        REF_MS = '05'
+
+        l_map = {}
+        for layer in LAYERS:
+            l_map[layer] = s.initLayer()
+            for r in RADII:
+                l_map[layer][r] = s.initRadius()
+                
+        for addr in s.variantModel['addresses']:
+            for vu in addr.variation_units:
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                reading = vu.getReadingForManuscript(REF_MS)
+                if not reading:
+                    continue
+
+                layer = s.computeLayer2(REF_MS, vu, reading)
+                if layer == 'L' or layer == 'LI':
+                    l_map['L']['labels'].append(vu.label)
+                    l_map['L']['p_set'].add(vu.word_index)
+                    l_map['L']['points'].append(vu.word_index)
+
+        for layer in LAYERS:
+            for pt_idx in l_map[layer]['points']:
+                for r in RADII:
+                    radius_points = set(range(pt_idx - r, pt_idx + r + 1))
+                    density = len(radius_points & l_map[layer]['p_set'])
+
+                    # Scale density for missing edge values
+                    if pt_idx - r < 0: # bottom
+                        unscaled_density = density
+                        short_range = 2 * r - abs(pt_idx - r)
+                        density = 2 * r * density / short_range
+                        s.info('Adjusting bottom edge density from', unscaled_density, 'to', density)
+                    if pt_idx + r > MAX_WORD_INDEX: # top
+                        unscaled_density = density
+                        short_range = 2 * r - (pt_idx + r - MAX_WORD_INDEX)
+                        density = 2 * r * density / short_range
+                        s.info('Adjusting top edge density from', unscaled_density, 'to', density)
+
+                    if density > l_map[layer][r]['max']:
+                        l_map[layer][r]['max'] = density
+                    elif density < l_map[layer][r]['min']:
+                        l_map[layer][r]['min'] = density
+                    l_map[layer][r]['sum'] = l_map[layer][r]['sum'] + density
+                    l_map[layer][r]['density_profile'].append(density)
+
+        for layer in LAYERS:
+            for r in RADII:
+                l_map[layer][r]['mean'] = round(l_map[layer][r]['sum'] * 1.0 / len(l_map[layer]['points']), 3)
+
+        file = open(c.get('finderFolder') + 'layer_density.csv', 'w+')
+        file.write('Label')
+        for r in RADII:
+            file.write('\tL' + str(r))
+        file.write('\n') # header
+
+        for idx, label in enumerate(l_map['L']['labels']):
+            file.write(label)
+            for r in RADII:
+                file.write('\t' + str(l_map['L'][r]['density_profile'][idx]))
+            file.write('\n')
+
+        file.write('\n')
+                
+        file.write('Points:')
+        for r in RADII:
+            file.write('\t' + str(len(l_map['L']['points'])))
+        file.write('\n')
+
+        file.write('Mean:')
+        for r in RADII:
+            file.write('\t' + str(l_map['L'][r]['mean']))
+        file.write('\n')
+
+        file.write('Min:')
+        for r in RADII:
+            file.write('\t' + str(l_map['L'][r]['min']))
+        file.write('\n')
+
+        file.write('Max:')
+        for r in RADII:
+            file.write('\t' + str(l_map['L'][r]['max']))
+        file.write('\n')
+
+        file.close()
+
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
@@ -1346,6 +1457,8 @@ class VariantFinder:
             s.buildLatinLayer()
         elif o.extra:
             s.fixHarmLayers()
+        elif o.vector:
+            s.generateVectors()
         else:
             s.findMultiwayVariants()
             s.saveMultiwayVariants()

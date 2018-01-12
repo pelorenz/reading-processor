@@ -889,6 +889,8 @@ class Dicer:
                 file.write(str(sidx + 1) + '\t' + segment['label'] + '\t' + str(segment['word_count']) + '\t' + str(len(ref_data['S_readings'])) + '\t' + str(len(ref_data['L_readings'])) + '\t' + str(len(ref_data['D_readings'])) + '\t' + str(ref_data['majority_count']) + '\n')
                 file.close()
 
+            multiplier_factor = s.segmentConfig['segmentSize'] + 10
+
             j_segment = {}
             j_segment['majority_count'] = majority_count
             j_segment['majority_count_prev'] = majority_count_prev
@@ -926,7 +928,7 @@ class Dicer:
             j_segment['index'] = segment['index']
             j_segment['address_count'] = segment['address_count']
             j_segment['word_count'] = segment['word_count']
-            j_segment['word_count_multiplier'] = 375.0 / segment['word_count']
+            j_segment['word_count_multiplier'] = multiplier_factor * 1.0 / segment['word_count']
             j_segment['last_word_count_multiplier'] = last_word_count_multiplier
             j_segment['label'] = segment['label']
             j_segment['greek_mss'] = []
@@ -1025,6 +1027,9 @@ class Dicer:
 
                 gpdat = {}
                 gpdat['group'] = g_name
+
+                if not ref_data.has_key('D_group_instances'):
+                    ref_data['D_group_instances'] = {}
 
                 gpdat['D_group_count'] = len(ref_data['D_group_instances'][g_name]) if ref_data['D_group_instances'].has_key(g_name) else 0
                 gpdat['D_group_pc'] = round(gpdat['D_group_count'] * 1.0 / j_segment['D_count'] if j_segment['D_count'] != 0 else 0.0, 3)

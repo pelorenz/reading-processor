@@ -7,6 +7,7 @@ from object.jsonDecoder import *
 from object.jsonEncoder import *
 from object.overlayManager import *
 from object.util import *
+from object.wordCounter import *
 
 from utility.config import *
 
@@ -77,6 +78,8 @@ class RangeManager:
 
                 s.info('loading', varfile)
                 s.loadVariants(varfile)
+
+            WordCounter(c).computeIndexes(s.chapterLookup)
             s.save()
 
     def save(s):

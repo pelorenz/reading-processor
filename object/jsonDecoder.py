@@ -84,6 +84,8 @@ class ComplexDecoder(json.JSONDecoder):
         if type == 'variationUnit':
             variation_unit = VariationUnit(obj['label'], obj['hasRetroversion'])
             variation_unit.readings = obj['readings']
+            if obj.has_key('wordIndex'):
+                variation_unit.word_index = obj['wordIndex']
             return variation_unit
         if type == 'verse':
             return VerseDelimiter(obj['tokenIndex'], '0', str(obj['verse']))

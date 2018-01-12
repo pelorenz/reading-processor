@@ -32,8 +32,11 @@ class  VariationUnit(object):
         s.bezae_correctors = {}
         s.sinai_correctors = {}
 
+        # word indices per ref MSS
+        s.word_index = 0
+
     def jsonSerialize(s):
-        return { '_type': 'variationUnit', 'label': s.label, 'hasRetroversion': s.hasRetroversion, 'readings': s.readings }
+        return { '_type': 'variationUnit', 'label': s.label, 'hasRetroversion': s.hasRetroversion, 'readings': s.readings, 'wordIndex': s.word_index }
 
     def isSingular(s):
         nonSing = 0

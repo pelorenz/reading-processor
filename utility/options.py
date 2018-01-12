@@ -36,6 +36,7 @@ class  CommandLine:
         self.parser.add_argument('-Y', '--latinlayer', help='Count Latin-layer readings (variantFinder).', action='store_true')
         self.parser.add_argument('-Z', '--harmonization', help='Generate CSV template to record harmonization data (variantFinder).', action='store_true')
         self.parser.add_argument('-E', '--corrector', help='Generate CSV template to record corrector data (variantFinder).', action='store_true')
+        self.parser.add_argument('-T', '--vector', help='Generate point vector of layer or corrector locations (variantFinder).', action='store_true')
 
     def getOptions(self):
         dict = vars(self.parser.parse_args())
