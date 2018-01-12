@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, string, re
+import numpy as np
 
 from object.jsonEncoder import *
 from object.rangeManager import *
@@ -1300,53 +1301,91 @@ class VariantFinder:
         l_dat['points'] = []
         return l_dat
 
-    def generateVectors(s):
-        c = s.config
-        s.info('Generating vector')
+    def initLayerData(s, l_map, label, word_index):
+        l_map['labels'].append(label)
+        l_map['p_set'].add(word_index)
+        l_map['points'].append(word_index)
 
-        LAYERS = [ 'L' ]
+    def computeDensity(s, is_interval):
+        c = s.config
+        s.info('Computing density')
+
+        INTERVAL = 15
+        LAYERS = [ 'L', '01C1', 'F03', 'C565', '01A', '05A', '05B' ]
         MAX_WORD_INDEX = 11562
         RADII = [ 30, 60, 90, 120, 150, 180 ]
         REF_MS = '05'
+
+        interval_points = list(range(INTERVAL, MAX_WORD_INDEX - INTERVAL, INTERVAL))
 
         l_map = {}
         for layer in LAYERS:
             l_map[layer] = s.initLayer()
             for r in RADII:
                 l_map[layer][r] = s.initRadius()
-                
-        for addr in s.variantModel['addresses']:
+
+        label_map = {}
+        last_interval_idx = INTERVAL
+        for aidx, addr in enumerate(s.variantModel['addresses']):
             for vu in addr.variation_units:
+                if is_interval:
+                    for interval_idx in range(last_interval_idx, MAX_WORD_INDEX - INTERVAL, INTERVAL):
+                        if not label_map.has_key(interval_idx):
+                            if vu.word_index >= interval_idx:
+                                label_map[interval_idx] = str(addr.chapter_num) + ':' + str(addr.verse_num)
+                                last_interval_idx = interval_idx
+                            else:
+                                break
+
                 if not vu.startingAddress:
                     vu.startingAddress = addr
 
                 reading = vu.getReadingForManuscript(REF_MS)
-                if not reading:
-                    continue
+                if reading:
+                    layer = s.computeLayer2(REF_MS, vu, reading)
+                    if layer == 'L' or layer == 'LI':
+                        s.initLayerData(l_map['L'], vu.label, vu.word_index)
 
-                layer = s.computeLayer2(REF_MS, vu, reading)
-                if layer == 'L' or layer == 'LI':
-                    l_map['L']['labels'].append(vu.label)
-                    l_map['L']['p_set'].add(vu.word_index)
-                    l_map['L']['points'].append(vu.word_index)
+                if vu.getReadingForCorrector('01C1'):
+                    s.initLayerData(l_map['01C1'], vu.label, vu.word_index)
+
+                for group in c.get('coreGroups'):
+                    if group['name'] != 'F03' and group['name'] != 'C565': continue
+                    if isDistinctive(c.get('msGroupAssignments'), REF_MS, vu, reading, group):
+                        s.initLayerData(l_map[group['name']], vu.label, vu.word_index)
+
+                if vu.getReadingForCorrector('01A'):
+                    s.initLayerData(l_map['01A'], vu.label, vu.word_index)
+
+                if vu.getReadingForCorrector('05A'):
+                    s.initLayerData(l_map['05A'], vu.label, vu.word_index)
+
+                if vu.getReadingForCorrector('05B'):
+                    s.initLayerData(l_map['05B'], vu.label, vu.word_index)
 
         for layer in LAYERS:
-            for pt_idx in l_map[layer]['points']:
+            all_points = l_map[layer]['points']
+            if is_interval:
+                all_points = interval_points
+    
+            for word_idx in all_points:
                 for r in RADII:
-                    radius_points = set(range(pt_idx - r, pt_idx + r + 1))
+                    radius_points = set(range(word_idx - r, word_idx + r + 1))
                     density = len(radius_points & l_map[layer]['p_set'])
 
                     # Scale density for missing edge values
-                    if pt_idx - r < 0: # bottom
+                    if word_idx - r < 0: # bottom
                         unscaled_density = density
-                        short_range = 2 * r - abs(pt_idx - r)
+                        short_range = 2 * r - abs(word_idx - r)
                         density = 2 * r * density / short_range
-                        s.info('Adjusting bottom edge density from', unscaled_density, 'to', density)
-                    if pt_idx + r > MAX_WORD_INDEX: # top
+                        if density != unscaled_density:
+                            s.info('Adjusting bottom edge density in', layer, str(r), 'from', unscaled_density, 'to', density)
+                    if word_idx + r > MAX_WORD_INDEX: # top
                         unscaled_density = density
-                        short_range = 2 * r - (pt_idx + r - MAX_WORD_INDEX)
+                        short_range = 2 * r - (word_idx + r - MAX_WORD_INDEX)
                         density = 2 * r * density / short_range
-                        s.info('Adjusting top edge density from', unscaled_density, 'to', density)
+                        if density != unscaled_density:
+                            s.info('Adjusting top edge density in', layer, str(r), 'from', unscaled_density, 'to', density)
 
                     if density > l_map[layer][r]['max']:
                         l_map[layer][r]['max'] = density
@@ -1356,42 +1395,82 @@ class VariantFinder:
                     l_map[layer][r]['density_profile'].append(density)
 
         for layer in LAYERS:
+            num_points = len(l_map[layer]['points']) if not is_interval else len(interval_points)
             for r in RADII:
-                l_map[layer][r]['mean'] = round(l_map[layer][r]['sum'] * 1.0 / len(l_map[layer]['points']), 3)
+                l_map[layer][r]['mean'] = round(l_map[layer][r]['sum'] * 1.0 / num_points, 3) if num_points > 0 else 0.0
 
-        file = open(c.get('finderFolder') + 'layer_density.csv', 'w+')
-        file.write('Label')
-        for r in RADII:
-            file.write('\tL' + str(r))
+        interval_str = ''
+        if is_interval:
+            interval_str = '-interval'
+        file = open(c.get('finderFolder') + 'layer_density' + interval_str + '.csv', 'w+')
+        for layer in LAYERS:
+            file.write(layer + ' Layer')
+            for r in RADII:
+                file.write('\t' + str(r))
+            file.write('\t\t')
         file.write('\n') # header
 
-        for idx, label in enumerate(l_map['L']['labels']):
-            file.write(label)
+        for layer in LAYERS:
+            file.write('Readings:')
             for r in RADII:
-                file.write('\t' + str(l_map['L'][r]['density_profile'][idx]))
+                file.write('\t' + str(len(l_map[layer]['points'])))
+            file.write('\t\t')
+        file.write('\n')
+
+        for layer in LAYERS:
+            file.write('Mean:')
+            for r in RADII:
+                file.write('\t' + str(l_map[layer][r]['mean']))
+            file.write('\t\t')
+        file.write('\n')
+
+        for layer in LAYERS:
+            file.write('Min:')
+            for r in RADII:
+                file.write('\t' + str(l_map[layer][r]['min']))
+            file.write('\t\t')
+        file.write('\n')
+
+        for layer in LAYERS:
+            file.write('Max:')
+            for r in RADII:
+                file.write('\t' + str(l_map[layer][r]['max']))
+            file.write('\t\t')
+        file.write('\n')
+
+        file.write('\n')
+
+        row_count = len(interval_points)
+        if not is_interval:
+            for layer in LAYERS:
+                if len(l_map[layer]['points']) > row_count:
+                    row_count = len(l_map[layer]['points'])
+
+        for idx in range(0, row_count):
+            for layer in LAYERS:
+                limit = len(l_map[layer]['labels'])
+                if is_interval:
+                    limit = len(interval_points)
+                if idx >= limit:
+                    for r in RADII:
+                        file.write('\t')
+                    file.write('\t\t')
+                    continue
+
+                label = str(idx)
+                if not is_interval:
+                    label = l_map[layer]['labels'][idx]
+                else:
+                    label_key = (idx + 1) * INTERVAL
+                    label = label_map[label_key] if label_map.has_key(label_key) else ''
+                    if label:
+                        label = label + ' '
+                    label = label + '(' + str(idx) + ')'
+                file.write(label)
+                for r in RADII:
+                    file.write('\t' + str(l_map[layer][r]['density_profile'][idx]))
+                file.write('\t\t')
             file.write('\n')
-
-        file.write('\n')
-                
-        file.write('Points:')
-        for r in RADII:
-            file.write('\t' + str(len(l_map['L']['points'])))
-        file.write('\n')
-
-        file.write('Mean:')
-        for r in RADII:
-            file.write('\t' + str(l_map['L'][r]['mean']))
-        file.write('\n')
-
-        file.write('Min:')
-        for r in RADII:
-            file.write('\t' + str(l_map['L'][r]['min']))
-        file.write('\n')
-
-        file.write('Max:')
-        for r in RADII:
-            file.write('\t' + str(l_map['L'][r]['max']))
-        file.write('\n')
 
         file.close()
 
@@ -1457,8 +1536,9 @@ class VariantFinder:
             s.buildLatinLayer()
         elif o.extra:
             s.fixHarmLayers()
-        elif o.vector:
-            s.generateVectors()
+        elif o.density:
+            s.computeDensity(False)
+            s.computeDensity(True)
         else:
             s.findMultiwayVariants()
             s.saveMultiwayVariants()

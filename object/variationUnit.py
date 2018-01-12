@@ -28,7 +28,7 @@ class  VariationUnit(object):
         # first address of variant
         s.startingAddress = None
 
-        # correctors
+        # correctors - not in model! (see Reading)
         s.bezae_correctors = {}
         s.sinai_correctors = {}
 
@@ -113,6 +113,20 @@ class  VariationUnit(object):
             counter = counter + 1
 
         return excerpt
+
+    def getReadingForCorrector(s, c_code):
+        ms = c_code[:2]
+        corrector = c_code[2:]
+        if ms == '01':
+            for reading in s.readings:
+                if corrector in reading.sinai_correctors:
+                    return reading
+        elif ms == '05':
+            for reading in s.readings:
+                if corrector in reading.bezae_correctors:
+                    return reading
+
+        return None
 
     def getReadingForManuscript(s, ms):
         for reading in s.readings:

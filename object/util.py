@@ -8,6 +8,8 @@ class Util:
     BEZAE_HANDS = ['05*','sm','A','B','C','D','E','H','A/B']
     SINAI_HANDS = ['01*','A','C1','C2']
 
+    CORE_GROUPS = ['F03', 'C565', 'F1', 'F13', 'CP45']
+
 def getGroupBase(group):
     s_res = re.search(r'^(Iso|[ByzCFP0-9]+)([s]{0,1})$', group)
     if s_res:
@@ -38,6 +40,36 @@ def makeParts(v):
         lastpart = makePart(tok, lastpart)
         parts.append(lastpart)
     return parts
+
+def isDistinctive(groupAssignments, refMS, vu, reading, group):
+    if not reading or vu.isReferenceSingular(refMS) or reading.hasManuscript('35'):
+        return False
+
+    g_counts = {}
+    nonref_count = reading.countNonRefGreekManuscriptsByGroup(refMS, groupAssignments, g_counts)
+
+    if nonref_count == 0:
+        return False
+
+    base_mss = []
+    base_mss.append('28')
+    base_mss.append('2542')
+    for ms, gp in groupAssignments.iteritems():
+        if gp in Util.CORE_GROUPS and gp != group['name']:
+            base_mss.append(ms)
+
+    if set(base_mss) & set(reading.manuscripts):
+        return False
+
+    member_count = 0
+    for ms in group['members']:
+        if reading.hasManuscript(ms):
+            member_count = member_count + 1
+
+    if member_count < group['minOccurs']:
+        return False
+
+    return True
 
 def refListToString(ref_list):
     r_str = ''
