@@ -40,24 +40,24 @@ class ComplexDecoder(json.JSONDecoder):
             reading.manuscripts = obj['manuscripts']
             reading.readingUnits = obj['readingUnits']
             try:
-                reading.synopticParallels = obj['synopticParallels']
+                reading.synopticParallels = obj['parallels']
             except KeyError as e:
                 action = None
-            if obj.has_key('bezaeCorrectors'):
-                reading.bezae_correctors = obj['bezaeCorrectors']
-            if obj.has_key('sinaiCorrectors'):
-                reading.sinai_correctors = obj['sinaiCorrectors']
+            if obj.has_key('cor05'):
+                reading.bezae_correctors = obj['cor05']
+            if obj.has_key('cor01'):
+                reading.sinai_correctors = obj['cor01']
             return reading
         if type == 'readingGroup':
             reading_group = ReadingGroup(obj['displayValue'])
             reading_group.readings = obj['readings']
             reading_group.manuscripts = obj['manuscripts']
-            if obj.has_key('bezaeCorrectors'):
-                reading_group.bezae_correctors = obj['bezaeCorrectors']
-            if obj.has_key('sinaiCorrectors'):
-                reading_group.sinai_correctors = obj['sinaiCorrectors']
+            if obj.has_key('cor05'):
+                reading_group.bezae_correctors = obj['cor05']
+            if obj.has_key('cor01'):
+                reading_group.sinai_correctors = obj['cor01']
             try:
-                reading_group.synopticParallels = obj['synopticParallels']
+                reading_group.synopticParallels = obj['parallels']
             except KeyError as e:
                 action = None
             return reading_group
@@ -84,8 +84,10 @@ class ComplexDecoder(json.JSONDecoder):
         if type == 'variationUnit':
             variation_unit = VariationUnit(obj['label'], obj['hasRetroversion'])
             variation_unit.readings = obj['readings']
-            if obj.has_key('wordIndex'):
-                variation_unit.word_index = obj['wordIndex']
+            if obj.has_key('widx03'):
+                variation_unit.word_index_03 = obj['widx03']
+            if obj.has_key('widx05'):
+                variation_unit.word_index_05 = obj['widx05']
             return variation_unit
         if type == 'verse':
             return VerseDelimiter(obj['tokenIndex'], '0', str(obj['verse']))

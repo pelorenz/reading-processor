@@ -7,4 +7,4 @@ class  VerseDelimiter(AddressSlot):
         super(VerseDelimiter, s).__init__(t_idx, c_num, v_num)
 
     def jsonSerialize(s):
-        return { 'verse': int(s.verse_num), 'tokenIndex': s.token_idx, '_type': 'verse' }
+        return { 'verse': int(s.verse_num), 'tokIdx': s.token_idx, '_type': 'verse' }
