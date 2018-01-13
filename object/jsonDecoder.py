@@ -39,10 +39,6 @@ class ComplexDecoder(json.JSONDecoder):
             reading = Reading(obj['displayValue'])
             reading.manuscripts = obj['manuscripts']
             reading.readingUnits = obj['readingUnits']
-            try:
-                reading.synopticParallels = obj['parallels']
-            except KeyError as e:
-                action = None
             if obj.has_key('cor05'):
                 reading.bezae_correctors = obj['cor05']
             if obj.has_key('cor01'):
@@ -56,10 +52,6 @@ class ComplexDecoder(json.JSONDecoder):
                 reading_group.bezae_correctors = obj['cor05']
             if obj.has_key('cor01'):
                 reading_group.sinai_correctors = obj['cor01']
-            try:
-                reading_group.synopticParallels = obj['parallels']
-            except KeyError as e:
-                action = None
             return reading_group
         if type == 'readingUnit':
             reading_unit = ReadingUnit(obj['tokenIndex'], obj['chapter'], obj['verse'], obj['addressIndex'], obj['text'])

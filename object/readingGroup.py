@@ -24,7 +24,7 @@ class  ReadingGroup(object):
         s.sinai_correctors = []
 
     def jsonSerialize(s):
-        return { '_type': 'readingGroup', 'displayValue': s.displayValue, 'readings': s.readings, 'manuscripts': s.manuscripts, 'parallels': s.synopticParallels, 'cor05': s.bezae_correctors,'cor01': s.sinai_correctors }
+        return { '_type': 'readingGroup', 'displayValue': s.displayValue, 'readings': s.readings, 'manuscripts': s.manuscripts, 'cor05': s.bezae_correctors,'cor01': s.sinai_correctors }
 
     def hasManuscript(s, id):
         for ms in s.manuscripts:

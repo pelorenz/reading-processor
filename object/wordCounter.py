@@ -14,6 +14,9 @@ class WordCounter:
         s.wordIndex03 = 0
         s.wordIndex05 = 0
 
+        s.word_map_03 = {}
+        s.word_map_05 = {}
+
     def info(s, *args):
         info = ''
         for i, arg in enumerate(args):
@@ -38,6 +41,7 @@ class WordCounter:
                 has_text = False
                 if addr.getTextFormForMS('03') != 'om.':
                     s.wordIndex03 = s.wordIndex03 + 1
+                    s.word_map_03[s.wordIndex03] = str(addr.chapter_num) + ':' + str(addr.verse_num)
                     file.write(str(s.wordIndex03) + '\t')
                     lastTextIndex03 = s.wordIndex03
                     has_text = True
@@ -60,6 +64,7 @@ class WordCounter:
                 has_text = False
                 if addr.getTextFormForMS('05') != 'om.':
                     s.wordIndex05 = s.wordIndex05 + 1
+                    s.word_map_05[s.wordIndex05] = str(addr.chapter_num) + ':' + str(addr.verse_num)
                     file.write(str(s.wordIndex05) + '\n')
                     lastTextIndex05 = s.wordIndex05
                     has_text = True
@@ -78,4 +83,16 @@ class WordCounter:
                         vu.word_index_05 = s.wordIndex05
                     else:
                         vu_stack_05.append(vu)
+        file.close()
+
+        cache_03 = c.get('variantDataCacheDir') + 'words-03-cache.json'
+        jdata = json.dumps(s.word_map_03, ensure_ascii=False)
+        file = open(cache_03, 'w+')
+        file.write(jdata.encode('UTF-8'))
+        file.close()
+
+        cache_05 = c.get('variantDataCacheDir') + 'words-05-cache.json'
+        jdata = json.dumps(s.word_map_05, ensure_ascii=False)
+        file = open(cache_05, 'w+')
+        file.write(jdata.encode('UTF-8'))
         file.close()

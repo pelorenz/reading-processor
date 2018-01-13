@@ -17,6 +17,8 @@ class RangeManager:
         s.config = None
         s.chapterLookup = {}
         s.overlayManager = None
+        s.word_map_03 = {}
+        s.word_map_05 = {}
 
     def info(s, *args):
         info = ''
@@ -56,6 +58,25 @@ class RangeManager:
             vmodel = s.appendModel(lookup, vmodel)
         s.chapterLookup[chapter] = vmodel
 
+    def loadWordMaps(s):
+        c = s.config
+
+        cache_03 = c.get('variantDataCacheDir') + 'words-03-cache.json'
+        if os.path.isfile(cache_03):
+            file = open(vcachefile, 'r')
+            j_data = file.read().decode('utf-8-sig') # Remove BOM
+            j_data = j_data.encode('utf-8') # Reencode without BOM
+            s.word_map_03 = json.loads(j_data, cls=ComplexDecoder)
+            file.close()
+
+        cache_05 = c.get('variantDataCacheDir') + 'words-05-cache.json'
+        if os.path.isfile(cache_05):
+            file = open(vcachefile, 'r')
+            j_data = file.read().decode('utf-8-sig') # Remove BOM
+            j_data = j_data.encode('utf-8') # Reencode without BOM
+            s.word_map_05 = json.loads(j_data, cls=ComplexDecoder)
+            file.close()
+
     def load(s, is_refresh):
         c = s.config = Config('processor-config.json')
         s.info('Loading variant data')
@@ -67,6 +88,7 @@ class RangeManager:
                 j_data = j_data.encode('utf-8') # Reencode without BOM
                 file.close()
             s.chapterLookup = json.loads(j_data, cls=ComplexDecoder)
+            s.loadWordMaps()
         else:
             s.overlayManager = OverlayManager(c)
 
@@ -79,7 +101,11 @@ class RangeManager:
                 s.info('loading', varfile)
                 s.loadVariants(varfile)
 
-            WordCounter(c).computeIndexes(s.chapterLookup)
+            wc = WordCounter(c)
+            wc.computeIndexes(s.chapterLookup)
+            s.word_map_03 = wc.word_map_03
+            s.word_map_05 = wc.word_map_05
+
             s.save()
 
     def save(s):
