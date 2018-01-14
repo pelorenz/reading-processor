@@ -63,18 +63,18 @@ class RangeManager:
 
         cache_03 = c.get('variantDataCacheDir') + 'words-03-cache.json'
         if os.path.isfile(cache_03):
-            file = open(vcachefile, 'r')
+            file = open(cache_03, 'r')
             j_data = file.read().decode('utf-8-sig') # Remove BOM
             j_data = j_data.encode('utf-8') # Reencode without BOM
-            s.word_map_03 = json.loads(j_data, cls=ComplexDecoder)
+            s.word_map_03 = json.loads(j_data)
             file.close()
 
         cache_05 = c.get('variantDataCacheDir') + 'words-05-cache.json'
         if os.path.isfile(cache_05):
-            file = open(vcachefile, 'r')
+            file = open(cache_05, 'r')
             j_data = file.read().decode('utf-8-sig') # Remove BOM
             j_data = j_data.encode('utf-8') # Reencode without BOM
-            s.word_map_05 = json.loads(j_data, cls=ComplexDecoder)
+            s.word_map_05 = json.loads(j_data)
             file.close()
 
     def load(s, is_refresh):

@@ -1346,6 +1346,31 @@ class VariantFinder:
 
         return agglom_data
 
+    def printStat(s, file, LAYERS, RADII, l_map, label, stat_key):
+        for layer in LAYERS:
+            file.write(label)
+            for r in RADII:
+                file.write('\t' + str(l_map[layer][r][stat_key]))
+            file.write('\t\t')
+        file.write('\n')
+
+    def printPercentile(s, file, LAYERS, RADII, l_map, label, percentile):
+        for layer in LAYERS:
+            file.write(label)
+            for r in RADII:
+                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], percentile)))
+            file.write('\t\t')
+        file.write('\n')
+
+    def printAgglom(s, file, LAYERS, RADII, l_map, label, percentile, ag_key, is_gaps):
+        for layer in LAYERS:
+            file.write(label)
+            for r in RADII:
+                ag = s.computeAgglom(l_map[layer][r]['density_profile'], percentile, is_gaps)
+                file.write('\t' + str(ag[ag_key]))
+            file.write('\t\t')
+        file.write('\n')
+
     def computeDensity(s, is_interval):
         c = s.config
         s.info('Computing density')
@@ -1380,7 +1405,7 @@ class VariantFinder:
                         s.initLayerData(l_map['L'], vu.label, vu.word_index_05)
 
                 if vu.getReadingForCorrector('01C1'):
-                    s.initLayerData(l_map['01C1'], vu.label, vu.word_index_03)
+                    s.initLayerData(l_map['01C1'], vu.label, vu.word_index_05)
 
                 for group in c.get('coreGroups'):
                     if group['name'] != 'F03' and group['name'] != 'C565': continue
@@ -1388,7 +1413,7 @@ class VariantFinder:
                         s.initLayerData(l_map[group['name']], vu.label, vu.word_index_05)
 
                 if vu.getReadingForCorrector('01A'):
-                    s.initLayerData(l_map['01A'], vu.label, vu.word_index_03)
+                    s.initLayerData(l_map['01A'], vu.label, vu.word_index_05)
 
                 if vu.getReadingForCorrector('05A'):
                     s.initLayerData(l_map['05A'], vu.label, vu.word_index_05)
@@ -1449,12 +1474,7 @@ class VariantFinder:
             file.write('\t\t')
         file.write('\n')
 
-        for layer in LAYERS:
-            file.write('Mean:')
-            for r in RADII:
-                file.write('\t' + str(l_map[layer][r]['mean']))
-            file.write('\t\t')
-        file.write('\n')
+        s.printStat(file, LAYERS, RADII, l_map, 'Mean:', 'mean')
 
         for layer in LAYERS:
             file.write('STD:')
@@ -1463,20 +1483,9 @@ class VariantFinder:
             file.write('\t\t')
         file.write('\n')
 
-        for layer in LAYERS:
-            file.write('Min:')
-            for r in RADII:
-                file.write('\t' + str(l_map[layer][r]['min']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('Max:')
-            for r in RADII:
-                file.write('\t' + str(l_map[layer][r]['max']))
-            file.write('\t\t')
-        file.write('\n')
-
+        s.printStat(file, LAYERS, RADII, l_map, 'Min:', 'min')
+        s.printStat(file, LAYERS, RADII, l_map, 'Max:', 'max')
+        
         for layer in LAYERS:
             file.write('Median:')
             for r in RADII:
@@ -1499,334 +1508,47 @@ class VariantFinder:
             file.write('\t\t')
         file.write('\n')
 
-        for layer in LAYERS:
-            file.write('95 Percentile:')
-            for r in RADII:
-                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], 95)))
-            file.write('\t\t')
-        file.write('\n')
+        s.printPercentile(file, LAYERS, RADII, l_map, '95 Percentile:', 95)
+        s.printAgglom(file, LAYERS, RADII, l_map, '95% Agglomerations:', 95, 'count', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '95% Ag Mean Span:', 95, 'mean_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '95% Ag Max Span:', 95, 'max_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '95% Ag Min Span:', 95, 'min_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '95% Ag Median Span:', 95, 'median_span', False)
 
-        for layer in LAYERS:
-            file.write('95% Agglomerations:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 95, False)
-                file.write('\t' + str(ag['count']))
-            file.write('\t\t')
-        file.write('\n')
+        s.printPercentile(file, LAYERS, RADII, l_map, '90 Percentile:', 90)
+        s.printAgglom(file, LAYERS, RADII, l_map, '90% Agglomerations:', 90, 'count', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '90% Ag Mean Span:', 90, 'mean_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '90% Ag Max Span:', 90, 'max_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '90% Ag Min Span:', 90, 'min_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '90% Ag Median Span:', 90, 'median_span', False)
 
-        for layer in LAYERS:
-            file.write('95% Ag Mean Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 95, False)
-                file.write('\t' + str(ag['mean_span']))
-            file.write('\t\t')
-        file.write('\n')
+        s.printPercentile(file, LAYERS, RADII, l_map, '80 Percentile:', 80)
+        s.printAgglom(file, LAYERS, RADII, l_map, '80% Agglomerations:', 80, 'count', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '80% Ag Mean Span:', 80, 'mean_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '80% Ag Max Span:', 80, 'max_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '80% Ag Min Span:', 80, 'min_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '80% Ag Median Span:', 80, 'median_span', False)
 
-        for layer in LAYERS:
-            file.write('95% Ag Max Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 95, False)
-                file.write('\t' + str(ag['max_span']))
-            file.write('\t\t')
-        file.write('\n')
+        s.printPercentile(file, LAYERS, RADII, l_map, '70 Percentile:', 70)
+        s.printAgglom(file, LAYERS, RADII, l_map, '70% Agglomerations:', 70, 'count', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '70% Ag Mean Span:', 70, 'mean_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '70% Ag Max Span:', 70, 'max_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '70% Ag Min Span:', 70, 'min_span', False)
+        s.printAgglom(file, LAYERS, RADII, l_map, '70% Ag Median Span:', 70, 'median_span', False)
 
-        for layer in LAYERS:
-            file.write('95% Ag Min Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 95, False)
-                file.write('\t' + str(ag['min_span']))
-            file.write('\t\t')
-        file.write('\n')
+        s.printPercentile(file, LAYERS, RADII, l_map, '5 Percentile:', 5)
+        s.printAgglom(file, LAYERS, RADII, l_map, '5% Agglomerations:', 5, 'count', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '5% Ag Mean Span:', 5, 'mean_span', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '5% Ag Max Span:', 5, 'max_span', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '5% Ag Min Span:', 5, 'min_span', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '5% Ag Median Span:', 5, 'median_span', True)
 
-        for layer in LAYERS:
-            file.write('95% Ag Median Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 95, False)
-                file.write('\t' + str(ag['median_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('90 Percentile:')
-            for r in RADII:
-                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], 90)))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('90% Agglomerations:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 90, False)
-                file.write('\t' + str(ag['count']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('90% Ag Mean Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 90, False)
-                file.write('\t' + str(ag['mean_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('90% Ag Max Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 90, False)
-                file.write('\t' + str(ag['max_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('90% Ag Min Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 90, False)
-                file.write('\t' + str(ag['min_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('90% Ag Median Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 90, False)
-                file.write('\t' + str(ag['median_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('80 Percentile:')
-            for r in RADII:
-                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], 80)))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('80% Agglomerations:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 80, False)
-                file.write('\t' + str(ag['count']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('80% Ag Mean Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 80, False)
-                file.write('\t' + str(ag['mean_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('80% Ag Max Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 80, False)
-                file.write('\t' + str(ag['max_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('80% Ag Min Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 80, False)
-                file.write('\t' + str(ag['min_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('80% Ag Median Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 80, False)
-                file.write('\t' + str(ag['median_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('75 Percentile:')
-            for r in RADII:
-                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], 75)))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('75% Agglomerations:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 75, False)
-                file.write('\t' + str(ag['count']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('75% Ag Mean Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 75, False)
-                file.write('\t' + str(ag['mean_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('75% Ag Max Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 75, False)
-                file.write('\t' + str(ag['max_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('75% Ag Min Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 75, False)
-                file.write('\t' + str(ag['min_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('75% Ag Median Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 75, False)
-                file.write('\t' + str(ag['median_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('70 Percentile:')
-            for r in RADII:
-                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], 70)))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('70% Agglomerations:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 70, False)
-                file.write('\t' + str(ag['count']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('70% Ag Mean Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 70, False)
-                file.write('\t' + str(ag['mean_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('70% Ag Max Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 70, False)
-                file.write('\t' + str(ag['max_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('70% Ag Min Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 70, False)
-                file.write('\t' + str(ag['min_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('70% Ag Median Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 70, False)
-                file.write('\t' + str(ag['median_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('5 Percentile:')
-            for r in RADII:
-                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], 5)))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('5% Gaps:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 5, True)
-                file.write('\t' + str(ag['count']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('5% Gap Mean Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 5, True)
-                file.write('\t' + str(ag['mean_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('5% Gap Max Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 5, True)
-                file.write('\t' + str(ag['max_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('5% Gap Min Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 5, True)
-                file.write('\t' + str(ag['min_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('5% Gap Median Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 5, True)
-                file.write('\t' + str(ag['median_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('10 Percentile:')
-            for r in RADII:
-                file.write('\t' + str(np.percentile(l_map[layer][r]['density_profile'], 10)))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('10% Gaps:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 10, True)
-                file.write('\t' + str(ag['count']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('10% Gap Mean Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 10, True)
-                file.write('\t' + str(ag['mean_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('10% Gap Max Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 10, True)
-                file.write('\t' + str(ag['max_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('10% Gap Min Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 10, True)
-                file.write('\t' + str(ag['min_span']))
-            file.write('\t\t')
-        file.write('\n')
-
-        for layer in LAYERS:
-            file.write('10% Gap Median Span:')
-            for r in RADII:
-                ag = s.computeAgglom(l_map[layer][r]['density_profile'], 10, True)
-                file.write('\t' + str(ag['median_span']))
-            file.write('\t\t')
-        file.write('\n')
+        s.printPercentile(file, LAYERS, RADII, l_map, '10 Percentile:', 10)
+        s.printAgglom(file, LAYERS, RADII, l_map, '10% Agglomerations:', 10, 'count', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '10% Ag Mean Span:', 10, 'mean_span', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '10% Ag Max Span:', 10, 'max_span', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '10% Ag Min Span:', 10, 'min_span', True)
+        s.printAgglom(file, LAYERS, RADII, l_map, '10% Ag Median Span:', 10, 'median_span', True)
 
         file.write('\n')
 
@@ -1847,18 +1569,15 @@ class VariantFinder:
                     file.write('\t\t')
                     continue
 
-                label = str(idx)
+                label = str(idx + 1)
                 if not is_interval:
                     label = l_map[layer]['labels'][idx]
                 else:
-                    label_key = (idx + 1) * INTERVAL
-                    if layer == '01C1' or layer == '01A':
-                        label = word_map_03[label_key] if word_map_03.has_key(label_key) else ''
-                    else:
-                        label = word_map_05[label_key] if word_map_05.has_key(label_key) else ''
+                    label_key = str((idx + 1) * INTERVAL)
+                    label = word_map_05[label_key] if word_map_05.has_key(label_key) else ''
                     if label:
                         label = label + ' '
-                    label = label + '(' + str(idx) + ')'
+                    label = label + '(' + str(idx + 1) + ')'
                 file.write(label)
                 for r in RADII:
                     file.write('\t' + str(l_map[layer][r]['density_profile'][idx]))
@@ -1930,7 +1649,7 @@ class VariantFinder:
         elif o.extra:
             s.fixHarmLayers()
         elif o.density:
-            s.computeDensity(False)
+            #s.computeDensity(False)
             s.computeDensity(True)
         else:
             s.findMultiwayVariants()
