@@ -34,7 +34,7 @@ class WordCounter:
         vu_stack_05 = []
 
         file = open(c.get('outputFolder') + 'word-counter.log', 'w+')
-        file.write('03 Count\t05 Count\n')
+        file.write('03 Index\t03 Verse\t05 Index\t05 Verse\n')
         for i in range(1, 17):
             vmodel = chapterLookup[str(i)]
             for slot_idx, addr in enumerate(vmodel['addresses']):
@@ -42,7 +42,7 @@ class WordCounter:
                 if addr.getTextFormForMS('03') != 'om.':
                     s.wordIndex03 = s.wordIndex03 + 1
                     s.word_map_03[s.wordIndex03] = str(addr.chapter_num) + ':' + str(addr.verse_num)
-                    file.write(str(s.wordIndex03) + '\t')
+                    file.write(str(s.wordIndex03) + '\t' + s.word_map_03[s.wordIndex03] + '\t')
                     lastTextIndex03 = s.wordIndex03
                     has_text = True
 
@@ -65,7 +65,7 @@ class WordCounter:
                 if addr.getTextFormForMS('05') != 'om.':
                     s.wordIndex05 = s.wordIndex05 + 1
                     s.word_map_05[s.wordIndex05] = str(addr.chapter_num) + ':' + str(addr.verse_num)
-                    file.write(str(s.wordIndex05) + '\n')
+                    file.write(str(s.wordIndex05) + '\t' + s.word_map_05[s.wordIndex05] + '\n')
                     lastTextIndex05 = s.wordIndex05
                     has_text = True
 
