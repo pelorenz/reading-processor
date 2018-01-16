@@ -614,7 +614,7 @@ class VariantFinder:
                             r_data = {
                                 'apparatusStr': vu.toApparatusString(),
                                 'mss': mssListToString(reading.manuscripts),
-                                'groupMSS': mssGroupListToString(reading.manuscripts, msGroupAssignments, g_counts),
+                                'groupMSS': mssGroupListToString(reading.manuscripts, msGroupAssignments, g_counts, ref_ms),
                                 'groupCounts': g_counts,
                                 'isBilingual': is_bilingual,
                                 'readingsDisplay': readings_str,
@@ -1155,7 +1155,7 @@ class VariantFinder:
         s.info('Generating layer apparatus')
 
         msGroupAssignments = c.get('msGroupAssignments')
-        apparatusLabels = c.get('apparatusLabels')
+        apparatusLabels = c.get('apparatusLabels') # if present, layer is ignored
         if apparatusLabels:
             apparatusLabels = apparatusLabels.split('|')
 
@@ -1191,7 +1191,7 @@ class VariantFinder:
 
                     r_mss = ''
                     if apparatusLabels:
-                        r_mss = mssGroupListToString(r_reading.manuscripts, msGroupAssignments, None)
+                        r_mss = mssGroupListToString(r_reading.manuscripts, msGroupAssignments, None, None)
                     else:
                         r_mss = mssListToString(r_reading.manuscripts)
 

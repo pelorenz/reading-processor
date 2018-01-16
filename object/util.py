@@ -157,7 +157,7 @@ def groupMapToString(g_map, g_list):
         g_str = g_str + ms_str + ')'
     return g_str
 
-def mssGroupListToString(mss_list, msGroups, g_map):
+def mssGroupListToString(mss_list, msGroups, g_map, excludeMS):
     mss_list = sorted(mss_list, cmp=sortMSS)
 
     # make g_map if null
@@ -165,6 +165,9 @@ def mssGroupListToString(mss_list, msGroups, g_map):
         g_map = {}
         multi_mss = []
         for ms in mss_list:
+            if excludeMS and excludeMS == ms:
+                continue
+
             if not msGroups.has_key(ms): # Latins and non-config'ed Greeks excluded
                 continue
 
