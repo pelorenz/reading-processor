@@ -1230,6 +1230,103 @@ class VariantFinder:
 
             csv_file.close()
 
+    def refNonMainstream(s):
+        c = s.config
+
+        file = open(c.get('finderFolder') + '/' + s.refMS + '-nonmainstream.csv', 'w+')
+        file.write(('Sort ID\tLabel\tReading\tSupport\tAll Readings\n').encode('UTF-8'))
+        for addr in s.variantModel['addresses']:
+            for vu in addr.variation_units:
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                if vu.isReferenceSingular(s.refMS):
+                    continue
+
+                reading = vu.getReadingForManuscript(s.refMS)
+                if not reading:
+                    continue
+
+                if reading.hasManuscript('35'):
+                    continue
+
+                file.write((s.generateSortLabel(vu.label) + u'\t').encode('UTF-8'))
+                file.write((vu.label + u'\t').encode('UTF-8'))
+                file.write((reading.getDisplayValue() + u'\t').encode('UTF-8'))
+
+                mss_str = ''
+                for ms in reading.manuscripts:
+                    if mss_str:
+                        mss_str = mss_str + ' '
+                    mss_str = mss_str + ms
+
+                file.write((mss_str + u'\t').encode('UTF-8'))
+
+                all_readings = ''
+                all_readings = all_readings + reading.getDisplayValue()
+                for rdg in vu.readings:
+                    if reading == rdg:
+                        continue
+
+                    if len(all_readings) > 0:
+                        all_readings = all_readings + ' | '
+                    all_readings = all_readings + rdg.getDisplayValue()
+
+                file.write((all_readings + u'\n').encode('UTF-8'))
+
+        file.close()
+
+    def refSingulars(s):
+        c = s.config
+
+        msGroupAssignments = c.get('msGroupAssignments')
+
+        file = open(c.get('finderFolder') + '/' + s.refMS + '-singulars.csv', 'w+')
+        file.write(('Sort ID\tLabel\tReading\tSupport\tAll Readings\n').encode('UTF-8'))
+        for addr in s.variantModel['addresses']:
+            for vu in addr.variation_units:
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                reading = vu.getReadingForManuscript(s.refMS)
+                if not reading:
+                    continue
+
+                g_counts = {}
+                g_count = reading.countNonRefGreekManuscriptsByGroup(s.refMS, msGroupAssignments, g_counts)
+                if vu.isReferenceSingular(s.refMS):
+                    file.write((s.generateSortLabel(vu.label) + u'\t').encode('UTF-8'))
+                    file.write((vu.label + u'\t').encode('UTF-8'))
+                    file.write((reading.getDisplayValue() + u'\t\t').encode('UTF-8'))
+                elif g_count <= 1:
+                    file.write((s.generateSortLabel(vu.label) + u'\t').encode('UTF-8'))
+                    file.write((vu.label + u'\t').encode('UTF-8'))
+                    file.write((reading.getDisplayValue() + u'\t').encode('UTF-8'))
+
+                    mss_str = ''
+                    for ms in reading.manuscripts:
+                        if mss_str:
+                            mss_str = mss_str + ' '
+                        mss_str = mss_str + ms
+
+                    file.write((mss_str + u'\t').encode('UTF-8'))
+                else:
+                    continue
+
+                all_readings = ''
+                all_readings = all_readings + reading.getDisplayValue()
+                for rdg in vu.readings:
+                    if reading == rdg:
+                        continue
+
+                    if len(all_readings) > 0:
+                        all_readings = all_readings + ' | '
+                    all_readings = all_readings + rdg.getDisplayValue()
+
+                file.write((all_readings + u'\n').encode('UTF-8'))
+
+        file.close()
+                    
     def fixHarmLayers(s):
         c = s.config
 
@@ -1660,7 +1757,9 @@ class VariantFinder:
         elif o.latinlayer:
             s.buildLatinLayer()
         elif o.extra:
-            s.fixHarmLayers()
+            s.refNonMainstream()
+            #s.refSingulars()
+            #s.fixHarmLayers()
         elif o.density:
             s.computeDensity(False)
             s.computeDensity(True)
@@ -1695,6 +1794,9 @@ class VariantFinder:
 #
 # Latin-layer builder
 # variantFinder.py -v -a c01-16 -R 05 -Y
+#
+# Reference singulars
+# variantFinder.py -v -a c01-16 -R 032 -X
 #
 # Group MSS
 # variantFinder.py -v -a c01-16 -P
