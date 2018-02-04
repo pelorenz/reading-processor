@@ -1282,7 +1282,7 @@ class VariantFinder:
         msGroupAssignments = c.get('msGroupAssignments')
 
         file = open(c.get('finderFolder') + '/' + s.refMS + '-singulars.csv', 'w+')
-        file.write(('Sort ID\tLabel\tReading\tSupport\tAll Readings\n').encode('UTF-8'))
+        file.write(('Sort ID\tLabel\tReading\tSupport\tMainstream Reading\tAll Readings\n').encode('UTF-8'))
         for addr in s.variantModel['addresses']:
             for vu in addr.variation_units:
                 if not vu.startingAddress:
@@ -1291,6 +1291,8 @@ class VariantFinder:
                 reading = vu.getReadingForManuscript(s.refMS)
                 if not reading:
                     continue
+
+                mainstream_reading = vu.getReadingForManuscript('35')
 
                 g_counts = {}
                 g_count = reading.countNonRefGreekManuscriptsByGroup(s.refMS, msGroupAssignments, g_counts)
@@ -1313,10 +1315,13 @@ class VariantFinder:
                 else:
                     continue
 
+                file.write((mainstream_reading.getDisplayValue() + u'\t').encode('UTF-8'))
+
                 all_readings = ''
                 all_readings = all_readings + reading.getDisplayValue()
+                all_readings = all_readings + '|' + mainstream_reading.getDisplayValue()
                 for rdg in vu.readings:
-                    if reading == rdg:
+                    if reading == rdg or mainstream_reading == rdg:
                         continue
 
                     if len(all_readings) > 0:
@@ -1757,8 +1762,8 @@ class VariantFinder:
         elif o.latinlayer:
             s.buildLatinLayer()
         elif o.extra:
-            s.refNonMainstream()
-            #s.refSingulars()
+            #s.refNonMainstream()
+            s.refSingulars()
             #s.fixHarmLayers()
         elif o.density:
             s.computeDensity(False)

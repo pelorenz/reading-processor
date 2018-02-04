@@ -426,7 +426,7 @@ class CorAnalyzer:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
-# Produce harmonization analysis for reference MSS
+# Produce correction analysis for reference MSS
 # corAnalyzer.py -v -R 05 -f bezaecor-01
 # corAnalyzer.py -v -R 01 -f sinaicor-01
 CorAnalyzer().main(sys.argv[1:])
