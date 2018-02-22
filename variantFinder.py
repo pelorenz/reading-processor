@@ -436,6 +436,66 @@ class VariantFinder:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
+    def buildNonMajorityLayers(s):
+        c = s.config
+        s.info('Building non-majority layers by groups')
+
+        ref_ms = s.refMS
+        msGroupAssignments = c.get('msGroupAssignments')
+
+        file_name = c.get('finderFolder') + '/bezae-nm-base-' + s.range_id + '.csv'
+        file = open(file_name, 'w+')
+        file.write('Sort Ref\tReference\tLayer\tReadings\tMSS\tMSS (Indiv)\tLatin Count\tGreek Count (ungrouped)\tGreek Count (grouped)\tReading Count\tGroups\tApparatus\n')
+        for addr in s.variantModel['addresses']:
+            for vidx, vu in enumerate(addr.variation_units):
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                r_reading = vu.getReadingForManuscript(ref_ms)
+                r_layer = s.computeLayer2(ref_ms, vu, r_reading)
+                if r_layer != 'BB' and r_layer != 'CC' and r_layer != 'GG' and r_layer != 'WW':
+                    continue
+
+                indiv_mss = []
+                g_counts = {}
+                nonref_count = 0
+                latin_count = r_reading.countNonRefLatinManuscripts(ref_ms)
+                nonref_count = r_reading.countNonRefGreekManuscriptsByGroup(ref_ms, msGroupAssignments, g_counts)
+                nonref_count_indiv = 0
+                nonref_count_indiv = r_reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
+
+                label = vu.label
+                sort_label = s.generateSortLabel(label)
+                readings_str = readingsToString(vu, r_reading)
+                mss = mssListToString(r_reading.manuscripts)
+                groupMSS = mssGroupListToString(r_reading.manuscripts, msGroupAssignments, g_counts, ref_ms)
+
+                g_list = g_counts.keys()
+                g_str = groupMapToString(g_counts, g_list)
+
+                if r_layer == 'CC':
+                    for ms in indiv_mss:
+                        if msGroupAssignments[ms] == 'F03':
+                            r_layer = 'CB'
+                            break
+
+                if r_layer == 'CC':
+                    for ms in indiv_mss:
+                        if ms == '032':
+                            r_layer = 'CW'
+                            break
+
+                if r_layer == 'CC':
+                    r_layer = 'CCC'
+                    for ms in indiv_mss:
+                        if msGroupAssignments[ms] != 'C565':
+                            r_layer = 'CC'
+                            break
+
+                file.write((sort_label + u'\t' + label + u'\t' + r_layer + u'\t' + readings_str + u'\t' + groupMSS + u'\t' + mss + u'\t' + str(latin_count) + u'\t' + str(nonref_count_indiv) + u'\t' + str(nonref_count) + u'\t' + str(len(vu.readings)) + u'\t' + g_str + u'\t' + vu.toApparatusString() + u'\n').encode('UTF-8'))
+
+        file.close()
+
     def buildLatinLayer(s):
         c = s.config
         s.info('Building Latin layer by groups')
@@ -1761,6 +1821,8 @@ class VariantFinder:
             s.generateVariationHeader()
         elif o.latinlayer:
             s.buildLatinLayer()
+        elif o.nonmajoritylayers:
+            s.buildNonMajorityLayers()
         elif o.extra:
             #s.refNonMainstream()
             s.refSingulars()
@@ -1799,6 +1861,9 @@ class VariantFinder:
 #
 # Latin-layer builder
 # variantFinder.py -v -a c01-16 -R 05 -Y
+#
+# Non-majority base layers builder
+# variantFinder.py -v -a c01-16 -R 05 -N
 #
 # Reference singulars
 # variantFinder.py -v -a c01-16 -R 032 -X
