@@ -1761,6 +1761,84 @@ class VariantFinder:
 
         s.writeDensity(LAYERS, RADII, l_map, INTERVAL, interval_points, is_interval, True)
 
+    def bobbiensisReadings(s):
+        c = s.config
+        s.info('Finding vercellensis readings')
+
+        file = open(c.get('finderFolder') + '/vercellensis.csv', 'w+')
+        file.write('Verse\tReadings\tMSS\tIs Singular\tHas 03\tHas Distinctive 03\tHas 565\tHas Distinctive 565\tHas 05\tOnly VL\tOnly VL(1 3)\tApparatus\n')
+
+        ref_ms = 'VL3'
+        for addr in s.variantModel['addresses']:
+            for vidx, vu in enumerate(addr.variation_units):
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                if vu.isSingular() and not vu.isReferenceSingular(ref_ms):
+                    continue
+
+                r_reading = vu.getReadingForManuscript(ref_ms)
+                if not r_reading:
+                    continue
+
+                if r_reading.hasManuscript('35'):
+                    continue
+
+                m_reading = vu.getReadingForManuscript('35')
+
+                all_readings = ''
+                all_readings = all_readings + r_reading.getDisplayValue() + ' | ' + m_reading.getDisplayValue()
+                for reading in vu.readings:
+                    if reading == r_reading or reading == m_reading:
+                        continue
+
+                    if len(all_readings) > 0:
+                        all_readings = all_readings + ' | '
+                    all_readings = all_readings + reading.getDisplayValue()
+
+                is_singular = ''
+                if len(r_reading.manuscripts) == 1:
+                    is_singular = 'Y'
+
+                has_03 = ''
+                if '03' in r_reading.manuscripts:
+                    has_03 = 'Y'
+
+                has_distinctive_03 = ''
+                if has_03 and len(r_reading.manuscripts) < 10:
+                    has_distinctive_03 = 'Y'
+
+                has_565 = ''
+                if '565' in r_reading.manuscripts or '038' in r_reading.manuscripts:
+                    has_565 = 'Y'
+
+                has_distinctive_565 = ''
+                if has_565 and len(r_reading.manuscripts) < 10:
+                    has_distinctive_565 = 'Y'
+
+                has_05 = ''
+                if '05' in r_reading.manuscripts:
+                    has_05 = 'Y'
+
+                only_vl = 'Y'
+                for ms in r_reading.manuscripts:
+                    if ms[:2] != 'VL' and ms != '19A':
+                        only_vl = ''
+                        break
+
+                vl1_and_vl3 = ''
+                bob_reading = vu.getReadingForManuscript('VL1')
+                if bob_reading and bob_reading != r_reading:
+                    vl1_and_vl3 = 'Y'
+                    for ms in bob_reading.manuscripts:
+                        if ms[:2] != 'VL' and ms != '19A':
+                            vl1_and_vl3 = ''
+                            break
+
+                file.write((vu.label + u'\t' + all_readings + u'\t' + mssListToString(r_reading.manuscripts) + u'\t' + is_singular + u'\t' + has_03 + u'\t' + has_distinctive_03 + u'\t' + has_565 + u'\t' + has_distinctive_565 + u'\t' + has_05 + u'\t' + only_vl + u'\t' + vl1_and_vl3 + u'\t' + vu.toApparatusString() + u'\n').encode('UTF-8'))
+
+        file.close()
+
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
@@ -1825,8 +1903,9 @@ class VariantFinder:
             s.buildNonMajorityLayers()
         elif o.extra:
             #s.refNonMainstream()
-            s.refSingulars()
+            #s.refSingulars()
             #s.fixHarmLayers()
+            s.bobbiensisReadings()
         elif o.density:
             s.computeDensity(False)
             s.computeDensity(True)
@@ -1867,6 +1946,9 @@ class VariantFinder:
 #
 # Reference singulars
 # variantFinder.py -v -a c01-16 -R 032 -X
+#
+# Bobbiensis
+# variantFinder.py -v -a c01-16 -R 05 -X
 #
 # Group MSS
 # variantFinder.py -v -a c01-16 -P
