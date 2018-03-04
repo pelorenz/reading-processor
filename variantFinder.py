@@ -1665,7 +1665,7 @@ class VariantFinder:
         s.info('Computing density')
 
         INTERVAL = 15
-        LAYERS = [ 'L', '01C1', 'F03', 'C565', '01A', '05A', '05B', 'G', 'M' ]
+        LAYERS = [ 'L', '01C1', 'F03', 'C565', '01A', '05A', '05B', 'G', 'M', 'VL5' ]
         MAX_WORD_INDEX = 11435
         RADII = [ 30, 60, 90, 120, 150, 180 ]
         REF_MS = '05'
@@ -1711,6 +1711,11 @@ class VariantFinder:
                     s.initLayerData(l_map['M'], vu.label, vu.word_index_05)
                 elif reading and (layer[:1] == 'B' or layer[:1] == 'C' or layer[:1] == 'G' or layer[:1] == 'W'):
                     s.initLayerData(l_map['G'], vu.label, vu.word_index_05)
+
+                vl5_reading = vu.getReadingForManuscript('VL5')
+                if vl5_reading and not vu.isSingular():
+                    if not vl5_reading.hasManuscript('35') and not vl5_reading.hasManuscript('05'):
+                        s.initLayerData(l_map['VL5'], vu.label, vu.word_index_05)
 
         for layer in LAYERS:
             all_points = l_map[layer]['points']
@@ -1760,6 +1765,152 @@ class VariantFinder:
                 l_map[layer][r]['mean'] = round(sum * 1.0 / num_points, 3) if num_points > 0 else 0.0
 
         s.writeDensity(LAYERS, RADII, l_map, INTERVAL, interval_points, is_interval, True)
+
+    def bezanLatinAgreements(s):
+        c = s.config
+        s.info('Computing Bezan Latin agreements')
+
+        latin_mss = [ '05' ]
+        latin_mss.extend(c.get('latinMSS'))
+
+        italian_mss = [ 'VL4', 'VL8', 'VL13', 'VL14', 'VL17' ]
+
+        stats = {}
+        attested_counts = {}
+        for ms in latin_mss:
+            stats[ms] = []
+            attested_counts[ms] = 0
+        ital_stats = []
+
+        ref_ms = 'VL5'
+        for addr in s.variantModel['addresses']:
+            for vidx, vu in enumerate(addr.variation_units):
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                if vu.isSingular() and not vu.isReferenceSingular(ref_ms):
+                    continue
+
+                r_reading = vu.getReadingForManuscript(ref_ms)
+                if not r_reading:
+                    continue
+
+                if r_reading.hasManuscript('35'):
+                    continue
+
+                b_reading = vu.getReadingForManuscript('05')
+                m_reading = vu.getReadingForManuscript('35')
+
+                extant_mss = vu.getExtantManuscripts()
+                for ms in latin_mss:
+                    if ms in extant_mss:
+                        attested_counts[ms] = attested_counts[ms] + 1
+
+                all_readings = ''
+                all_readings = all_readings + r_reading.getDisplayValue() + ' | ' + m_reading.getDisplayValue()
+                for reading in vu.readings:
+                    if reading == r_reading or reading == m_reading:
+                        continue
+
+                    if len(all_readings) > 0:
+                        all_readings = all_readings + ' | '
+                    all_readings = all_readings + reading.getDisplayValue()
+
+                r_info = {}
+                r_info['verse'] = vu.label
+                r_info['all_readings'] = all_readings
+                r_info['mss'] = r_reading.manuscripts
+                r_info['apparatus'] = vu.toApparatusString()
+                r_info['has_05'] = True if '05' in r_reading.manuscripts else False
+                r_info['reading_05'] = b_reading.getDisplayValue() if b_reading else ''
+                r_info['reading_35'] = m_reading.getDisplayValue()
+                r_info['reading_VL5'] = r_reading.getDisplayValue()
+                r_info['word_index'] = vu.word_index_05
+
+                for ms in r_reading.manuscripts:
+                    if ms in latin_mss:
+                        stats[ms].append(r_info)
+
+                if set(italian_mss) & set(r_reading.manuscripts):
+                    ital_stats.append(r_info)
+
+        file = open(c.get('finderFolder') + '/bezan-latin-agreements-summary.csv', 'w+')
+        file.write('MS\tAgreements\tAttested\tRatio\tPercent\n')
+        for ms in latin_mss:
+            agreements = len(stats[ms])
+            percent = round(agreements * 1.0 / attested_counts[ms], 3) if attested_counts[ms] > 0 else 0.0
+            file.write(ms + '\t' + str(agreements) + '\t' + str(attested_counts[ms]) + '\t' + str(agreements) + '/' + str(attested_counts[ms]) + '\t' + str(percent) + '\n')
+
+        agreements = len(ital_stats)
+        percent = round(agreements * 1.0 / attested_counts['VL5'], 3) if attested_counts['VL5'] > 0 else 0.0
+        file.write('Ital\t' + str(agreements) + '\t' + str(attested_counts['VL5']) + '\t' + str(agreements) + '/' + str(attested_counts['VL5']) + '\t' + str(percent) + '\n')
+
+        file.close()
+
+        file = open(c.get('finderFolder') + '/bezan-col-diffs.csv', 'w+')
+        file.write('Sort ID\tWord Index\tHas 05\tVerse\tVL5 Reading\t05 Reading\tMainstream\tReadings\tMSS\tApparatus\n')
+        for info in stats['VL5']:
+            has_05 = 'Y' if info['has_05'] else 'N'
+            file.write((s.generateSortLabel(info['verse']) + u'\t' + str(info['word_index']) + u'\t' + has_05 + u'\t' + info['verse'] + u'\t' + info['reading_VL5'] + u'\t' + info['reading_05'] + u'\t' + info['reading_35'] + u'\t' + info['all_readings'] + u'\t' + mssListToString(info['mss']) + u'\t' + info['apparatus'] + u'\n').encode('UTF-8'))
+        file.close()
+
+    def alexAgreements(s):
+        c = s.config
+        s.info('Computing Alex agreements')
+
+        alex_mss = [ 'P88', '01', '03', '04', '019', '037', '044', '083', '0274', '33', '579', '892', '1342' ]
+        core_mss = [ '01', '019', '044' ]
+
+        stats = {}
+        attested_counts = {}
+        for ms in alex_mss:
+            stats[ms] = []
+            attested_counts[ms] = 0
+        core_stats = []
+
+        ref_ms = '03'
+        for addr in s.variantModel['addresses']:
+            for vidx, vu in enumerate(addr.variation_units):
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                if vu.isSingular() and not vu.isReferenceSingular(ref_ms):
+                    continue
+
+                r_reading = vu.getReadingForManuscript(ref_ms)
+                if not r_reading:
+                    continue
+
+                if r_reading.hasManuscript('35'):
+                    continue
+
+                extant_mss = vu.getExtantManuscripts()
+                for ms in alex_mss:
+                    if ms in extant_mss:
+                        attested_counts[ms] = attested_counts[ms] + 1
+
+                r_info = {}
+                r_info['verse'] = vu.label
+
+                for ms in r_reading.manuscripts:
+                    if ms in alex_mss:
+                        stats[ms].append(r_info)
+
+                if set(core_mss) & set(r_reading.manuscripts):
+                    core_stats.append(r_info)
+
+        file = open(c.get('finderFolder') + '/f03-agreements-summary.csv', 'w+')
+        file.write('MS\tAgreements\tAttested\tRatio\tPercent\n')
+        for ms in alex_mss:
+            agreements = len(stats[ms])
+            percent = round(agreements * 1.0 / attested_counts[ms], 3) if attested_counts[ms] > 0 else 0.0
+            file.write(ms + '\t' + str(agreements) + '\t' + str(attested_counts[ms]) + '\t' + str(agreements) + '/' + str(attested_counts[ms]) + '\t' + str(percent) + '\n')
+
+        agreements = len(core_stats)
+        percent = round(agreements * 1.0 / attested_counts['03'], 3) if attested_counts['03'] > 0 else 0.0
+        file.write('Core\t' + str(agreements) + '\t' + str(attested_counts['03']) + '\t' + str(agreements) + '/' + str(attested_counts['03']) + '\t' + str(percent) + '\n')
+
+        file.close()
 
     def bobbiensisReadings(s):
         c = s.config
@@ -1822,7 +1973,7 @@ class VariantFinder:
 
                 only_vl = 'Y'
                 for ms in r_reading.manuscripts:
-                    if ms[:2] != 'VL' and ms != '19A':
+                    if ms[:2] != 'VL' and ms != '19A' and ms != 'vg':
                         only_vl = ''
                         break
 
@@ -1831,7 +1982,7 @@ class VariantFinder:
                 if bob_reading and bob_reading != r_reading:
                     vl1_and_vl3 = 'Y'
                     for ms in bob_reading.manuscripts:
-                        if ms[:2] != 'VL' and ms != '19A':
+                        if ms[:2] != 'VL' and ms != '19A' and ms != 'vg':
                             vl1_and_vl3 = ''
                             break
 
@@ -1905,7 +2056,9 @@ class VariantFinder:
             #s.refNonMainstream()
             #s.refSingulars()
             #s.fixHarmLayers()
-            s.bobbiensisReadings()
+            #s.bobbiensisReadings()
+            #s.bezanLatinAgreements()
+            s.alexAgreements()
         elif o.density:
             s.computeDensity(False)
             s.computeDensity(True)
