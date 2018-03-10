@@ -73,6 +73,35 @@ class VariantFinder:
             layer = layer + 'NR'
         return layer
 
+    def enhancedLayer(s, layer, ref_ms, reading, indiv_mss):
+        c = s.config
+        msGroupAssignments = c.get('msGroupAssignments')
+        indiv_mss = []
+        if not indiv_mss:
+            reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
+        if layer == 'CC':
+            for ms in indiv_mss:
+                if msGroupAssignments[ms] == 'F03':
+                    layer = 'CB'
+                    break
+        if layer == 'CC':
+            for ms in indiv_mss:
+                if ms == '032':
+                    layer = 'CW'
+                    break
+        if layer == 'CC':
+            layer = 'CCC'
+            for ms in indiv_mss:
+                if msGroupAssignments[ms] != 'C565':
+                    layer = 'CC'
+                    break
+        return layer
+
+    def computeLayer3(s, ref_ms, vu, reading):
+        indiv_mss = []
+        layer = s.computeLayer2(ref_ms, vu, reading)
+        return s.enhancedLayer(layer, ref_ms, reading, indiv_mss)
+
     def computeLayer2(s, ref_ms, vu, reading):
         c = s.config
 
@@ -473,24 +502,7 @@ class VariantFinder:
                 g_list = g_counts.keys()
                 g_str = groupMapToString(g_counts, g_list)
 
-                if r_layer == 'CC':
-                    for ms in indiv_mss:
-                        if msGroupAssignments[ms] == 'F03':
-                            r_layer = 'CB'
-                            break
-
-                if r_layer == 'CC':
-                    for ms in indiv_mss:
-                        if ms == '032':
-                            r_layer = 'CW'
-                            break
-
-                if r_layer == 'CC':
-                    r_layer = 'CCC'
-                    for ms in indiv_mss:
-                        if msGroupAssignments[ms] != 'C565':
-                            r_layer = 'CC'
-                            break
+                r_layer = s.enhancedLayer(r_layer, ref_ms, r_reading, indiv_mss)
 
                 file.write((sort_label + u'\t' + label + u'\t' + r_layer + u'\t' + readings_str + u'\t' + groupMSS + u'\t' + mss + u'\t' + str(latin_count) + u'\t' + str(nonref_count_indiv) + u'\t' + str(nonref_count) + u'\t' + str(len(vu.readings)) + u'\t' + g_str + u'\t' + vu.toApparatusString() + u'\n').encode('UTF-8'))
 
@@ -1773,14 +1785,19 @@ class VariantFinder:
         latin_mss = [ '05' ]
         latin_mss.extend(c.get('latinMSS'))
 
+        bz_lyrs = ['C', 'CC', 'CB', 'CW', 'CCC', 'B', 'BB', 'W', 'WW', 'G', 'GG', 'M', 'LATIN', 'NONLATIN_NONMAJORITY', 'VL5_NONMAJORITY']
         italian_mss = [ 'VL4', 'VL8', 'VL13', 'VL14', 'VL17' ]
 
-        stats = {}
-        attested_counts = {}
-        for ms in latin_mss:
-            stats[ms] = []
-            attested_counts[ms] = 0
-        ital_stats = []
+        all_layers = {}
+        for lyr in bz_lyrs:
+            layer_stats = {}
+            layer_stats['stats'] = {}
+            layer_stats['attested_counts'] = {}
+            for ms in latin_mss:
+                layer_stats['stats'][ms] = []
+                layer_stats['attested_counts'][ms] = 0
+            layer_stats['ital_stats'] = []
+            all_layers[lyr] = layer_stats
 
         ref_ms = 'VL5'
         for addr in s.variantModel['addresses']:
@@ -1788,7 +1805,7 @@ class VariantFinder:
                 if not vu.startingAddress:
                     vu.startingAddress = addr
 
-                if vu.isSingular() and not vu.isReferenceSingular(ref_ms):
+                if vu.isSingular() or vu.isReferenceSingular(ref_ms):
                     continue
 
                 r_reading = vu.getReadingForManuscript(ref_ms)
@@ -1800,11 +1817,6 @@ class VariantFinder:
 
                 b_reading = vu.getReadingForManuscript('05')
                 m_reading = vu.getReadingForManuscript('35')
-
-                extant_mss = vu.getExtantManuscripts()
-                for ms in latin_mss:
-                    if ms in extant_mss:
-                        attested_counts[ms] = attested_counts[ms] + 1
 
                 all_readings = ''
                 all_readings = all_readings + r_reading.getDisplayValue() + ' | ' + m_reading.getDisplayValue()
@@ -1827,29 +1839,71 @@ class VariantFinder:
                 r_info['reading_VL5'] = r_reading.getDisplayValue()
                 r_info['word_index'] = vu.word_index_05
 
+                extant_mss = vu.getExtantManuscripts()
+                for ms in latin_mss:
+                    if ms in extant_mss:
+                        all_layers['VL5_NONMAJORITY']['attested_counts'][ms] = all_layers['VL5_NONMAJORITY']['attested_counts'][ms] + 1
+
                 for ms in r_reading.manuscripts:
                     if ms in latin_mss:
-                        stats[ms].append(r_info)
+                        all_layers['VL5_NONMAJORITY']['stats'][ms].append(r_info)
 
                 if set(italian_mss) & set(r_reading.manuscripts):
-                    ital_stats.append(r_info)
+                    all_layers['VL5_NONMAJORITY']['ital_stats'].append(r_info)
+
+                if not b_reading:
+                    continue
+
+                layer = s.computeLayer3('05', vu, b_reading)
+                if layer[:1] == 'L':
+                    layer = 'LATIN'
+
+                if layer != 'LATIN' and layer != 'M':
+                    for ms in latin_mss:
+                        if ms in extant_mss:
+                            all_layers['NONLATIN_NONMAJORITY']['attested_counts'][ms] = all_layers['NONLATIN_NONMAJORITY']['attested_counts'][ms] + 1
+
+                    for ms in r_reading.manuscripts:
+                        if ms in latin_mss:
+                            all_layers['NONLATIN_NONMAJORITY']['stats'][ms].append(r_info)
+
+                    if set(italian_mss) & set(r_reading.manuscripts):
+                        all_layers['NONLATIN_NONMAJORITY']['ital_stats'].append(r_info)
+
+                if layer in bz_lyrs:
+                    if layer == 'NONLATIN_NONMAJORITY' or layer == 'VL5_NONMAJORITY':
+                        continue
+
+                    for ms in latin_mss:
+                        if ms in extant_mss:
+                            all_layers[layer]['attested_counts'][ms] = all_layers[layer]['attested_counts'][ms] + 1
+
+                    for ms in r_reading.manuscripts:
+                        if ms in latin_mss:
+                            all_layers[layer]['stats'][ms].append(r_info)
+
+                    if set(italian_mss) & set(r_reading.manuscripts):
+                        all_layers[layer]['ital_stats'].append(r_info)
 
         file = open(c.get('finderFolder') + '/bezan-latin-agreements-summary.csv', 'w+')
         file.write('MS\tAgreements\tAttested\tRatio\tPercent\n')
-        for ms in latin_mss:
-            agreements = len(stats[ms])
-            percent = round(agreements * 1.0 / attested_counts[ms], 3) if attested_counts[ms] > 0 else 0.0
-            file.write(ms + '\t' + str(agreements) + '\t' + str(attested_counts[ms]) + '\t' + str(agreements) + '/' + str(attested_counts[ms]) + '\t' + str(percent) + '\n')
+        for lyr in bz_lyrs:
+            file.write(lyr + '\n')
+            for ms in latin_mss:
+                agreements = len(all_layers[lyr]['stats'][ms])
+                attested_counts = all_layers[lyr]['attested_counts']
+                percent = round(agreements * 1.0 / attested_counts[ms], 3) if attested_counts[ms] > 0 else 0.0
+                file.write(ms + '\t' + str(agreements) + '\t' + str(attested_counts[ms]) + '\t' + str(agreements) + '/' + str(attested_counts[ms]) + '\t' + str(percent) + '\n')
 
-        agreements = len(ital_stats)
-        percent = round(agreements * 1.0 / attested_counts['VL5'], 3) if attested_counts['VL5'] > 0 else 0.0
-        file.write('Ital\t' + str(agreements) + '\t' + str(attested_counts['VL5']) + '\t' + str(agreements) + '/' + str(attested_counts['VL5']) + '\t' + str(percent) + '\n')
+            agreements = len(all_layers[lyr]['ital_stats'])
+            percent = round(agreements * 1.0 / attested_counts['VL5'], 3) if attested_counts['VL5'] > 0 else 0.0
+            file.write('Ital\t' + str(agreements) + '\t' + str(attested_counts['VL5']) + '\t' + str(agreements) + '/' + str(attested_counts['VL5']) + '\t' + str(percent) + '\n\n')
 
         file.close()
 
         file = open(c.get('finderFolder') + '/bezan-col-diffs.csv', 'w+')
         file.write('Sort ID\tWord Index\tHas 05\tVerse\tVL5 Reading\t05 Reading\tMainstream\tReadings\tMSS\tApparatus\n')
-        for info in stats['VL5']:
+        for info in all_layers['VL5_NONMAJORITY']['stats']['VL5']:
             has_05 = 'Y' if info['has_05'] else 'N'
             file.write((s.generateSortLabel(info['verse']) + u'\t' + str(info['word_index']) + u'\t' + has_05 + u'\t' + info['verse'] + u'\t' + info['reading_VL5'] + u'\t' + info['reading_05'] + u'\t' + info['reading_35'] + u'\t' + info['all_readings'] + u'\t' + mssListToString(info['mss']) + u'\t' + info['apparatus'] + u'\n').encode('UTF-8'))
         file.close()
@@ -2057,8 +2111,8 @@ class VariantFinder:
             #s.refSingulars()
             #s.fixHarmLayers()
             #s.bobbiensisReadings()
-            #s.bezanLatinAgreements()
-            s.alexAgreements()
+            s.bezanLatinAgreements()
+            #s.alexAgreements()
         elif o.density:
             s.computeDensity(False)
             s.computeDensity(True)
