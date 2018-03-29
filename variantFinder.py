@@ -482,7 +482,7 @@ class VariantFinder:
 
                 r_reading = vu.getReadingForManuscript(ref_ms)
                 r_layer = s.computeLayer2(ref_ms, vu, r_reading)
-                if r_layer != 'BB' and r_layer != 'CC' and r_layer != 'GG' and r_layer != 'WW':
+                if r_layer != 'BB' and r_layer != 'CC' and r_layer != 'GG' and r_layer != 'WW' and r_layer != 'CNR' and r_layer != 'CCNR' and r_layer != 'C' and r_layer != 'BNR' and r_layer != 'WNR' and r_layer != 'GNR':
                     continue
 
                 indiv_mss = []
@@ -2044,6 +2044,150 @@ class VariantFinder:
 
         file.close()
 
+    def analyzeGroups(s):
+        c = s.config
+        s.info('Analyzing groups')
+
+        groups = { 'F03': [], 'C565': [], '032': [], 'F1': [], 'F13': [], 'P45': [] }
+        f03 = set([ "03", "01", "019" ])
+        f1 = set([ "1", "1582"])
+        f13 = set([ "13", "346", "543", "788", "826", "828", "983"])
+        c565 = set([ "038", "565"])
+
+        count = 0
+        for addr in s.variantModel['addresses']:
+            for vidx, vu in enumerate(addr.variation_units):
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                # exclude singulars
+                if vu.isSingular() or vu.isReferenceSingular('05'):
+                    continue
+
+                latinLayerCore = c.get('latinLayerCoreVariants').split(u'|')
+                latinLayerMulti = c.get('latinLayerMultiVariants').split(u'|')
+                if vu.label in latinLayerCore or vu.label in latinLayerMulti:
+                    continue
+
+                reading = vu.getReadingForManuscript('05')
+                if not reading or reading.hasManuscript('35'):
+                    continue
+
+                mss = set(reading.manuscripts)
+                if mss & f03:
+                    groups['F03'].append(vu.label)
+
+                if mss & f1:
+                    groups['F1'].append(vu.label)
+
+                if mss & f13:
+                    groups['F13'].append(vu.label)
+
+                if mss & c565:
+                    groups['C565'].append(vu.label)
+
+                if '032' in mss:
+                    groups['032'].append(vu.label)
+
+                if 'P45' in mss:
+                    groups['P45'].append(vu.label)
+
+                count = count + 1
+
+        file_name = c.get('finderFolder') + '/group-analysis-' + s.range_id + '.csv'
+        file = open(file_name, 'w+')
+        file.write('Group\tReadings\tTotal\tPercentage\n')
+
+        # One set
+        glen = len(groups['C565'])
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(groups['F03'])
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('F03\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(groups['F1'])
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('F1\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(groups['F13'])
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('F13\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(groups['032'])
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('032\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        # Two sets
+        glen = len(set(groups['C565']) | set(groups['F03']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['C565']) | set(groups['F1']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F1\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['C565']) | set(groups['F13']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F13\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['C565']) | set(groups['032']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U 032\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        # C565 x F03
+        glen = len(set(groups['C565']) & set(groups['F03']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 N F03\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        # Three sets
+        glen = len(set(groups['C565']) | set(groups['F03']) | set(groups['F1']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03 U F1\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['C565']) | set(groups['F03']) | set(groups['F13']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03 U F13\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['C565']) | set(groups['F03']) | set(groups['032']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03 U 032\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        # Four sets
+        glen = len(set(groups['C565']) | set(groups['F03']) | set(groups['F1']) | set(groups['F13']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03 U F1 U F13\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['C565']) | set(groups['F03']) | set(groups['F13']) | set(groups['032']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03 U F13 U 032\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['C565']) | set(groups['F03']) | set(groups['F1']) | set(groups['032']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03 U F1 U 032\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        # Five sets
+        glen = len(set(groups['C565']) | set(groups['F03']) | set(groups['F1']) | set(groups['F13']) | set(groups['032']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('C565 U F03 U F1 U F13 U 032\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        # P45 x 032
+        glen = len(set(groups['032']) & set(groups['P45']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('P45 N 032\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        # Distinctive
+        glen = len(set(groups['C565']) - set(groups['F03']) - set(groups['F1']) - set(groups['F13']) - set(groups['032']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('Only C565\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        glen = len(set(groups['F03']) - set(groups['C565']) - set(groups['F1']) - set(groups['F13']) - set(groups['032']))
+        pc = round(glen * 1.0 / count, 3) if count > 0 else 0.0
+        file.write('Only F03\t' + str(glen) + '\t' + str(count) + '\t' + str(pc) + '\n')
+
+        file.close()
+
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
         c = s.config = Config(o.config)
@@ -2111,8 +2255,9 @@ class VariantFinder:
             #s.refSingulars()
             #s.fixHarmLayers()
             #s.bobbiensisReadings()
-            s.bezanLatinAgreements()
+            #s.bezanLatinAgreements()
             #s.alexAgreements()
+            s.analyzeGroups()
         elif o.density:
             s.computeDensity(False)
             s.computeDensity(True)

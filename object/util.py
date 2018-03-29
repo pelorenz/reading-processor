@@ -10,6 +10,9 @@ class Util:
 
     CORE_GROUPS = ['F03', 'C565', 'F1', 'F13', 'CP45']
 
+    group_map = {}
+    g_prefixes = ['B', 'C', 'F', 'I', 'S']
+
 def getGroupBase(group):
     s_res = re.search(r'^(Iso|[ByzCFP0-9]+)([s]{0,1})$', group)
     if s_res:
@@ -141,20 +144,25 @@ def mssListToString(mss_list):
 def groupMapToString(g_map, g_list):
     g_str = ''
 
+    Util.group_map = g_map
     if g_list:
         g_list = sorted(g_list, cmp=sortGroups)
 
-    for group in g_list:
-        group_list = g_map[group]
+    for item in g_list:
+        ch = item[:1]
         if g_str:
             g_str = g_str + ' '
-        g_str = g_str + group + '('
-        ms_str = ''
-        for ms in group_list:
-            if ms_str:
-                ms_str = ms_str + ' '
-            ms_str = ms_str + ms
-        g_str = g_str + ms_str + ')'
+        if ch in Util.g_prefixes:
+            group_list = sorted(g_map[item], cmp=sortMSS)
+            g_str = g_str + '('
+            ms_str = ''
+            for ms in group_list:
+                if ms_str:
+                    ms_str = ms_str + ' '
+                ms_str = ms_str + ms
+            g_str = g_str + ms_str + ')'
+        else:
+            g_str = g_str + item
     return g_str
 
 def mssGroupListToString(mss_list, msGroups, g_map, excludeMS):
@@ -232,7 +240,10 @@ def mssGroupListToString(mss_list, msGroups, g_map, excludeMS):
 
     mss_str = ''
     if g_list:
-        mss_str = ' '.join(g_list)
+        if group_list:
+            group_list.extend(g_list)
+        else:
+            group_list = g_list
 
     if group_list:
         if mss_str:
@@ -252,25 +263,19 @@ def mssGroupListToString(mss_list, msGroups, g_map, excludeMS):
     return mss_str
 
 def sortGroups(g1, g2):
-    if g1 == 'Byz' and g2 != 'Byz':
-        return 1
-    elif g1 != 'Byz' and g2 == 'Byz':
-        return -1
-
-    if g1 == 'Iso' and g2 != 'Iso':
-        return 1
-    elif g1 != 'Iso' and g2 == 'Iso':
-        return -1
-
     c1 = g1[:1]
     c2 = g2[:1]
-    if c1 == 'C' and c2 == 'F':
-        return -1
-    elif c1 == 'F' and c2 == 'C':
-        return 1
 
-    m1 = re.sub(r'^[CF]', '', g1)
-    m2 = re.sub(r'^[CF]', '', g2)
+    m1 = g1
+    if c1 in Util.g_prefixes:
+        glist1 = sorted(Util.group_map[g1], cmp=sortMSS)
+        m1 = glist1[0]
+
+    m2 = g2
+    if c2 in Util.g_prefixes:
+        glist2 = sorted(Util.group_map[g2], cmp=sortMSS)
+        m2 = glist2[0]
+
     return sortMSS(m1, m2)
 
 def sortMSS(ms1, ms2):

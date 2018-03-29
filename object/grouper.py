@@ -71,7 +71,7 @@ class Grouper:
         return o_str
 
     def writeHeader(s):
-        return 'Primary MS\tSecondary MS\tDs Ratio\tDs Agree\tDs Extant\tDs Display\tTtl Ratio\tTtl Agree\tTtl Extant\tTtl Display\tM Ratio\tM Agree\tExtant Readings\tM Display\n'
+        return 'Primary MS\tSecondary MS\tDs Ratio\tDs Agree\tDs Extant\tDs Display\tTtl Ratio\tTtl Agree\tTtl Extant\tTtl Display\tM Ratio\tM Agree\tExtant Readings\tM Display\tTtl > 0.8M\n'
 
     def writeOutput(s):
         s.info('Writing GDF')
