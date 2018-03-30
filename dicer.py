@@ -1,8 +1,9 @@
 #! python2.7
 # -*- coding: utf-8 -*-
 
-import sys, os, string, json, re, subprocess
+import sys, os, string, json, re, subprocess, itertools
 
+import numpy as np
 from object.jsonEncoder import *
 from object.rangeManager import *
 from object.truthTable import *
@@ -511,6 +512,9 @@ class Dicer:
             if not segment.has_key('ref_data'):
                 segment['ref_data'] = {}
 
+            if not segment.has_key('ms_refs_d'):
+                segment['ms_refs_d'] = {}
+
             ref_data = {}
             ref_data['majority_count'] = 0
 
@@ -631,6 +635,15 @@ class Dicer:
                     elif reading_info['D_layer']:
                         ref_data['D_readings'].append(reading_info)
                     ref_data['nonM_readings'].append(reading_info)
+
+                    # MS refs in D
+                    if reading_info['D_layer']:
+                        for ms in r_reading.manuscripts:
+                            if ms == refMS:
+                                continue
+                            if not segment['ms_refs_d'].has_key(ms):
+                                segment['ms_refs_d'][ms] = []
+                            segment['ms_refs_d'][ms].append(vu.label)
 
                     # Family profile scores
                     reading_info['c565_scores'] = s.isCluster565(greek_mss)
@@ -761,6 +774,25 @@ class Dicer:
             hdr.append(ms)
         hauptliste_matrix.append(hdr) # hdr row
 
+        # list of rows for SO CSV
+        unions = c.get('unions')
+        intersections = c.get('intersections')
+        exclusions = c.get('exclusions')
+        setop_matrix = []
+        hdr = ['']
+        for union in unions:
+            u_str = ' U '.join(union)
+            hdr.append(u_str)
+        for isect in intersections:
+            u_str1 = '(' + ' U '.join(isect[0]) + ')'
+            u_str2 = '(' + ' U '.join(isect[1]) + ')'
+            hdr.append(u_str1 + ' x ' + u_str2)
+        for exclu in exclusions:
+            u_str1 = '(' + ' U '.join(exclu[0]) + ')'
+            u_str2 = '(' + ' U '.join(exclu[1]) + ')'
+            hdr.append(u_str1 + ' - ' + u_str2)
+        setop_matrix.append(hdr) # hdr row
+
         hauptliste_delta_matrix = []
         hdr = ['']
         for ms in s.variantModel['manuscripts']:
@@ -784,6 +816,7 @@ class Dicer:
         seg_prev = {}
         hauptliste_matrix_row = []
         hauptliste_delta_matrix_row = []
+        setop_matrix_row = []
         last_word_count_multiplier = 0.0
 
         c_prev_count = {}
@@ -816,6 +849,7 @@ class Dicer:
             segment_labels.append(segment['label'])
             hauptliste_matrix_row.append(segment['label'])
             hauptliste_delta_matrix_row.append(segment['label'])
+            setop_matrix_row.append(segment['label'])
 
             majority_count = ref_data['majority_count']
             majority_count_prev = mcount_prev
@@ -1017,6 +1051,52 @@ class Dicer:
 
             j_segment['profiles'] = j_profiles
 
+            # Process unions
+            for union in unions:
+                union_refs = set()
+                for ms in union:
+                    if not segment['ms_refs_d'].has_key(ms):
+                        continue
+                    union_refs = union_refs | set(segment['ms_refs_d'][ms])
+                ratio = str(round(len(union_refs) * 1.0 / D_count, 3))
+                setop_matrix_row.append(ratio)
+
+            # Process intersections
+            for isect in intersections:
+                u1_refs = set()
+                u2_refs = set()
+                u1 = isect[0]
+                u2 = isect[1]
+                for ms in u1:
+                    if not segment['ms_refs_d'].has_key(ms):
+                        continue
+                    u1_refs = u1_refs | set(segment['ms_refs_d'][ms])
+                for ms in u2:
+                    if not segment['ms_refs_d'].has_key(ms):
+                        continue
+                    u2_refs = u2_refs | set(segment['ms_refs_d'][ms])
+                isect_refs = u1_refs & u2_refs
+                ratio = str(round(len(isect_refs) * 1.0 / D_count, 3))
+                setop_matrix_row.append(ratio)
+
+            # Process exclusions
+            for exclu in exclusions:
+                u1_refs = set()
+                u2_refs = set()
+                u1 = exclu[0]
+                u2 = exclu[1]
+                for ms in u1:
+                    if not segment['ms_refs_d'].has_key(ms):
+                        continue
+                    u1_refs = u1_refs | set(segment['ms_refs_d'][ms])
+                for ms in u2:
+                    if not segment['ms_refs_d'].has_key(ms):
+                        continue
+                    u2_refs = u2_refs | set(segment['ms_refs_d'][ms])
+                exclu_refs = u1_refs - u2_refs
+                ratio = str(round(len(exclu_refs) * 1.0 / D_count, 3))
+                setop_matrix_row.append(ratio)
+
             # Process core groups
             core_groups = c.get('coreGroups')
             for gp in core_groups:
@@ -1138,9 +1218,11 @@ class Dicer:
             j_segment['latin_mss_Lsort'] = sorted(j_segment['latin_mss'], cmp=sortHauptlisteL)[:10]
             hauptliste['segments'].append(j_segment)
 
+            setop_matrix.append(setop_matrix_row)
             hauptliste_matrix.append(hauptliste_matrix_row)
             if segment['index'] != 1:
                 hauptliste_delta_matrix.append(hauptliste_delta_matrix_row)
+            setop_matrix_row = []
             hauptliste_matrix_row = []
             hauptliste_delta_matrix_row = []
 
@@ -1193,10 +1275,17 @@ class Dicer:
             file.write(jdata.encode('UTF-8'))
             file.close()
 
-        # Save hauptlist CSVs
+        # Save hauptliste CSVs
         csvfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-hauptliste.csv'
         with open(csvfile, 'w+') as file:
             for row in hauptliste_matrix:
+                file.write(('\t'.join(row) + '\n').encode('UTF-8'))
+            file.close()
+
+        # Save setop CSVs
+        csvfile = s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-setop.csv'
+        with open(csvfile, 'w+') as file:
+            for row in setop_matrix:
                 file.write(('\t'.join(row) + '\n').encode('UTF-8'))
             file.close()
 
@@ -1288,9 +1377,35 @@ class Dicer:
 
         file.close()
 
+    def computeUnions(s, refMS):
+        c = s.config
+        unionMSS = c.get('unionMSS')
+        file = open(s.dicerFolder + refMS + '-' + s.segmentConfig['label'] + '-unions.csv', 'w+')
+        file.write('MSS\tMSS Count\tAVG\tSTD\n')
+        for i in range(1,9):
+            s.info('Processing combinations of', str(i))
+            combos = itertools.combinations(unionMSS, i)
+            for cmb in combos:
+                ratios = []
+                for sidx, segment in enumerate(s.dicer_segments):
+                    u_refs = set()
+                    for ms in cmb:
+                        if not segment['ms_refs_d'].has_key(ms):
+                            continue
+                        u_refs = u_refs | set(segment['ms_refs_d'][ms])
+                    ref_data = segment['ref_data'][refMS]
+                    D_count = len(ref_data['D_readings'])
+                    ratio = round(len(u_refs) * 1.0 / D_count, 3)
+                    ratios.append(ratio)
+                avg = round(np.mean(ratios), 3)
+                std = round(np.std(ratios), 3)
+                file.write(' '.join(cmb) + '\t' + str(i) + '\t' + str(avg) + '\t' + str(std) + '\n')
+        file.close()
+
     def runHauptliste(s, refMS):
         s.prepareHauptlisten(refMS)
         s.computeHauptlisten(refMS)
+        #s.computeUnions(refMS) # expensive!
 
     def main(s, argv):
         o = s.options = CommandLine(argv).getOptions()
