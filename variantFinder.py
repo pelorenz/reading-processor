@@ -482,7 +482,7 @@ class VariantFinder:
 
                 r_reading = vu.getReadingForManuscript(ref_ms)
                 r_layer = s.computeLayer2(ref_ms, vu, r_reading)
-                if r_layer != 'BB' and r_layer != 'CC' and r_layer != 'GG' and r_layer != 'WW' and r_layer != 'CNR' and r_layer != 'CCNR' and r_layer != 'C' and r_layer != 'BNR' and r_layer != 'WNR' and r_layer != 'GNR':
+                if r_layer != 'BB' and r_layer != 'CC' and r_layer != 'GG' and r_layer != 'WW' and r_layer != 'CNR' and r_layer != 'CCNR' and r_layer != 'C' and r_layer != 'BNR' and r_layer != 'WNR' and r_layer != 'GNR' and r_layer != 'B' and r_layer != 'G' and r_layer != 'W':
                     continue
 
                 indiv_mss = []

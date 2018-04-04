@@ -210,7 +210,7 @@ class Grouper:
                 if vu.isSingular() or vu.isReferenceSingular('05'):
                     s.info('Excluding', vu.label)
                     continue
-                elif s.is_greek and (vu.label in s.latinLayerCore or vu.label in s.latinLayerMulti or vu.isLatinOnly):
+                elif s.is_greek and (vu.label in s.latinLayerCore or vu.label in s.latinLayerMulti or vu.isLatinOnly()):
                     s.info('Excluding', vu.label)
                     continue
 

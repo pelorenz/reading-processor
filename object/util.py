@@ -93,10 +93,13 @@ def refListToString(ref_list):
     return r_str
 
 def readingsToString(vu, reading):
+    m_reading = vu.getReadingForManuscript('35')
     readings_str = ''
     readings_str = readings_str + reading.getDisplayValue()
+    if m_reading:
+        readings_str = readings_str + ' | ' + m_reading.getDisplayValue()
     for rdg in vu.readings:
-        if rdg == reading or not rdg.manuscripts:
+        if rdg == reading or rdg == m_reading or not rdg.manuscripts:
             continue
 
         if len(readings_str) > 0:
