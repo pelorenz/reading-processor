@@ -1354,7 +1354,7 @@ class VariantFinder:
         msGroupAssignments = c.get('msGroupAssignments')
 
         file = open(c.get('finderFolder') + '/' + s.refMS + '-singulars.csv', 'w+')
-        file.write(('Sort ID\tLabel\tReading\tSupport\tMainstream Reading\tAll Readings\n').encode('UTF-8'))
+        file.write(('Sort ID\tLayer\tCols Agree\tLabel\tReading\tSupport\tMainstream Reading\tAll Readings\n').encode('UTF-8'))
         for addr in s.variantModel['addresses']:
             for vu in addr.variation_units:
                 if not vu.startingAddress:
@@ -1366,14 +1366,23 @@ class VariantFinder:
 
                 mainstream_reading = vu.getReadingForManuscript('35')
 
+                cols_agree = 'N'
+                latin_col = vu.getReadingForManuscript('VL5')
+                if latin_col == reading:
+                    cols_agree = 'Y'
+
                 g_counts = {}
                 g_count = reading.countNonRefGreekManuscriptsByGroup(s.refMS, msGroupAssignments, g_counts)
                 if vu.isReferenceSingular(s.refMS):
                     file.write((s.generateSortLabel(vu.label) + u'\t').encode('UTF-8'))
+                    file.write((u'S\t').encode('UTF-8'))
+                    file.write((cols_agree + u'\t').encode('UTF-8'))
                     file.write((vu.label + u'\t').encode('UTF-8'))
                     file.write((reading.getDisplayValue() + u'\t\t').encode('UTF-8'))
                 elif g_count <= 1:
                     file.write((s.generateSortLabel(vu.label) + u'\t').encode('UTF-8'))
+                    file.write((u'SS\t').encode('UTF-8'))
+                    file.write((cols_agree + u'\t').encode('UTF-8'))
                     file.write((vu.label + u'\t').encode('UTF-8'))
                     file.write((reading.getDisplayValue() + u'\t').encode('UTF-8'))
 
@@ -1391,7 +1400,7 @@ class VariantFinder:
 
                 all_readings = ''
                 all_readings = all_readings + reading.getDisplayValue()
-                all_readings = all_readings + '|' + mainstream_reading.getDisplayValue()
+                all_readings = all_readings + ' | ' + mainstream_reading.getDisplayValue()
                 for rdg in vu.readings:
                     if reading == rdg or mainstream_reading == rdg:
                         continue
@@ -2252,12 +2261,12 @@ class VariantFinder:
             s.buildNonMajorityLayers()
         elif o.extra:
             #s.refNonMainstream()
-            #s.refSingulars()
+            s.refSingulars()
             #s.fixHarmLayers()
             #s.bobbiensisReadings()
             #s.bezanLatinAgreements()
             #s.alexAgreements()
-            s.analyzeGroups()
+            #s.analyzeGroups()
         elif o.density:
             s.computeDensity(False)
             s.computeDensity(True)
