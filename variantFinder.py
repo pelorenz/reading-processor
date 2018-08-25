@@ -160,12 +160,14 @@ class VariantFinder:
 
             return s.checkConfig(ref_ms, vu, 'G') # Base
         else:
-            if nonref_count < VariantFinder.MAX_RANGE and latin_count >= nonref_count and latin_count != 0:
+            if nonref_count < 1 and latin_count >= nonref_count and latin_count != 0:
                 return 'L'
             else:
                 return 'G'
 
     def computeLayer(s, var_label, reading, NEW_LAYER_CODES):
+        greek_mss = []
+        latin_mss = []
         if s.refMS == '05':
             if not NEW_LAYER_CODES:
                 if reading.hasManuscript('35'):
@@ -1254,7 +1256,7 @@ class VariantFinder:
                         continue
 
                     if r_layer != 'S':
-                        r_layer = s.computeLayer(vu.label, r_reading, False)
+                        r_layer = s.computeLayer2(s.refMS, vu, r_reading)
 
                     if apparatusLabels and not vu.label in apparatusLabels:
                         continue
@@ -2223,8 +2225,8 @@ class VariantFinder:
             if o.criteria:
                 s.queryCriteria = c.get('queryCriteria')[o.criteria]
 
-            if o.layer and o.layer not in ['L', 'D', 'M']:
-                s.info('If specified, layer must be one of \'L\', \'D\', or \'M\'')
+            if o.layer and o.layer not in ['L', 'G', 'M']:
+                s.info('If specified, layer must be one of \'L\', \'G\', or \'M\'')
                 return
 
             s.latinLayerCore = c.get('latinLayerCoreVariants').split(u'|')
