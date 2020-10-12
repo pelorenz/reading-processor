@@ -160,3 +160,18 @@ class  VariationUnit(object):
             if counter > 1:
                 return False
         return True
+
+    def getLatinOnlyReadings(s, hasAll=[], hasAny=[]):
+        readings = []
+        for reading in s.readings:
+            if reading.hasGreekManuscript():
+                continue
+            if len(hasAll) > 0:
+                if set(reading.manuscripts) >= set(hasAll):
+                    readings.append(reading)
+            elif len(hasAny) > 0:
+                if len(set(reading.manuscripts) & set(hasAny)) > 0:
+                    readings.append(reading)
+            else:
+                readings.append(reading)
+        return readings

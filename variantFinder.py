@@ -1414,7 +1414,48 @@ class VariantFinder:
                 file.write((all_readings + u'\n').encode('UTF-8'))
 
         file.close()
-                    
+
+    def latinOnlyReadings(s):
+        c = s.config
+
+        file = open(c.get('finderFolder') + '/latin-only.csv', 'w+')
+        file.write(
+            ('Sort ID\tLabel\tReading\tSupport\tMainstream Reading\n').encode('UTF-8'))
+        for addr in s.variantModel['addresses']:
+            for vu in addr.variation_units:
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                #latinOnly = vu.getLatinOnlyReadings()
+                #latinOnly = vu.getLatinOnlyReadings(hasAny=['VL1','VL2'])
+                latinOnly = vu.getLatinOnlyReadings(hasAny=['VL2'])
+                if len(latinOnly) == 0:
+                    continue
+
+                mainstream_reading = vu.getReadingForManuscript('35')
+
+                for reading in latinOnly:
+                    if len(reading.manuscripts) == 0:
+                        continue
+
+                    file.write((s.generateSortLabel(vu.label) + u'\t').encode('UTF-8'))
+                    file.write((vu.label + u'\t').encode('UTF-8'))
+                    file.write((reading.getDisplayValue() + u'\t').encode('UTF-8'))
+
+                    mss_str = ''
+                    for ms in reading.manuscripts:
+                        if mss_str:
+                            mss_str = mss_str + ' '
+                        mss_str = mss_str + ms
+
+                    file.write((mss_str + u'\t').encode('UTF-8'))
+                    if mainstream_reading:
+                        file.write((mainstream_reading.getDisplayValue() + u'\n').encode('UTF-8'))
+                    else:
+                        file.write((u'\n').encode('UTF-8'))
+
+        file.close()
+
     def fixHarmLayers(s):
         c = s.config
 
@@ -1977,6 +2018,171 @@ class VariantFinder:
 
         file.close()
 
+    def bobbiensisDistinctiveGreek(s):
+        c = s.config
+        s.info('Finding distinctive VL1 readings')
+
+        msGroupAssignments = c.get('msGroupAssignments')
+        all_refs = []
+
+        all_mss = set()
+        ref_mss = {}
+
+        all_groups = set()
+        ref_groups = {}
+
+        file = open(c.get('finderFolder') + '/vl1-distinctive.csv', 'w+')
+        file.write('Reference\tSort Ref\t032 Extant\tP45 Extant\tVL1 Reading\tVulgate Reading\tMainstream Reading\t'\
+                   'Has F03\t01 Reading\t03 Reading\tHas 05\t05 Reading\tHas CP45\t032 Reading\tHas F1\t1582 Reading\tHas F13\t788 Reading\tHas C565\t565 Reading\t'\
+                   'Groups\tGroup Names\tGroup Count\tMSS (group)\tReadings\tMSS (Indiv)\tLatin Count\tGreek Count (ungrouped)\tGreek Count (grouped)\tReading Count\tApparatus\n')
+
+        ref_ms = 'VL1'
+        for addr in s.variantModel['addresses']:
+            for vidx, vu in enumerate(addr.variation_units):
+                if not vu.startingAddress:
+                    vu.startingAddress = addr
+
+                # Uncomment to stop at specific address
+                #if addr.addr_idx != 22 or addr.verse_num != 10 or addr.chapter_num != '8':
+                #    continue
+
+                if not vu.hasRetroversion:
+                    continue
+
+                r_reading = vu.getReadingForManuscript(ref_ms)
+                if not r_reading:
+                    continue
+
+                if not r_reading.hasGreekManuscript():
+                    continue
+
+                if r_reading.hasManuscript('35'):
+                    continue
+
+                m35_reading = vu.getReadingForManuscript('35')
+                vg_reading = vu.getReadingForManuscript('vg')
+                m01_reading = vu.getReadingForManuscript('01')
+                m03_reading = vu.getReadingForManuscript('03')
+                m05_reading = vu.getReadingForManuscript('05')
+                m032_reading = vu.getReadingForManuscript('032')
+                m1582_reading = vu.getReadingForManuscript('1582')
+                m788_reading = vu.getReadingForManuscript('788')
+                m565_reading = vu.getReadingForManuscript('565')
+
+                indiv_mss = []
+                g_counts = {}
+                nonref_count = r_reading.countNonRefGreekManuscriptsByGroup(ref_ms, msGroupAssignments, g_counts)
+                nonref_count_indiv = r_reading.countNonRefGreekManuscripts(ref_ms, indiv_mss)
+                group_names = r_reading.getGroupsByName(msGroupAssignments)
+                if 'Byz' in group_names:
+                    continue
+                if len(group_names) > 5:
+                    continue
+                latin_count = r_reading.countNonRefLatinManuscripts(ref_ms)
+
+                vl1_text = ''
+                vg_text = ''
+                m35_text = ''
+                key = addr.chapter_num + '-' + str(addr.verse_num)
+                if s.variantModel['address_lookup'].has_key(key):
+                    verse_addrs = s.variantModel['address_lookup'][key]
+                    vl1_text = r_reading.getTextForManuscript('VL1', verse_addrs)
+                    vg_text = vg_reading.getTextForManuscript('vg', verse_addrs) if vg_reading else ''
+                    m35_text = m35_reading.getTextForManuscript('35', verse_addrs) if m35_reading else ''
+                    m01_text = m01_reading.getTextForManuscript('01', verse_addrs) if m01_reading else ''
+                    m03_text = m03_reading.getTextForManuscript('03', verse_addrs) if m03_reading else ''
+                    m05_text = m05_reading.getTextForManuscript('05', verse_addrs) if m05_reading else ''
+                    m032_text = m032_reading.getTextForManuscript('032', verse_addrs) if m032_reading else ''
+                    m1582_text = m1582_reading.getTextForManuscript('1582', verse_addrs) if m1582_reading else ''
+                    m788_text = m788_reading.getTextForManuscript('788', verse_addrs) if m788_reading else ''
+                    m565_text = m565_reading.getTextForManuscript('565', verse_addrs) if m565_reading else ''
+
+                label = vu.label
+                sort_label = s.generateSortLabel(label)
+                readings_str = readingsToString(vu, r_reading)
+                mss = mssListToString(r_reading.manuscripts)
+                groupMSS = mssGroupListToString(r_reading.manuscripts, msGroupAssignments, g_counts, ref_ms)
+                group_name_str = groupNamesToString(group_names)
+
+                P45_extant = False
+                m032_extant = False
+                extant_mss = vu.getExtantManuscripts()
+                if 'P45' in extant_mss:
+                    P45_extant = True
+                if '032' in extant_mss:
+                    m032_extant = True
+                P45_extant_str = 'yes' if P45_extant else 'no'
+                m032_extant_str = 'yes' if m032_extant else 'no'
+
+                has_CP45 = 'yes' if 'CP45' in group_names else 'no'
+                has_F03 = 'yes' if 'F03' in group_names else 'no'
+                has_F1 = 'yes' if 'F1' in group_names else 'no'
+                has_F13 = 'yes' if 'F13' in group_names else 'no'
+                has_C565 = 'yes' if 'C565' in group_names else 'no'
+                has_05 = 'yes' if r_reading.hasManuscript('05') else 'no'
+                if (has_05 == 'yes'):
+                    group_name_str = '05 ' + group_name_str
+
+                all_mss = all_mss | set(indiv_mss)
+                all_refs.append(sort_label)
+                all_groups = all_groups | group_names
+                ref_mss[sort_label] = set(indiv_mss)
+                ref_groups[sort_label] = group_names
+
+                g_list = g_counts.keys()
+                g_str = groupMapToString(g_counts, g_list)
+                file.write((label + u'\t' + sort_label + u'\t' + m032_extant_str + u'\t' + P45_extant_str + u'\t' + vl1_text + u'\t' + vg_text + u'\t' \
+                            + m35_text + u'\t' + has_F03 + u'\t' + m01_text + u'\t' + m03_text + u'\t' + has_05 + u'\t' + m05_text + u'\t' \
+                            + has_CP45 + u'\t' + m032_text + u'\t' \
+                            + has_F1 + u'\t' + m1582_text + u'\t' + has_F13 + u'\t' + m788_text + u'\t' + has_C565 + u'\t' + m565_text + u'\t' \
+                            + g_str + u'\t' + group_name_str + u'\t' + str(len(group_names)) + u'\t' + groupMSS + u'\t' + readings_str + u'\t' + mss + u'\t' \
+                            + str(latin_count) + u'\t' + str(nonref_count_indiv) + u'\t' \
+                            + str(nonref_count) + u'\t' + str(len(vu.readings)) + u'\t' + vu.toApparatusString() + u'\n').encode('UTF-8'))
+
+        file.close()
+
+        sorted_mss = sorted(list(all_mss), cmp=sortMSS)
+        header = 'Sort Ref'
+        for ms in sorted_mss:
+            header = header + '\t' + ms
+        header = header + '\n'
+
+        file = open(c.get('finderFolder') + '/vl1-distinctive-mss.csv', 'w+')
+        file.write(header)
+        for ref in all_refs:
+            line = ref
+            supporting_mss = ref_mss[ref] # ref must be present!
+            for ms in sorted_mss:
+                if ms in supporting_mss:
+                    line = line + '\t' + '1'
+                else:
+                    line = line + '\t' + '0'
+            line = line + '\n'
+            file.write(line)
+
+        file.close()
+
+        sorted_groups = sorted(list(all_groups))
+        header = 'Sort Ref'
+        for group in sorted_groups:
+            header = header + '\t' + group
+        header = header + '\n'
+
+        file = open(c.get('finderFolder') + '/vl1-distinctive-groups.csv', 'w+')
+        file.write(header)
+        for ref in all_refs:
+            line = ref
+            supporting_groups = ref_groups[ref]  # ref must be present!
+            for group in sorted_groups:
+                if group in supporting_groups:
+                    line = line + '\t' + '1'
+                else:
+                    line = line + '\t' + '0'
+            line = line + '\n'
+            file.write(line)
+
+        file.close()
+
     def bobbiensisReadings(s):
         c = s.config
         s.info('Finding vercellensis readings')
@@ -2263,7 +2469,9 @@ class VariantFinder:
             s.buildNonMajorityLayers()
         elif o.extra:
             #s.refNonMainstream()
-            s.refSingulars()
+            #s.refSingulars()
+            s.bobbiensisDistinctiveGreek()
+            # 10/11/2020 s.latinOnlyReadings()
             #s.fixHarmLayers()
             #s.bobbiensisReadings()
             #s.bezanLatinAgreements()
@@ -2316,4 +2524,7 @@ class VariantFinder:
 # Group MSS
 # variantFinder.py -v -a c01-16 -P
 # variantFinder.py -v -a c01-16 -P greek
+#
+# Latin-only readings
+# variantFinder.py -v -a c01-16 -X
 VariantFinder().main(sys.argv[1:])

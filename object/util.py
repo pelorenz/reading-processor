@@ -107,6 +107,14 @@ def readingsToString(vu, reading):
         readings_str = readings_str + rdg.getDisplayValue()
     return readings_str
 
+def groupNamesToString(group_names):
+    name_list = sorted(list(group_names))
+
+    name_str = ''
+    for name in name_list:
+        name_str = name_str + name + ' '
+    return name_str.strip()
+
 def mssListToString(mss_list):
     mss_list = sorted(mss_list, cmp=sortMSS)
 
@@ -188,7 +196,7 @@ def mssGroupListToString(mss_list, msGroups, g_map, excludeMS):
                 continue
 
             group = getGroupBase(msGroups[ms])
-            if group != 'Iso' and group != 'CP45':
+            if group != 'Iso': # 10/11/2020 and group != 'CP45':
                 if not g_map.has_key(group):
                     g_map[group] = []
                     g_map[group].append(ms)
@@ -430,7 +438,7 @@ def isSubSingular(subsingularVariants, vu, ms):
             return True
 
     return False
-
+"""
 def computeLayer(latinCore, latinMulti, ref_ms, vu_label, reading):
     if reading.hasManuscript('35'):
         return 'M'
@@ -453,7 +461,7 @@ def computeLayer(latinCore, latinMulti, ref_ms, vu_label, reading):
                 greek_mss.append(ms)
 
     return 'L' if isLatinLayer(len(greek_mss), len(latin_mss)) else 'G'
-
+"""
 def isLatinLayer(greek_counter, latin_counter):
     is_latin = False
     #if latin_counter >= 10 and greek_counter == 5:

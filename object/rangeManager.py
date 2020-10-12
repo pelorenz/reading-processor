@@ -122,7 +122,7 @@ class RangeManager:
         c = s.config = Config('processor-config.json')
         s.info('Retrieving variant model')
 
-        variantModel = { 'addresses': [], 'manuscripts': [] }
+        variantModel = { 'addresses': [], 'manuscripts': [], 'address_lookup': {} }
         range_data = c.get('rangeData')
         if range_data.has_key(range_id):
             ranges = range_data[range_id]
@@ -141,6 +141,14 @@ class RangeManager:
                 for addr in c_data['addresses']:
                     if addr.verse_num in v_set:
                         variantModel['addresses'].append(addr)
+
+                        key = addr.chapter_num + '-' + str(addr.verse_num)
+                        verse_addrs = []
+                        if variantModel['address_lookup'].has_key(key):
+                            verse_addrs = variantModel['address_lookup'][key]
+                        else:
+                            variantModel['address_lookup'][key] = verse_addrs
+                        verse_addrs.append(addr)
 
                 variantModel['manuscripts'] = sorted(list(set(variantModel['manuscripts']).union(set(c_data['manuscripts']))), cmp=sortMSS)
 

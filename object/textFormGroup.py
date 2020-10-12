@@ -21,6 +21,12 @@ class  TextFormGroup(object):
     def getForm(s):
         return s.mainForm
 
+    def hasManuscript(s, id):
+        for form in s.textForms:
+            if form.hasManuscript(id):
+                return True
+        return False
+
     def getLemmas(s):
         lemmas = []
         for frm in s.textForms:

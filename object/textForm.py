@@ -91,6 +91,12 @@ class  TextForm(object):
         else:
             return s.form
 
+    def hasManuscript(s, id):
+        for ms in s.linked_mss:
+            if ms == id:
+                return True
+        return False
+
     def getLemmas(s):
         lemmas = []
         if not s.form or not TextForm.morph_cache:

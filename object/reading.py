@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, collections, json, re
+
+from object.textFormGroup import TextFormGroup
 from util import *
 
 class  Reading(object):
@@ -41,6 +43,12 @@ class  Reading(object):
                 return ms
         return None
 
+    def getFirstLatinManuscript(s):
+        for ms in s.manuscripts:
+            if ms == '19A' or ms == 'vg' or ms[:1] == 'V':
+                return ms
+        return None
+
     def hasGreekManuscript(s):
         for ms in s.manuscripts:
             if ms in Util.MS_OVERLAYS:
@@ -48,6 +56,15 @@ class  Reading(object):
             if ms != '19A' and ms != 'vg' and ms[:1] != 'V':
                 return True
         return False
+
+    def getGroupsByName(s, group_assignments):
+        groups = set()
+        for ms in s.manuscripts:
+            if ms == '19A' or ms == 'vg' or ms[:1] == 'V':
+                continue
+            if (group_assignments.has_key(ms)):
+                groups.add(group_assignments[ms])
+        return groups
 
     def countNonRefGreekManuscripts(s, refMS, indiv_mss):
         counter = 0
@@ -80,7 +97,7 @@ class  Reading(object):
                 continue
 
             group = getGroupBase(msGroups[ms])
-            if group == 'Iso' or group == 'CP45':
+            if group == 'Iso': # 10/11/2020 or group == 'CP45':
                 counter = counter + 1
             else:
                 # did we count group already?
@@ -143,7 +160,7 @@ class  Reading(object):
         txt_str = ''
         isOm = True
         for ru in s.readingUnits:
-            if ru.text <> 'om.':
+            if ru.text != 'om.':
                 isOm = False
                 break
         if isOm:
@@ -157,6 +174,38 @@ class  Reading(object):
             txt_str = txt_str + ru.text
 
         return txt_str
+
+    def getTextForManuscript(s, ms, verse_addrs):
+        ms_text = ''
+        for ru in s.readingUnits:
+            if ru.text == 'om.':
+                continue
+            addr = None
+            for curr_addr in verse_addrs:
+                if curr_addr.addr_idx == ru.addr_idx:
+                    addr = curr_addr
+                    break
+            if not addr:
+                continue
+            for text_form in addr.sorted_text_forms:
+                if TextFormGroup == type(text_form):
+                    for sub_form in text_form.textForms:
+                        if sub_form.hasManuscript(ms):
+                            if sub_form.form == 'om.' or sub_form.form == '':
+                                break
+                            if len(ms_text) > 0:
+                                ms_text = ms_text + ' '
+                            ms_text = ms_text + sub_form.form
+                            break
+                else:
+                    if text_form.hasManuscript(ms):
+                        if text_form.form == 'om.' or text_form.form == '':
+                            break
+                        if len(ms_text) > 0:
+                            ms_text = ms_text + ' '
+                        ms_text = ms_text + text_form.form
+                        break
+        return 'om.' if ms_text == '' else ms_text
 
     def getAllTokens(s):
         values = []

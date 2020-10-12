@@ -42,11 +42,24 @@ class  ReadingGroup(object):
                 return ms
         return None
 
+    def getFirstLatinManuscript(s):
+        mss = sorted(s.manuscripts, cmp=sortMSS)
+        for ms in mss:
+            if ms == '19A' or ms == 'vg' or ms[:1] == 'V':
+                return ms
+        return None
+
     def hasGreekManuscript(s):
         for reading in s.readings:
             if reading.hasGreekManuscript():
                 return True
         return False
+
+    def getGroupsByName(s, group_assignments):
+        groups = set()
+        for reading in s.readings:
+            groups = groups | reading.getGroupsByName(group_assignments)
+        return groups
 
     def countNonRefGreekManuscripts(s, refMS, indiv_mss):
         counter = 0
@@ -92,6 +105,12 @@ class  ReadingGroup(object):
             return s.getManuscriptReading(first_greek).getDisplayValue()
 
         return s.displayValue
+
+    def getTextForManuscript(s, ms, verse_addrs):
+        for reading in s.readings:
+            if reading.hasManuscript(ms):
+                return reading.getTextForManuscript(ms, verse_addrs)
+        return ''
 
     def getAllTokens(s):
         values = []
